@@ -11,8 +11,13 @@ const steps = [
   },
   {
     number: "03",
-    title: "Resultado contenido",
-    text: "El objetivo no es cambiar el rostro: es optimizarlo con criterio, seguridad y continuidad."
+    title: "Indicar con criterio",
+    text: "Cada intervención se decide por beneficio real, seguridad, etapa del plan y expectativa del paciente."
+  },
+  {
+    number: "04",
+    title: "Sostener el resultado",
+    text: "El seguimiento permite ajustar, mantener y evitar sobrecorrecciones. La estética correcta también necesita tiempo."
   }
 ];
 
@@ -22,7 +27,7 @@ export function MethodSection() {
       <div className="container">
         <div className="section-header">
           <div>
-            <p className="section-kicker">Método</p>
+            <p className="section-kicker">Método HAUTLAB</p>
             <h2>No se trata de hacer más. Se trata de indicar mejor.</h2>
           </div>
           <p className="section-text">
@@ -30,9 +35,9 @@ export function MethodSection() {
           </p>
         </div>
 
-        <div className="grid-3">
+        <div className="grid-4">
           {steps.map((step) => (
-            <article className="card" key={step.number}>
+            <article className="card card-method" key={step.number}>
               <div className="card-number">{step.number}</div>
               <h3>{step.title}</h3>
               <p>{step.text}</p>
