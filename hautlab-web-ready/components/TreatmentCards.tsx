@@ -16,8 +16,8 @@ const treatments = [
     text: "Estrategias para soporte, calidad de piel y envejecimiento facial con visión de mediano plazo."
   },
   {
-    title: "Dermatología clínica",
-    text: "Diagnóstico y tratamiento de piel con criterio médico, seguimiento y documentación clínica."
+    title: "Calidad de piel",
+    text: "Protocolos para textura, luminosidad, poros, manchas y salud cutánea con seguimiento clínico."
   },
   {
     title: "Medicina metabólica estética",
@@ -27,7 +27,7 @@ const treatments = [
 
 export function TreatmentCards() {
   return (
-    <section className="section" id="tratamientos">
+    <section className="section section-muted" id="tratamientos">
       <div className="container">
         <div className="section-header">
           <div>
@@ -35,13 +35,14 @@ export function TreatmentCards() {
             <h2>Servicios organizados por criterio clínico.</h2>
           </div>
           <p className="section-text">
-            La indicación correcta depende de diagnóstico, anatomía, objetivos y tolerancia al riesgo. Esta web no reemplaza una consulta médica.
+            La indicación correcta depende de diagnóstico, anatomía, objetivos y tolerancia al riesgo. HAUTLAB no funciona como catálogo de procedimientos: funciona como un plan médico-estético.
           </p>
         </div>
 
         <div className="grid-3">
           {treatments.map((treatment) => (
-            <article className="card" key={treatment.title}>
+            <article className="card treatment-card" key={treatment.title}>
+              <span className="card-tag">HAUTLAB</span>
               <h3>{treatment.title}</h3>
               <p>{treatment.text}</p>
             </article>
