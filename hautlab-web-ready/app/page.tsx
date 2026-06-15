@@ -1,5 +1,6 @@
 import { Hero } from "@/components/Hero";
 import { MethodSection } from "@/components/MethodSection";
+import { ExperienceSection } from "@/components/ExperienceSection";
 import { TreatmentCards } from "@/components/TreatmentCards";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -8,12 +9,13 @@ export default function HomePage() {
     <>
       <Hero />
       <MethodSection />
+      <ExperienceSection />
       <TreatmentCards />
 
-      <section className="section">
+      <section className="section" id="consulta">
         <div className="container split-panel">
-          <div className="panel">
-            <p className="section-kicker">Consulta</p>
+          <div className="panel panel-large">
+            <p className="section-kicker">Consulta privada</p>
             <h2>La valoración ordena la decisión.</h2>
             <p className="section-text" style={{ marginTop: 24 }}>
               Antes de indicar toxina, relleno, bioestimulación, láser o tratamiento dermatológico, se define si el caso realmente es candidato y qué secuencia aporta más valor.
@@ -38,13 +40,13 @@ export default function HomePage() {
           </div>
           <div>
             <p className="section-text">
-              La consulta estética tiene un costo de $1,300 MXN y puede abonarse al procedimiento si se realiza el mismo día y el caso es candidato.
+              La valoración estética tiene un costo de $1,300 MXN y puede abonarse al procedimiento si se realiza el mismo día y el caso es candidato.
             </p>
             <div className="section-actions" style={{ marginTop: 24 }}>
               <a className="button button-primary" href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
                 Agendar por WhatsApp
               </a>
-              <a className="button" href="/contacto">
+              <a className="button button-dark" href="/contacto">
                 Ver contacto
               </a>
             </div>
