@@ -1,22 +1,21 @@
-import Image from "next/image";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { siteConfig } from "@/lib/siteConfig";
 
 export function Hero() {
   return (
-    <section className="hero">
+    <section className="hero hero-lab">
       <div className="container hero-grid">
-        <div>
-          <p className="eyebrow">HAUTLAB · Medicina estética con criterio clínico</p>
-          <h1>Precisión médica. Estética contenida.</h1>
+        <div className="hero-copy-lab">
+          <p className="eyebrow">HAUTLAB · Dirección médica Dr. Salvador Cordero</p>
+          <h1>Medicina estética con precisión clínica y estética contenida.</h1>
           <p className="lead">
-            Dermatología clínica, armonización facial y medicina estética avanzada por el Dr. Salvador Cordero para pacientes que buscan verse mejor sin perder identidad.
+            Dermatología clínica, armonización facial y medicina estética avanzada para pacientes que buscan verse mejor sin perder identidad.
           </p>
 
           <div className="pill-row" aria-label="Pilares de atención">
-            <span className="pill">Diagnóstico antes que procedimiento</span>
+            <span className="pill">Diagnóstico médico-estético</span>
+            <span className="pill">Plan por capas</span>
             <span className="pill">Resultados naturales</span>
-            <span className="pill">Atención privada</span>
           </div>
 
           <div className="hero-actions">
@@ -24,29 +23,38 @@ export function Hero() {
               Agendar valoración privada
             </a>
             <a className="button" href="#metodo">
-              Conocer el método HAUTLAB
+              Ver método HAUTLAB
             </a>
           </div>
         </div>
 
-        <aside className="hero-card" aria-label="Resumen clínico">
-          <div className="hero-card-label">Dirección médica</div>
-          <div className="portrait-frame">
-            <Image
-              src="/dr-salvador-cordero.svg"
-              alt="Dr. Salvador Cordero"
-              width={600}
-              height={760}
-              priority
-            />
+        <aside className="lab-hero-card" aria-label="Sistema clínico HAUTLAB">
+          <div className="lab-card-header">
+            <span>HAUTLAB</span>
+            <span>Clinical aesthetic system</span>
           </div>
-          <div className="hero-meta">
-            <strong>{siteConfig.doctorName}</strong>
-            <span>{siteConfig.platformName} · {siteConfig.location}</span>
+          <div className="lab-orbital">
+            <div className="orbital-ring ring-one" />
+            <div className="orbital-ring ring-two" />
+            <div className="orbital-ring ring-three" />
+            <div className="orbital-axis axis-v" />
+            <div className="orbital-axis axis-h" />
+            <div className="orbital-point p1" />
+            <div className="orbital-point p2" />
+            <div className="orbital-point p3" />
+            <div className="orbital-point p4" />
+            <div className="orbital-monogram">SC</div>
           </div>
-          <p className="hero-note">
-            Valoración estética: {siteConfig.consultationPrice}. Abonable al procedimiento si se realiza el mismo día y el caso es candidato.
-          </p>
+          <div className="lab-card-footer">
+            <div>
+              <strong>{siteConfig.doctorName}</strong>
+              <p>{siteConfig.platformName} · {siteConfig.location}</p>
+            </div>
+            <div>
+              <strong>{siteConfig.consultationPrice}</strong>
+              <p>valoración estética</p>
+            </div>
+          </div>
         </aside>
       </div>
     </section>
