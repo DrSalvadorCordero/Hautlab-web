@@ -1,0 +1,143 @@
+.hero-lab {
+  min-height: calc(100svh - 76px);
+  padding: 92px 0 70px;
+  background:
+    radial-gradient(circle at 78% 28%, rgba(200,179,154,.18), transparent 28%),
+    radial-gradient(circle at 18% 20%, rgba(143,118,94,.12), transparent 24%),
+    linear-gradient(135deg, rgba(255,255,255,.05), transparent 35%),
+    var(--bg);
+}
+
+.hero-copy-lab h1 {
+  font-size: clamp(56px, 7.6vw, 108px);
+  line-height: .9;
+  letter-spacing: -.065em;
+  max-width: 980px;
+}
+
+.hero-copy-lab .lead {
+  max-width: 720px;
+  font-size: clamp(18px, 2vw, 23px);
+}
+
+.lab-hero-card {
+  position: relative;
+  border: 1px solid rgba(242,238,231,.14);
+  border-radius: 34px;
+  min-height: 620px;
+  padding: 28px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.025)),
+    radial-gradient(circle at 50% 10%, rgba(200,179,154,.16), transparent 34%);
+  box-shadow: 0 44px 120px rgba(0,0,0,.42);
+}
+
+.lab-hero-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 33px;
+  background: linear-gradient(145deg, rgba(255,255,255,.08), transparent 35%, rgba(200,179,154,.06));
+  pointer-events: none;
+}
+
+.lab-card-header,
+.lab-card-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.lab-card-header {
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  font-size: 11px;
+}
+
+.lab-card-header span:last-child,
+.lab-card-footer p {
+  color: var(--muted);
+}
+
+.lab-orbital {
+  position: relative;
+  z-index: 1;
+  height: 440px;
+  margin: 38px 0 28px;
+  border-radius: 30px;
+  background:
+    linear-gradient(rgba(242,238,231,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242,238,231,.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(200,179,154,.13), transparent 46%);
+  background-size: 42px 42px, 42px 42px, auto;
+  border: 1px solid rgba(242,238,231,.1);
+  overflow: hidden;
+}
+
+.orbital-ring,
+.orbital-axis,
+.orbital-point,
+.orbital-monogram { position: absolute; }
+
+.orbital-ring {
+  border: 1px solid rgba(200,179,154,.24);
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ring-one { width: 270px; height: 350px; }
+.ring-two { width: 380px; height: 250px; transform: translate(-50%, -50%) rotate(-18deg); }
+.ring-three { width: 210px; height: 210px; border-color: rgba(242,238,231,.12); }
+
+.orbital-axis { background: rgba(242,238,231,.11); }
+.axis-v { width: 1px; height: 74%; left: 50%; top: 13%; }
+.axis-h { height: 1px; width: 78%; left: 11%; top: 50%; }
+
+.orbital-point {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 8px rgba(200,179,154,.08);
+}
+
+.p1 { left: 26%; top: 35%; }
+.p2 { right: 24%; top: 38%; }
+.p3 { left: 35%; bottom: 23%; }
+.p4 { right: 33%; bottom: 25%; }
+
+.orbital-monogram {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(200,179,154,.35);
+  color: var(--accent);
+  font-family: Georgia, serif;
+  font-size: 36px;
+  letter-spacing: .18em;
+  background: rgba(13,13,12,.72);
+  backdrop-filter: blur(18px);
+}
+
+.lab-card-footer { align-items: end; }
+.lab-card-footer strong { display: block; color: var(--bone); }
+.lab-card-footer p { margin: 6px 0 0; font-size: 14px; }
+
+@media (max-width: 900px) {
+  .hero-lab { padding: 56px 0 46px; }
+  .hero-copy-lab h1 { font-size: clamp(46px, 14vw, 72px); }
+  .lab-hero-card { min-height: auto; padding: 20px; border-radius: 26px; }
+  .lab-orbital { height: 320px; margin: 28px 0 22px; }
+  .lab-card-footer { display: grid; gap: 16px; }
+}
