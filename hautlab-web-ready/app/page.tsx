@@ -1,6 +1,4 @@
 import { Hero } from "@/components/Hero";
-import { MethodSection } from "@/components/MethodSection";
-import { ExperienceSection } from "@/components/ExperienceSection";
 import { TreatmentCards } from "@/components/TreatmentCards";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -8,49 +6,20 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <MethodSection />
-      <ExperienceSection />
       <TreatmentCards />
 
-      <section className="section" id="consulta">
-        <div className="container split-panel">
-          <div className="panel panel-large">
-            <p className="section-kicker">Consulta privada</p>
-            <h2>La valoración ordena la decisión.</h2>
-            <p className="section-text" style={{ marginTop: 24 }}>
-              Antes de indicar toxina, relleno, bioestimulación, láser o tratamiento dermatológico, se define si el caso realmente es candidato y qué secuencia aporta más valor.
+      <section className="section" id="metodo">
+        <div className="container compact-consult">
+          <div>
+            <p className="section-kicker">Método HAUTLAB</p>
+            <h2>Primero diagnóstico. Después procedimiento.</h2>
+            <p>
+              La valoración define si conviene tratar, esperar, priorizar o replantear. Se evalúa piel, anatomía, proporción, movimiento, antecedentes y expectativas.
             </p>
           </div>
-          <div className="panel panel-soft">
-            <ul className="list-clean">
-              <li>Diagnóstico médico-estético inicial.</li>
-              <li>Priorización por zonas y capas.</li>
-              <li>Plan progresivo según presupuesto y objetivo.</li>
-              <li>Comunicación clara de límites, riesgos y expectativas.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section className="cta-band">
-        <div className="container section-header" style={{ marginBottom: 0 }}>
-          <div>
-            <p className="section-kicker">Agenda</p>
-            <h2>Empieza con una valoración privada.</h2>
-          </div>
-          <div>
-            <p className="section-text">
-              La valoración estética tiene un costo de $1,300 MXN y puede abonarse al procedimiento si se realiza el mismo día y el caso es candidato.
-            </p>
-            <div className="section-actions" style={{ marginTop: 24 }}>
-              <a className="button button-primary" href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
-                Agendar por WhatsApp
-              </a>
-              <a className="button button-dark" href="/contacto">
-                Ver contacto
-              </a>
-            </div>
-          </div>
+          <a className="button button-primary" href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
+            Agendar valoración
+          </a>
         </div>
       </section>
     </>
