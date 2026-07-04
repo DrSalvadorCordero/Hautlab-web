@@ -1,81 +1,77 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
-import "./hautlab-premium.css";
-import { siteConfig } from "@/lib/siteConfig";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
-import { WhatsAppCTA } from "@/components/WhatsAppCTA";
-
-const metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
-const googleTagId = process.env.NEXT_PUBLIC_GOOGLE_TAG_ID;
 
 export const metadata: Metadata = {
-  title: siteConfig.title,
-  description: siteConfig.description,
-  metadataBase: new URL(siteConfig.url),
+  metadataBase: new URL("https://www.hautlabmx.com"),
+  title: "Dr. Salvador Cordero | HAUTLAB - Dermatología clínica y medicina estética en Mérida",
+  description:
+    "HAUTLAB es una práctica médica de dermatología clínica y medicina estética en Mérida, enfocada en diagnóstico, proporción facial, estética contenida y tratamientos con criterio médico.",
+  alternates: { canonical: "https://www.hautlabmx.com/" },
   openGraph: {
-    title: siteConfig.title,
-    description: siteConfig.description,
-    url: siteConfig.url,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: "/og-image.svg",
-        width: 1200,
-        height: 630,
-        alt: siteConfig.title
-      }
-    ],
+    title: "Dr. Salvador Cordero | HAUTLAB",
+    description: "Dermatología clínica y medicina estética en Mérida. Precisión médica. Estética contenida.",
+    url: "https://www.hautlabmx.com/",
+    siteName: "HAUTLAB",
     locale: "es_MX",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.title,
-    description: siteConfig.description,
-    images: ["/og-image.svg"]
-  }
+    title: "Dr. Salvador Cordero | HAUTLAB",
+    description: "Dermatología clínica y medicina estética en Mérida. Precisión médica. Estética contenida."
+  },
+  robots: { index: true, follow: true }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MedicalClinic",
+    name: "HAUTLAB",
+    alternateName: "Dr. Salvador Cordero | HAUTLAB",
+    url: "https://www.hautlabmx.com",
+    telephone: "+529992809758",
+    priceRange: "$$",
+    medicalSpecialty: ["Dermatology", "Aesthetic Medicine"],
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Calle 43 número 299A x 32A, San Ramón Norte",
+      addressLocality: "Mérida",
+      addressRegion: "Yucatán",
+      postalCode: "97117",
+      addressCountry: "MX"
+    },
+    founder: {
+      "@type": "Person",
+      name: "Dr. Salvador Cordero Romero",
+      jobTitle: "Médico"
+    },
+    sameAs: ["https://www.instagram.com/hautlabmx"]
+  };
+
   return (
-    <html lang="es">
+    <html lang="es-MX">
       <body>
-        {metaPixelId ? (
-          <>
-            <Script id="meta-pixel" strategy="afterInteractive">
-              {`
-                !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-                n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-                t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
-                'https://connect.facebook.net/en_US/fbevents.js');
-                fbq('init', '${metaPixelId}');
-                fbq('track', 'PageView');
-              `}
-            </Script>
-          </>
-        ) : null}
-
-        {googleTagId ? (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${googleTagId}`} strategy="afterInteractive" />
-            <Script id="google-tag" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${googleTagId}');
-              `}
-            </Script>
-          </>
-        ) : null}
-
-        <Header />
-        <main>{children}</main>
-        <WhatsAppCTA />
-        <Footer />
+        {children}
+        <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-GJ8ZHDB9YM" strategy="afterInteractive" />
+        <Script id="hautlab-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-GJ8ZHDB9YM');
+            document.addEventListener('click', function(event) {
+              const link = event.target.closest('[data-event]');
+              if (!link || typeof gtag !== 'function') return;
+              gtag('event', link.dataset.event, {
+                event_category: 'engagement',
+                event_label: link.href || link.textContent
+              });
+            });
+          `}
+        </Script>
       </body>
     </html>
   );
