@@ -1,50 +1,52 @@
-const treatments = [
+const groups = [
   {
-    title: "Armonización facial",
-    text: "Planificación por estructura, proporción y movimiento. Enfoque natural, médico y progresivo."
+    label: "01",
+    title: "Medicina estética facial",
+    text: "Toxina botulínica, rinomodelación, rellenos y armonización con enfoque conservador."
   },
   {
-    title: "Toxina botulínica",
-    text: "Manejo de expresión, prevención de líneas dinámicas y ajuste fino del tercio superior e inferior."
+    label: "02",
+    title: "Dermatología clínica",
+    text: "Acné, rosácea, manchas, dermatitis, alopecia, uñas y piel sensible."
   },
   {
-    title: "Rinomodelación",
-    text: "Corrección no quirúrgica en casos seleccionados, con valoración anatómica estricta y enfoque de seguridad."
+    label: "03",
+    title: "Calidad de piel y soporte",
+    text: "Bioestimulación, peelings, textura, poros, cicatrices, estrías y tecnología."
   },
   {
-    title: "Bioestimulación",
-    text: "Estrategias para soporte, calidad de piel y envejecimiento facial con visión de mediano plazo."
-  },
-  {
-    title: "Calidad de piel",
-    text: "Protocolos para textura, luminosidad, poros, manchas y salud cutánea con seguimiento clínico."
-  },
-  {
-    title: "Medicina metabólica estética",
-    text: "Acompañamiento médico para composición corporal, piel, metabolismo y adherencia clínica."
+    label: "04",
+    title: "Dermatología procedimental",
+    text: "Lesiones benignas, verrugas, dermatoscopia y procedimientos focales."
   }
 ];
 
 export function TreatmentCards() {
   return (
     <section className="section section-muted" id="tratamientos">
-      <div className="container">
-        <div className="section-header">
-          <div>
-            <p className="section-kicker">Tratamientos</p>
-            <h2>Servicios organizados por criterio clínico.</h2>
-          </div>
-          <p className="section-text">
-            La indicación correcta depende de diagnóstico, anatomía, objetivos y tolerancia al riesgo. HAUTLAB no funciona como catálogo de procedimientos: funciona como un plan médico-estético.
+      <div className="container treatment-board">
+        <div className="treatment-index">
+          <p className="section-kicker">Procedimientos</p>
+          <h2>Todo dividido por familias médicas.</h2>
+          <p>
+            La página deja de funcionar como lista larga. Ahora el paciente entiende rápido qué tipo de valoración necesita y por qué no se elige procedimiento sin diagnóstico.
           </p>
+          <div className="treatment-links">
+            {groups.map((group) => (
+              <a href="#consulta" key={group.title}>
+                <span>{group.title}</span>
+                <span>→</span>
+              </a>
+            ))}
+          </div>
         </div>
 
-        <div className="grid-3">
-          {treatments.map((treatment) => (
-            <article className="card treatment-card" key={treatment.title}>
-              <span className="card-tag">HAUTLAB</span>
-              <h3>{treatment.title}</h3>
-              <p>{treatment.text}</p>
+        <div className="treatment-matrix">
+          {groups.map((group) => (
+            <article className="treatment-cell" key={group.title}>
+              <small>{group.label}</small>
+              <h3>{group.title}</h3>
+              <p>{group.text}</p>
             </article>
           ))}
         </div>
