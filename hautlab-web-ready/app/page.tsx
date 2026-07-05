@@ -19,7 +19,7 @@ export default function HomePage() {
       <TreatmentCards />
 
       <section className="section" id="piel">
-        <div className="container" style={{ display: "grid", gridTemplateColumns: ".88fr 1.12fr", gap: 18, alignItems: "stretch" }}>
+        <div className="container split-panel">
           <div className="panel panel-soft">
             <p className="section-kicker">Calidad de piel</p>
             <h2>No todo rostro necesita más volumen.</h2>
@@ -32,7 +32,7 @@ export default function HomePage() {
       </section>
 
       <section className="section" id="metodo">
-        <div className="container" style={{ display: "grid", gridTemplateColumns: "1.12fr .88fr", gap: 18, alignItems: "stretch" }}>
+        <div className="container split-panel">
           <div aria-hidden="true" style={visualStyle("/visuals/clinic-office.svg")} />
           <div className="compact-consult">
             <div>
