@@ -31,14 +31,19 @@ export function TreatmentCards() {
           <p>
             La página deja de funcionar como lista larga. Ahora el paciente entiende rápido qué tipo de valoración necesita y por qué no se elige procedimiento sin diagnóstico.
           </p>
-          <div className="treatment-links">
-            {groups.map((group) => (
-              <a href="#consulta" key={group.title}>
-                <span>{group.title}</span>
-                <span>→</span>
-              </a>
-            ))}
-          </div>
+          <div
+            aria-hidden="true"
+            style={{
+              minHeight: 220,
+              marginTop: 24,
+              borderRadius: 28,
+              border: "1px solid rgba(242,238,231,.13)",
+              backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.58), rgba(11,10,9,.12)), url('/visuals/treatment-room.svg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              boxShadow: "0 34px 100px rgba(0,0,0,.32)"
+            }}
+          />
         </div>
 
         <div className="treatment-matrix">
