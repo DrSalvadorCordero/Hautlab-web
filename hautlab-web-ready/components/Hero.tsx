@@ -3,7 +3,16 @@ import { siteConfig } from "@/lib/siteConfig";
 
 export function Hero() {
   return (
-    <section className="hero" style={{ minHeight: "auto", padding: "76px 0 64px" }}>
+    <section
+      className="hero"
+      style={{
+        minHeight: "calc(100svh - 72px)",
+        padding: "42px 0 34px",
+        backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.96) 0%, rgba(11,10,9,.82) 43%, rgba(11,10,9,.38) 100%), url('/visuals/hero-architecture.svg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      }}
+    >
       <div className="container hero-grid" style={{ alignItems: "center" }}>
         <div>
           <p className="eyebrow">DR. SALVADOR CORDERO | HAUTLAB</p>
@@ -23,7 +32,7 @@ export function Hero() {
             <a className="button" href="#tratamientos">Ver procedimientos</a>
           </div>
         </div>
-        <aside aria-label="Resumen HAUTLAB" className="panel panel-soft">
+        <aside aria-label="Resumen HAUTLAB" className="panel panel-soft" style={{ backdropFilter: "blur(18px)", borderColor: "rgba(200,179,154,.26)" }}>
           <p className="section-kicker">Valoración médica</p>
           <h2>Primero se evalúa. Después se decide.</h2>
           <p className="section-text" style={{ marginTop: 18 }}>
