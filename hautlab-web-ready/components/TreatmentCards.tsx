@@ -38,7 +38,7 @@ export function TreatmentCards() {
               marginTop: 24,
               borderRadius: 28,
               border: "1px solid rgba(242,238,231,.13)",
-              backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.58), rgba(11,10,9,.12)), url('/visuals/treatment-room.svg')",
+              backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.58), rgba(11,10,9,.12)), url('/visuals/treatment-room.webp')",
               backgroundSize: "cover",
               backgroundPosition: "center",
               boxShadow: "0 34px 100px rgba(0,0,0,.32)"
