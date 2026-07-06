@@ -27,13 +27,13 @@ export default function HomePage() {
               A veces el cambio correcto está en textura, inflamación, pigmento, barrera cutánea, colágeno y luz de piel. Primero se diagnostica; después se elige el procedimiento.
             </p>
           </div>
-          <div aria-hidden="true" style={visualStyle("/visuals/skin-macro.svg")} />
+          <div aria-hidden="true" style={visualStyle("/visuals/skin-macro.webp")} />
         </div>
       </section>
 
       <section className="section" id="metodo">
         <div className="container split-panel">
-          <div aria-hidden="true" style={visualStyle("/visuals/clinic-office.svg")} />
+          <div aria-hidden="true" style={visualStyle("/visuals/clinic-office.webp")} />
           <div className="compact-consult">
             <div>
               <p className="section-kicker">Método HAUTLAB</p>
