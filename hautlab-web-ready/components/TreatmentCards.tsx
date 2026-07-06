@@ -2,22 +2,26 @@ const groups = [
   {
     label: "01",
     title: "Medicina estética facial",
-    text: "Toxina botulínica, rinomodelación, rellenos y armonización con enfoque conservador."
+    text: "Toxina botulínica, rinomodelación, rellenos y armonización con enfoque conservador.",
+    href: "/procedimientos"
   },
   {
     label: "02",
     title: "Dermatología clínica",
-    text: "Acné, rosácea, manchas, dermatitis, alopecia, uñas y piel sensible."
+    text: "Acné, rosácea, manchas, dermatitis, alopecia, uñas y piel sensible.",
+    href: "/dermatologia-clinica"
   },
   {
     label: "03",
     title: "Calidad de piel y soporte",
-    text: "Bioestimulación, peelings, textura, poros, cicatrices, estrías y tecnología."
+    text: "Bioestimulación, peelings, textura, poros, cicatrices, estrías y tecnología.",
+    href: "/procedimientos"
   },
   {
     label: "04",
     title: "Dermatología procedimental",
-    text: "Lesiones benignas, verrugas, dermatoscopia y procedimientos focales."
+    text: "Lesiones benignas, verrugas, dermatoscopia y procedimientos focales.",
+    href: "/dermatologia-clinica"
   }
 ];
 
@@ -29,8 +33,13 @@ export function TreatmentCards() {
           <p className="section-kicker">Procedimientos</p>
           <h2>Todo dividido por familias médicas.</h2>
           <p>
-            La página deja de funcionar como lista larga. Ahora el paciente entiende rápido qué tipo de valoración necesita y por qué no se elige procedimiento sin diagnóstico.
+            La home muestra la familia. Las páginas internas explican cada procedimiento con intención, precio, límites y agenda.
           </p>
+          <div className="treatment-links">
+            <a href="/rinomodelacion">Rinomodelación <span>Ver</span></a>
+            <a href="/botox">Botox / toxina <span>Ver</span></a>
+            <a href="/procedimientos">Ver todo <span>Ver</span></a>
+          </div>
           <div
             aria-hidden="true"
             style={{
@@ -48,11 +57,11 @@ export function TreatmentCards() {
 
         <div className="treatment-matrix">
           {groups.map((group) => (
-            <article className="treatment-cell" key={group.title}>
+            <a className="treatment-cell" href={group.href} key={group.title} style={{ display: "block" }}>
               <small>{group.label}</small>
               <h3>{group.title}</h3>
               <p>{group.text}</p>
-            </article>
+            </a>
           ))}
         </div>
       </div>
