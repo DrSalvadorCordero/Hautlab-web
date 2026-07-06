@@ -8,7 +8,7 @@ export function Hero() {
       style={{
         minHeight: "calc(100svh - 72px)",
         padding: "42px 0 34px",
-        backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.96) 0%, rgba(11,10,9,.82) 43%, rgba(11,10,9,.38) 100%), url('/visuals/hero-architecture.svg')",
+        backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.96) 0%, rgba(11,10,9,.82) 43%, rgba(11,10,9,.38) 100%), url('/visuals/hero-architecture.webp')",
         backgroundSize: "cover",
         backgroundPosition: "center"
       }}
