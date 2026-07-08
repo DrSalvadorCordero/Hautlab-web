@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 const mercadoPagoLink = "https://mpago.la/2WjpWKf";
+const stripeLink = "https://buy.stripe.com/fZuaEYcd8fU5dGT7LW9sk0m";
 
 export const metadata: Metadata = {
   title: "Pagos | HAUTLAB | Dr. Salvador Cordero",
@@ -31,17 +32,20 @@ export default function PagosPage() {
               Realiza tu pago de valoración, apartado o solicita un link personalizado para procedimiento.
             </p>
             <div className="hero-actions">
-              <a className="button button-primary" href={mercadoPagoLink} target="_blank" rel="noreferrer">
+              <a className="button button-primary" href={stripeLink} target="_blank" rel="noreferrer">
+                Pagar con Stripe
+              </a>
+              <a className="button" href={mercadoPagoLink} target="_blank" rel="noreferrer">
                 Pagar con Mercado Pago
               </a>
-              <a className="button" href={buildWhatsAppLink("Hola, ya realicé mi pago en Mercado Pago y quiero enviar mi comprobante.")} target="_blank" rel="noreferrer">
+              <a className="button" href={buildWhatsAppLink("Hola, ya realicé mi pago y quiero enviar mi comprobante.")} target="_blank" rel="noreferrer">
                 Enviar comprobante
               </a>
             </div>
           </div>
           <aside className="panel panel-soft">
             <p className="section-kicker">Pago seguro</p>
-            <h2>Mercado Pago</h2>
+            <h2>Stripe o Mercado Pago</h2>
             <p className="section-text" style={{ marginTop: 16 }}>
               Los procedimientos están sujetos a valoración médica. Para montos variables, solicita un link personalizado por WhatsApp.
             </p>
@@ -51,6 +55,11 @@ export default function PagosPage() {
 
       <section className="section">
         <div className="container treatment-matrix">
+          <a className="treatment-cell" href={stripeLink} target="_blank" rel="noreferrer" style={{ display: "block" }}>
+            <small>Stripe</small>
+            <h3>Pagar con tarjeta</h3>
+            <p>Pago seguro con tarjeta mediante Stripe. Conserva tu comprobante.</p>
+          </a>
           <a className="treatment-cell" href={mercadoPagoLink} target="_blank" rel="noreferrer" style={{ display: "block" }}>
             <small>Mercado Pago</small>
             <h3>Pagar valoración o apartado</h3>
@@ -65,11 +74,6 @@ export default function PagosPage() {
             <small>Comprobante</small>
             <h3>Enviar comprobante</h3>
             <p>Comparte tu comprobante para confirmar agenda o seguimiento.</p>
-          </a>
-          <a className="treatment-cell" href="/" style={{ display: "block" }}>
-            <small>HAUTLAB</small>
-            <h3>Volver al sitio</h3>
-            <p>Regresa a la página principal de HAUTLAB.</p>
           </a>
         </div>
       </section>
