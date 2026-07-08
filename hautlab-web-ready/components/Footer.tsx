@@ -19,6 +19,12 @@ export function Footer() {
             <p style={{ margin: "10px 0 0", maxWidth: 560, lineHeight: 1.6 }}>
               Dermatología clínica y medicina estética en Mérida, Yucatán. Precisión médica. Estética contenida.
             </p>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 14, fontSize: 13 }}>
+              <a href="/procedimientos" style={{ color: "#b9afa2" }}>Procedimientos</a>
+              <a href="/pagos" style={{ color: "#b9afa2" }}>Pagos</a>
+              <a href="/rinomodelacion" style={{ color: "#b9afa2" }}>Rinomodelación</a>
+              <a href="/botox" style={{ color: "#b9afa2" }}>Botox</a>
+            </div>
           </div>
           <div style={{ textAlign: "right", lineHeight: 1.8 }}>
             <a href="https://wa.me/529992809758" target="_blank" rel="noreferrer" style={{ color: "#f2eee7" }}>WhatsApp 999 280 9758</a><br />
