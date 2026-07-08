@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 import "./premium.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es-MX">
       <body>
         {children}
+        <Footer />
         <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-GJ8ZHDB9YM" strategy="afterInteractive" />
         <Script id="hautlab-analytics" strategy="afterInteractive">
