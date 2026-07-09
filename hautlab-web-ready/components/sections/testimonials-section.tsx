@@ -12,9 +12,6 @@ export function TestimonialsSection() {
             <h2 className="font-serif text-[clamp(2.6rem,5vw,4.8rem)] leading-[.95] tracking-[-.055em] text-bone">
               Experiencias discretas, reales y sin exageración.
             </h2>
-            <p className="mt-6 text-sm leading-7 text-muted">
-              Placeholder temporal: cuando entregues el archivo CSV o XML con testimonios reales, se reemplaza este arreglo en data/site.ts manteniendo el mismo diseño.
-            </p>
           </div>
         </Reveal>
 
