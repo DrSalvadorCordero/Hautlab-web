@@ -1,13 +1,22 @@
 export const siteConfig = {
-  name: "Dr. Salvador Cordero | HAUTLAB",
+  name: "HAUTLAB + Dr. Salvador Cordero",
   doctorName: "Dr. Salvador Cordero",
+  legalDoctorName: "Dr. Salvador Cordero Romero",
   platformName: "HAUTLAB",
-  title: "Dr. Salvador Cordero | HAUTLAB · Dermatología clínica y medicina estética",
+  title: "HAUTLAB + Dr. Salvador Cordero | Dermatología clínica y medicina estética en Mérida",
   description:
-    "Dermatología clínica, armonización facial y medicina estética avanzada con precisión médica, criterio estético y resultados contenidos.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://hautlabmx.com",
-  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "529999999999",
-  location: "Mérida · Ciudad de México",
+    "Precisión médica. Estética contenida. Dermatología clínica y medicina estética en Mérida con diagnóstico primero, procedimientos por indicación y resultados sobrios.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.hautlabmx.com",
+  whatsappNumber: "529992809758",
+  whatsappDisplay: "+52 999 280 9758",
+  instagram: "https://www.instagram.com/hautlabmx",
+  instagramHandle: "@hautlabmx",
+  address: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
+  mapQuery: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
+  location: "Mérida, Yucatán",
   tagline: "Precisión médica. Estética contenida.",
-  consultationPrice: "$1,300 MXN"
+  triad: "Diagnóstico primero. Procedimientos por indicación. Resultados sobrios.",
+  philosophy: "No hago procedimientos. Rediseño rostros.",
+  consultationPrice: "$1,300 MXN",
+  hours: "Lunes a sábado · atención con cita previa"
 };
