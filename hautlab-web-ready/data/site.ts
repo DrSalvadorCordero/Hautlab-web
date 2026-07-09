@@ -68,42 +68,42 @@ export const treatmentFamilies = [
 
 export const testimonials = [
   {
-    name: "Lou M.",
+    name: "L. M.",
     detail: "Encuesta verificada",
     quote: "Maravilloso tratamiento. El profesionalismo del Dr. Salvador es altamente recomendable. Genera confianza en su trato y explicación."
   },
   {
-    name: "Cecilia C.",
+    name: "C. C.",
     detail: "Medicina estética facial",
     quote: "Es el mejor. Atento, amable, con mucha dedicación y experiencia. Me encanta su trabajo."
   },
   {
-    name: "Crisel C.",
+    name: "C. C.",
     detail: "Encuesta verificada",
     quote: "Excelente atención, súper cuidadoso. Muy profesional y amable."
   },
   {
-    name: "Ileana C.",
+    name: "I. C.",
     detail: "Procedimiento estético",
     quote: "Me gustó mucho su trabajo. Explica muy claramente cada procedimiento. Muy satisfecha."
   },
   {
-    name: "Sebastián C.",
+    name: "S. C.",
     detail: "Consulta dermatológica",
     quote: "Excelente consulta, súper completa y explicada a la perfección."
   },
   {
-    name: "Flor G.",
+    name: "F. G.",
     detail: "Atención y seguimiento",
     quote: "Atento en todo momento, brinda indicaciones específicas y responde todas tus dudas. Excelente servicio."
   },
   {
-    name: "Tina S.",
+    name: "T. S.",
     detail: "Patient survey",
     quote: "Dr. Salvador listened to what I wanted instead of telling me what he thought I should get. I appreciated that."
   },
   {
-    name: "Joanna R.",
+    name: "J. R.",
     detail: "Resultados",
     quote: "El mejor de todos, encantada con mis resultados. Definitivamente la mejor opción."
   }
