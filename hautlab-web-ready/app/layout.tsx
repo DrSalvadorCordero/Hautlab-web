@@ -1,27 +1,31 @@
 import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/site/footer";
+import { Header } from "@/components/site/header";
+import { siteConfig } from "@/lib/siteConfig";
 import "./globals.css";
-import "./premium.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.hautlabmx.com"),
-  title: "Dr. Salvador Cordero | HAUTLAB - Dermatología clínica y medicina estética en Mérida",
-  description:
-    "HAUTLAB es una práctica médica de dermatología clínica y medicina estética en Mérida, enfocada en diagnóstico, proporción facial, estética contenida y tratamientos con criterio médico.",
-  alternates: { canonical: "https://www.hautlabmx.com/" },
+  metadataBase: new URL(siteConfig.url),
+  title: siteConfig.title,
+  description: siteConfig.description,
+  alternates: { canonical: siteConfig.url },
   openGraph: {
-    title: "Dr. Salvador Cordero | HAUTLAB",
-    description: "Dermatología clínica y medicina estética en Mérida. Precisión médica. Estética contenida.",
-    url: "https://www.hautlabmx.com/",
+    title: siteConfig.title,
+    description: siteConfig.description,
+    url: siteConfig.url,
     siteName: "HAUTLAB",
     locale: "es_MX",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dr. Salvador Cordero | HAUTLAB",
-    description: "Dermatología clínica y medicina estética en Mérida. Precisión médica. Estética contenida."
+    title: siteConfig.title,
+    description: siteConfig.description
   },
   robots: { index: true, follow: true }
 };
@@ -31,14 +35,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@context": "https://schema.org",
     "@type": "MedicalClinic",
     name: "HAUTLAB",
-    alternateName: "Dr. Salvador Cordero | HAUTLAB",
-    url: "https://www.hautlabmx.com",
-    telephone: "+529992809758",
-    priceRange: "$$",
+    alternateName: "HAUTLAB + Dr. Salvador Cordero",
+    url: siteConfig.url,
+    telephone: siteConfig.whatsappDisplay,
+    priceRange: "$$$",
     medicalSpecialty: ["Dermatology", "Aesthetic Medicine"],
+    slogan: siteConfig.tagline,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Calle 43 número 299A x 32A, San Ramón Norte",
+      streetAddress: "Calle 43 #299A-32A, San Ramón Norte",
       addressLocality: "Mérida",
       addressRegion: "Yucatán",
       postalCode: "97117",
@@ -46,35 +51,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     },
     founder: {
       "@type": "Person",
-      name: "Dr. Salvador Cordero Romero",
+      name: siteConfig.legalDoctorName,
       jobTitle: "Médico"
     },
-    sameAs: ["https://www.instagram.com/hautlabmx"]
+    sameAs: [siteConfig.instagram]
   };
 
   return (
-    <html lang="es-MX">
+    <html lang="es-MX" className={`${inter.variable} ${playfair.variable}`}>
       <body>
+        <Header />
         {children}
         <Footer />
         <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-GJ8ZHDB9YM" strategy="afterInteractive" />
-        <Script id="hautlab-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-GJ8ZHDB9YM');
-            document.addEventListener('click', function(event) {
-              const link = event.target.closest('[data-event]');
-              if (!link || typeof gtag !== 'function') return;
-              gtag('event', link.dataset.event, {
-                event_category: 'engagement',
-                event_label: link.href || link.textContent
-              });
-            });
-          `}
-        </Script>
       </body>
     </html>
   );
