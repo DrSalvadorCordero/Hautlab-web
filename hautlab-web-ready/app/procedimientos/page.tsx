@@ -1,47 +1,60 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { treatmentFamilies } from "@/data/site";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
-  title: "Procedimientos | HAUTLAB | Dr. Salvador Cordero",
+  title: "Procedimientos | HAUTLAB + Dr. Salvador Cordero",
   description: "Procedimientos de dermatología clínica y medicina estética en HAUTLAB Mérida."
 };
-
-const procedures = [
-  { title: "Rinomodelación", href: "/rinomodelacion", text: "Proporción nasal con ácido hialurónico cuando el caso es candidato." },
-  { title: "Botox / toxina botulínica", href: "/botox", text: "Control de movimiento y arrugas dinámicas con resultado sobrio." },
-  { title: "Dermatología clínica", href: "/dermatologia-clinica", text: "Acné, rosácea, manchas, dermatitis, alopecia, uñas y piel sensible." }
-];
 
 export default function ProcedimientosPage() {
   return (
     <main>
-      <section className="hero" style={{ minHeight: "auto", padding: "74px 0 54px", backgroundImage: "linear-gradient(90deg, rgba(11,10,9,.96), rgba(11,10,9,.70)), url('/visuals/treatment-room.webp')", backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div className="container">
-          <p className="eyebrow">PROCEDIMIENTOS HAUTLAB</p>
-          <h1 style={{ fontSize: "clamp(48px, 7vw, 94px)", lineHeight: .9, letterSpacing: "-.06em", maxWidth: 980 }}>Tratamientos divididos por intención médica.</h1>
-          <p className="lead" style={{ maxWidth: 760 }}>Cada ruta explica indicación, objetivo, límites y forma de agenda. La decisión final se toma después de valoración.</p>
+      <section className="border-b border-line bg-aurora py-16 lg:py-24">
+        <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+          <p className="mb-5 text-xs uppercase tracking-[0.24em] text-champagne">Procedimientos HAUTLAB</p>
+          <h1 className="max-w-5xl font-serif text-[clamp(3rem,7vw,6.2rem)] leading-[.9] tracking-[-.065em] text-bone">
+            Tratamientos divididos por intención médica.
+          </h1>
+          <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">
+            Cada ruta explica indicación, objetivo, límites y forma de agenda. La decisión final se toma después de valoración.
+          </p>
         </div>
       </section>
 
-      <section className="section">
-        <div className="container treatment-matrix">
-          {procedures.map((item) => (
-            <a className="treatment-cell" key={item.href} href={item.href} style={{ display: "block" }}>
-              <small>Ver ruta</small>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </a>
-          ))}
+      <section className="border-b border-line bg-background py-20 lg:py-28">
+        <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-4 md:grid-cols-2">
+          {treatmentFamilies.map((family) => {
+            const Icon = family.icon;
+            return (
+              <Link key={family.slug} href={`/tratamientos/${family.slug}`}>
+                <Card className="h-full p-6 transition hover:-translate-y-1 hover:border-champagne/40">
+                  <Icon className="mb-8 h-6 w-6 text-champagne" />
+                  <p className="text-xs uppercase tracking-[0.18em] text-champagne">Ver ruta</p>
+                  <h3 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-bone">{family.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-muted">{family.summary}</p>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      <section className="cta-band">
-        <div className="container section-header" style={{ marginBottom: 0 }}>
+      <section className="bg-bone py-16 text-background">
+        <div className="mx-auto flex w-[min(1180px,calc(100%-32px))] flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="section-kicker">Agenda</p>
-            <h2>No sabes cuál elegir: empieza por valoración.</h2>
+            <p className="mb-3 text-xs uppercase tracking-[0.24em] text-taupe">Agenda</p>
+            <h2 className="font-serif text-4xl tracking-[-.05em]">No sabes cuál elegir: empieza por valoración.</h2>
           </div>
-          <a className="button button-primary" href={buildWhatsAppLink()} target="_blank" rel="noreferrer">WhatsApp</a>
+          <Button asChild variant="dark" size="lg">
+            <a href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
+              WhatsApp <ArrowRight className="h-4 w-4" />
+            </a>
+          </Button>
         </div>
       </section>
     </main>
