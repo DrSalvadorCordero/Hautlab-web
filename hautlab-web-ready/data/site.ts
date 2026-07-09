@@ -68,24 +68,44 @@ export const treatmentFamilies = [
 
 export const testimonials = [
   {
-    name: "Paciente HAUTLAB",
+    name: "Lou M.",
+    detail: "Encuesta verificada",
+    quote: "Maravilloso tratamiento. El profesionalismo del Dr. Salvador es altamente recomendable. Genera confianza en su trato y explicación."
+  },
+  {
+    name: "Cecilia C.",
     detail: "Medicina estética facial",
-    quote: "Me gustó que primero me explicaran qué sí convenía y qué no. El resultado se ve natural, no exagerado."
+    quote: "Es el mejor. Atento, amable, con mucha dedicación y experiencia. Me encanta su trabajo."
   },
   {
-    name: "Paciente HAUTLAB",
-    detail: "Dermatología clínica",
-    quote: "La consulta fue muy ordenada. Salí entendiendo mi piel y con un plan claro, no solo con una lista de productos."
+    name: "Crisel C.",
+    detail: "Encuesta verificada",
+    quote: "Excelente atención, súper cuidadoso. Muy profesional y amable."
   },
   {
-    name: "Paciente HAUTLAB",
-    detail: "Calidad de piel",
-    quote: "Buscaba verme mejor sin cambiar mi cara. El enfoque fue muy cuidadoso y eso me dio confianza."
+    name: "Ileana C.",
+    detail: "Procedimiento estético",
+    quote: "Me gustó mucho su trabajo. Explica muy claramente cada procedimiento. Muy satisfecha."
   },
   {
-    name: "Paciente HAUTLAB",
-    detail: "Procedimiento dermatológico",
-    quote: "Todo fue claro desde la valoración hasta los cuidados. Se siente una atención privada y muy médica."
+    name: "Sebastián C.",
+    detail: "Consulta dermatológica",
+    quote: "Excelente consulta, súper completa y explicada a la perfección."
+  },
+  {
+    name: "Flor G.",
+    detail: "Atención y seguimiento",
+    quote: "Atento en todo momento, brinda indicaciones específicas y responde todas tus dudas. Excelente servicio."
+  },
+  {
+    name: "Tina S.",
+    detail: "Patient survey",
+    quote: "Dr. Salvador listened to what I wanted instead of telling me what he thought I should get. I appreciated that."
+  },
+  {
+    name: "Joanna R.",
+    detail: "Resultados",
+    quote: "El mejor de todos, encantada con mis resultados. Definitivamente la mejor opción."
   }
 ];
 
