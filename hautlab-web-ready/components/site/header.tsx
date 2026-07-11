@@ -1,13 +1,36 @@
 import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-const navItems = [
-  { label: "Método", href: "#metodo" },
-  { label: "Tratamientos", href: "#tratamientos" },
-  { label: "Testimonios", href: "#testimonios" },
+const areas = [
+  {
+    title: "Diseño facial",
+    href: "/tratamientos/medicina-estetica-facial",
+    items: ["Rinomodelación", "Toxina botulínica", "Labios", "Ojeras", "Mentón", "Mandíbula"]
+  },
+  {
+    title: "Piel y textura",
+    href: "/tratamientos/calidad-de-piel-y-soporte",
+    items: ["Cicatrices", "Estrías", "Poros", "Textura", "Manchas", "Peelings"]
+  },
+  {
+    title: "Condiciones de piel",
+    href: "/tratamientos/dermatologia-clinica",
+    items: ["Acné", "Rosácea", "Melasma", "Dermatitis", "Alopecia", "Vitíligo"]
+  },
+  {
+    title: "Procedimientos focales",
+    href: "/tratamientos/dermatologia-procedimental",
+    items: ["Verrugas", "Quistes", "Lunares", "Dermatoscopia", "Cauterización", "Biopsias"]
+  }
+];
+
+const mobileNav = [
+  { label: "Método", href: "/#metodo" },
+  { label: "Áreas", href: "/#tratamientos" },
+  { label: "Destacados", href: "/#destacados" },
+  { label: "Testimonios", href: "/#testimonios" },
   { label: "Pagos", href: "/pagos" }
 ];
 
@@ -21,11 +44,32 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm text-muted lg:flex" aria-label="Navegación principal">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="transition hover:text-bone">
-              {item.label}
-            </Link>
-          ))}
+          <Link href="/#metodo" className="transition hover:text-bone">Método</Link>
+
+          <div className="group relative">
+            <button className="inline-flex items-center gap-1 py-7 transition group-hover:text-bone" type="button" aria-haspopup="true">
+              Áreas de atención <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            <div className="invisible absolute left-1/2 top-full w-[min(900px,88vw)] -translate-x-1/2 translate-y-2 rounded-[2rem] border border-line bg-[#0d0c0b]/98 p-6 opacity-0 shadow-calm backdrop-blur-2xl transition duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {areas.map((area) => (
+                  <Link key={area.title} href={area.href} className="rounded-3xl border border-line bg-white/[0.03] p-5 transition hover:border-champagne/40 hover:bg-white/[0.055]">
+                    <p className="text-sm font-medium text-bone">{area.title}</p>
+                    <ul className="mt-4 space-y-2 text-xs leading-5 text-muted">
+                      {area.items.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-xs">
+                <span>Diagnóstico primero. Procedimientos por indicación.</span>
+                <Link href="/procedimientos" className="text-bone">Ver todas las áreas →</Link>
+              </div>
+            </div>
+          </div>
+
+          <Link href="/#testimonios" className="transition hover:text-bone">Testimonios</Link>
+          <Link href="/pagos" className="transition hover:text-bone">Pagos</Link>
         </nav>
 
         <Button asChild size="sm" className="shrink-0">
@@ -35,12 +79,11 @@ export function Header() {
           </a>
         </Button>
       </div>
+
       <div className="border-t border-line/50 lg:hidden">
         <div className="mx-auto flex w-[min(1180px,calc(100%-32px))] gap-5 overflow-x-auto py-3 text-xs uppercase tracking-[0.16em] text-muted">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="whitespace-nowrap">
-              {item.label}
-            </Link>
+          {mobileNav.map((item) => (
+            <Link key={item.href} href={item.href} className="whitespace-nowrap">{item.label}</Link>
           ))}
         </div>
       </div>
