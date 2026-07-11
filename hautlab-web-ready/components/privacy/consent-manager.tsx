@@ -7,27 +7,26 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type ConsentValue = "accepted" | "rejected";
-
-type Fbq = {
-  (...args: unknown[]): void;
-  callMethod?: (...args: unknown[]) => void;
-  queue: unknown[][];
-  loaded: boolean;
-  version: string;
-  push: (...args: unknown[]) => void;
+type MetaPixelFunction = (...args: unknown[]) => void;
+type QueuedMetaPixel = MetaPixelFunction & {
+  callMethod?: MetaPixelFunction;
+  queue?: unknown[][];
+  loaded?: boolean;
+  version?: string;
+  push?: MetaPixelFunction;
 };
 
 declare global {
   interface Window {
-    fbq?: Fbq;
-    _fbq?: Fbq;
+    fbq?: MetaPixelFunction;
+    _fbq?: MetaPixelFunction;
   }
 }
 
 const STORAGE_KEY = "hautlab_cookie_consent_v1";
 const OPEN_EVENT = "hautlab:open-consent";
 const PIXEL_ID = "1377800767233124";
-const GENERAL_TRACKING_PATHS = new Set(["/", "/pagos"]);
+const GENERAL_TRACKING_PATHS = new Set<string>(["/", "/pagos"]);
 
 function getStoredConsent(): ConsentValue | null {
   try {
@@ -50,32 +49,37 @@ function expireMetaCookies() {
   }
 }
 
-function ensureMetaPixel(): Fbq {
+function ensureMetaPixel(): MetaPixelFunction {
   if (window.fbq) return window.fbq;
 
-  const fbq = ((...args: unknown[]) => {
-    if (fbq.callMethod) fbq.callMethod(...args);
-    else fbq.queue.push(args);
-  }) as Fbq;
+  const queuedPixel = ((...args: unknown[]) => {
+    if (queuedPixel.callMethod) {
+      queuedPixel.callMethod(...args);
+      return;
+    }
 
-  fbq.queue = [];
-  fbq.loaded = true;
-  fbq.version = "2.0";
-  fbq.push = (...args: unknown[]) => fbq(...args);
+    if (!queuedPixel.queue) queuedPixel.queue = [];
+    queuedPixel.queue.push(args);
+  }) as QueuedMetaPixel;
 
-  window.fbq = fbq;
-  window._fbq = fbq;
+  queuedPixel.queue = [];
+  queuedPixel.loaded = true;
+  queuedPixel.version = "2.0";
+  queuedPixel.push = (...args: unknown[]) => queuedPixel(...args);
+
+  window.fbq = queuedPixel;
+  window._fbq = queuedPixel;
 
   const script = document.createElement("script");
   script.async = true;
   script.src = "https://connect.facebook.net/en_US/fbevents.js";
   document.head.appendChild(script);
 
-  fbq("set", "autoConfig", false, PIXEL_ID);
-  fbq("consent", "grant");
-  fbq("init", PIXEL_ID);
+  queuedPixel("set", "autoConfig", false, PIXEL_ID);
+  queuedPixel("consent", "grant");
+  queuedPixel("init", PIXEL_ID);
 
-  return fbq;
+  return queuedPixel;
 }
 
 export function ConsentManager() {
@@ -130,7 +134,7 @@ export function ConsentManager() {
       if (href.includes("buy.stripe.com") || href.includes("mpago.la")) fbq("track", "InitiateCheckout");
     };
 
-    const trackSubmit = (event: SubmitEvent) => {
+    const trackSubmit = (event: Event) => {
       if (event.target instanceof HTMLFormElement) fbq("track", "Lead");
     };
 
