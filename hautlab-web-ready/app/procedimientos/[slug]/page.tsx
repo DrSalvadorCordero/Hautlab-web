@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TreatmentPageLayout } from "@/components/treatments/treatment-page-layout";
-import { extraTreatmentsV2 } from "@/data/treatments-v2-extra";
-import { treatmentsV2 } from "@/data/treatments-v2";
+import { treatmentCatalog } from "@/data/treatment-catalog";
 import { siteConfig } from "@/lib/siteConfig";
-
-const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return Object.keys(allTreatments).map((slug) => ({ slug }));
+  return Object.keys(treatmentCatalog).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const treatment = allTreatments[slug];
+  const treatment = treatmentCatalog[slug];
   if (!treatment) return {};
 
   const title = `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`;
@@ -46,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProcedurePage({ params }: PageProps) {
   const { slug } = await params;
-  const treatment = allTreatments[slug];
+  const treatment = treatmentCatalog[slug];
   if (!treatment) notFound();
 
   const url = `${siteConfig.url}/procedimientos/${slug}`;
