@@ -5,9 +5,12 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { treatmentFamilies } from "@/data/site";
+import { extraTreatmentsV2 } from "@/data/treatments-v2-extra";
 import { treatmentsV2 } from "@/data/treatments-v2";
 import { siteConfig } from "@/lib/siteConfig";
 import { whatsappForTreatment } from "@/lib/whatsapp";
+
+const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -21,13 +24,13 @@ const categoryByFamilySlug: Record<string, string> = {
 export function generateStaticParams() {
   return [
     ...treatmentFamilies.map((family) => ({ slug: family.slug })),
-    ...Object.keys(treatmentsV2).map((slug) => ({ slug }))
+    ...Object.keys(allTreatments).map((slug) => ({ slug }))
   ];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const legacyTreatment = treatmentsV2[slug];
+  const legacyTreatment = allTreatments[slug];
 
   if (legacyTreatment) {
     return {
@@ -60,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function TreatmentAreaPage({ params }: PageProps) {
   const { slug } = await params;
 
-  if (treatmentsV2[slug]) {
+  if (allTreatments[slug]) {
     redirect(`/procedimientos/${slug}`);
   }
 
@@ -68,9 +71,10 @@ export default async function TreatmentAreaPage({ params }: PageProps) {
   if (!family) notFound();
 
   const categoryLabel = categoryByFamilySlug[family.slug];
-  const familyTreatments = Object.entries(treatmentsV2)
+  const familyTreatments = Object.entries(allTreatments)
     .filter(([, item]) => item.category.label === categoryLabel)
-    .map(([treatmentSlug, item]) => ({ slug: treatmentSlug, ...item }));
+    .map(([treatmentSlug, item]) => ({ slug: treatmentSlug, ...item }))
+    .sort((a, b) => a.title.localeCompare(b.title, "es"));
 
   const Icon = family.icon;
 

@@ -15,7 +15,7 @@ export function Footer() {
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-bone">HAUTLAB + Dr. Salvador Cordero</p>
             <p className="mt-4 max-w-xl text-sm leading-7">
-              {siteConfig.tagline} Dermatología clínica y medicina estética con diagnóstico primero, procedimientos por indicación y resultados sobrios.
+              {siteConfig.tagline} Valoración de piel y diseño facial con diagnóstico primero, procedimientos por indicación y resultados sobrios.
             </p>
           </div>
 

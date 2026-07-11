@@ -3,9 +3,9 @@ export const siteConfig = {
   doctorName: "Dr. Salvador Cordero",
   legalDoctorName: "Dr. Salvador Cordero Romero",
   platformName: "HAUTLAB",
-  title: "HAUTLAB + Dr. Salvador Cordero | Dermatología clínica y medicina estética en Mérida",
+  title: "HAUTLAB + Dr. Salvador Cordero | Piel y diseño facial en Mérida",
   description:
-    "Precisión médica. Estética contenida. Dermatología clínica y medicina estética en Mérida con diagnóstico primero, procedimientos por indicación y resultados sobrios.",
+    "Precisión médica. Estética contenida. Valoración de piel, diseño facial y procedimientos por indicación en Mérida, con resultados sobrios.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.hautlabmx.com",
   whatsappNumber: "529992809758",
   whatsappDisplay: "+52 999 280 9758",

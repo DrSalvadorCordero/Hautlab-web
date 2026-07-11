@@ -40,8 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     url: siteConfig.url,
     telephone: siteConfig.whatsappDisplay,
     priceRange: "$$$",
-    medicalSpecialty: ["Dermatology", "Aesthetic Medicine"],
     slogan: siteConfig.tagline,
+    description: siteConfig.description,
     address: {
       "@type": "PostalAddress",
       streetAddress: "Calle 43 #299A-32A, San Ramón Norte",
@@ -50,10 +50,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       postalCode: "97117",
       addressCountry: "MX"
     },
+    areaServed: {
+      "@type": "City",
+      name: "Mérida, Yucatán"
+    },
     founder: {
       "@type": "Person",
       name: siteConfig.legalDoctorName,
-      jobTitle: "Médico"
+      jobTitle: "Médico Cirujano"
+    },
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Áreas de atención HAUTLAB",
+      itemListElement: [
+        { "@type": "OfferCatalog", name: "Diseño facial" },
+        { "@type": "OfferCatalog", name: "Piel y textura" },
+        { "@type": "OfferCatalog", name: "Condiciones de piel" },
+        { "@type": "OfferCatalog", name: "Procedimientos focales" }
+      ]
     },
     sameAs: [siteConfig.instagram]
   };

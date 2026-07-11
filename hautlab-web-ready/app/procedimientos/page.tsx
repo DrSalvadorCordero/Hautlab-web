@@ -6,6 +6,7 @@ import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { treatmentFamilies } from "@/data/site";
+import { extraTreatmentsV2 } from "@/data/treatments-v2-extra";
 import { treatmentsV2 } from "@/data/treatments-v2";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -16,10 +17,25 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteConfig.url}/procedimientos` }
 };
 
-const procedureOrder = ["rinomodelacion", "toxina-botulinica", "labios", "acne", "melasma", "verrugas"];
+const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
+
+const areaOrder = ["Diseño facial", "Piel y textura", "Condiciones de piel", "Procedimientos focales"] as const;
+
+const areaIntro: Record<(typeof areaOrder)[number], string> = {
+  "Diseño facial": "Proporción, soporte y movimiento sin convertir el rostro en una suma de productos.",
+  "Piel y textura": "Calidad cutánea, pigmento, cicatrices y soporte mediante planes progresivos.",
+  "Condiciones de piel": "Valoración, diagnóstico y seguimiento antes de intensificar tratamientos.",
+  "Procedimientos focales": "Lesiones específicas evaluadas antes de elegir retiro, estudio o seguimiento."
+};
 
 export default function ProcedimientosPage() {
-  const featuredProcedures = procedureOrder.map((slug) => ({ slug, ...treatmentsV2[slug] }));
+  const groupedProcedures = areaOrder.map((area) => ({
+    area,
+    items: Object.entries(allTreatments)
+      .filter(([, item]) => item.category.label === area)
+      .map(([slug, item]) => ({ slug, ...item }))
+      .sort((a, b) => a.title.localeCompare(b.title, "es"))
+  }));
 
   return (
     <main>
@@ -37,40 +53,42 @@ export default function ProcedimientosPage() {
         </div>
       </section>
 
-      <section className="border-b border-line bg-background py-20 lg:py-28">
-        <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
-          <div className="mb-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-champagne">Páginas desarrolladas</p>
-              <h2 className="mt-4 font-serif text-[clamp(2.5rem,5vw,4.7rem)] leading-[.95] tracking-[-.055em] text-bone">
-                Procedimientos y condiciones destacados.
-              </h2>
+      {groupedProcedures.map(({ area, items }, areaIndex) => (
+        <section key={area} className={areaIndex % 2 === 0 ? "border-b border-line bg-background py-20 lg:py-28" : "border-b border-line bg-soft/30 py-20 lg:py-28"}>
+          <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+            <div className="mb-10 grid gap-5 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-champagne">Área {String(areaIndex + 1).padStart(2, "0")}</p>
+                <h2 className="mt-4 font-serif text-[clamp(2.5rem,5vw,4.7rem)] leading-[.95] tracking-[-.055em] text-bone">
+                  {area}
+                </h2>
+              </div>
+              <p className="max-w-2xl text-sm leading-7 text-muted">{areaIntro[area]}</p>
             </div>
-            <p className="max-w-xl text-sm leading-7 text-muted">
-              La valoración define si conviene tratar, esperar, priorizar otra zona o no realizar un procedimiento.
-            </p>
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {featuredProcedures.map((procedure) => (
-              <Link key={procedure.slug} href={`/procedimientos/${procedure.slug}`} className="group overflow-hidden rounded-[2rem] border border-line bg-white/[0.03] transition hover:-translate-y-1 hover:border-champagne/40">
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <Image src={procedure.image} alt={procedure.imageAlt} fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-                </div>
-                <div className="p-6">
-                  <p className="text-xs uppercase tracking-[0.18em] text-champagne">{procedure.eyebrow}</p>
-                  <h3 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-bone">{procedure.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-muted">{procedure.summary}</p>
-                  <span className="mt-6 inline-flex items-center gap-2 text-sm text-bone">Entender el tratamiento <ArrowUpRight className="h-4 w-4" /></span>
-                </div>
-              </Link>
-            ))}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {items.map((procedure) => (
+                <Link key={procedure.slug} href={`/procedimientos/${procedure.slug}`} className="group overflow-hidden rounded-[2rem] border border-line bg-white/[0.03] transition duration-300 hover:-translate-y-1 hover:border-champagne/40">
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image src={procedure.image} alt={procedure.imageAlt} fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/75 via-transparent to-transparent" />
+                  </div>
+                  <div className="p-6">
+                    <p className="text-xs uppercase tracking-[0.18em] text-champagne">{procedure.eyebrow}</p>
+                    <h3 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-bone">{procedure.title}</h3>
+                    <p className="mt-4 text-sm leading-7 text-muted">{procedure.summary}</p>
+                    <span className="mt-6 inline-flex items-center gap-2 text-sm text-bone">
+                      Entender el enfoque <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
-      <section className="border-b border-line bg-soft/30 py-20 lg:py-28">
+      <section className="border-b border-line bg-background py-20 lg:py-28">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
           <div className="mb-10">
             <p className="text-xs uppercase tracking-[0.18em] text-champagne">Explorar por área</p>

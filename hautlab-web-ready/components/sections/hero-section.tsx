@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import { Reveal } from "@/components/motion/reveal";
 
 export function HeroSection() {
   return (
@@ -51,7 +51,7 @@ export function HeroSection() {
                 <div className="rounded-[1.35rem] border border-line bg-background/70 p-5 backdrop-blur-xl">
                   <div className="flex items-center gap-3 text-sm text-bone">
                     <ShieldCheck className="h-5 w-5 text-champagne" />
-                    Medicina estética para pacientes que no quieren parecer intervenidos.
+                    Piel y diseño facial para pacientes que no quieren parecer intervenidos.
                   </div>
                 </div>
               </div>
