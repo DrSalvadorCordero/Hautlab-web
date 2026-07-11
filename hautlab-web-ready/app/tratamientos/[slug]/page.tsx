@@ -1,122 +1,78 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Script from "next/script";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TreatmentPageLayout } from "@/components/treatments/treatment-page-layout";
 import { treatmentFamilies } from "@/data/site";
-import { getTreatmentPage, treatmentPages } from "@/data/treatment-pages";
+import { treatmentsV2 } from "@/data/treatments-v2";
 import { siteConfig } from "@/lib/siteConfig";
 import { whatsappForTreatment } from "@/lib/whatsapp";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
+const categoryByFamilySlug: Record<string, string> = {
+  "medicina-estetica-facial": "Diseño facial",
+  "calidad-de-piel-y-soporte": "Piel y textura",
+  "dermatologia-clinica": "Condiciones de piel",
+  "dermatologia-procedimental": "Procedimientos focales"
+};
+
 export function generateStaticParams() {
   return [
     ...treatmentFamilies.map((family) => ({ slug: family.slug })),
-    ...treatmentPages.map((treatment) => ({ slug: treatment.slug }))
+    ...Object.keys(treatmentsV2).map((slug) => ({ slug }))
   ];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const treatment = getTreatmentPage(slug);
+  const legacyTreatment = treatmentsV2[slug];
 
-  if (treatment) {
+  if (legacyTreatment) {
     return {
-      title: treatment.metaTitle,
-      description: treatment.metaDescription,
-      alternates: { canonical: `${siteConfig.url}/tratamientos/${treatment.slug}` },
-      openGraph: {
-        title: treatment.metaTitle,
-        description: treatment.metaDescription,
-        url: `${siteConfig.url}/tratamientos/${treatment.slug}`,
-        type: "article",
-        images: [{ url: treatment.image, alt: treatment.imageAlt }]
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: treatment.metaTitle,
-        description: treatment.metaDescription,
-        images: [treatment.image]
-      }
+      title: `${legacyTreatment.title} | HAUTLAB`,
+      description: legacyTreatment.summary,
+      alternates: { canonical: `${siteConfig.url}/procedimientos/${slug}` },
+      robots: { index: false, follow: true }
     };
   }
 
   const family = treatmentFamilies.find((item) => item.slug === slug);
   if (!family) return {};
 
+  const url = `${siteConfig.url}/tratamientos/${family.slug}`;
   return {
     title: `${family.title} | HAUTLAB + Dr. Salvador Cordero`,
     description: `${family.summary} ${family.approach}`,
-    alternates: { canonical: `${siteConfig.url}/tratamientos/${family.slug}` }
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${family.title} | HAUTLAB`,
+      description: family.summary,
+      url,
+      siteName: "HAUTLAB",
+      locale: "es_MX",
+      type: "website"
+    }
   };
 }
 
-export default async function TreatmentPage({ params }: PageProps) {
+export default async function TreatmentAreaPage({ params }: PageProps) {
   const { slug } = await params;
-  const treatment = getTreatmentPage(slug);
 
-  if (treatment) {
-    const pageUrl = `${siteConfig.url}/tratamientos/${treatment.slug}`;
-    const faqJsonLd = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: treatment.faq.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.answer
-        }
-      }))
-    };
-
-    const breadcrumbJsonLd = {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: treatment.breadcrumbs.map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: item.label,
-        item: item.href ? `${siteConfig.url}${item.href}` : pageUrl
-      }))
-    };
-
-    return (
-      <>
-        <TreatmentPageLayout content={treatment} />
-        <Script id={`faq-${treatment.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-        <Script id={`breadcrumbs-${treatment.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      </>
-    );
+  if (treatmentsV2[slug]) {
+    redirect(`/procedimientos/${slug}`);
   }
 
   const family = treatmentFamilies.find((item) => item.slug === slug);
   if (!family) notFound();
 
+  const categoryLabel = categoryByFamilySlug[family.slug];
+  const familyTreatments = Object.entries(treatmentsV2)
+    .filter(([, item]) => item.category.label === categoryLabel)
+    .map(([treatmentSlug, item]) => ({ slug: treatmentSlug, ...item }));
+
   const Icon = family.icon;
-  const familyTreatments = treatmentPages.filter((item) => {
-    const mapping: Record<string, string> = {
-      "medicina-estetica-facial": "diseno-facial",
-      "calidad-de-piel-y-soporte": "piel-y-textura",
-      "dermatologia-clinica": "condiciones-de-piel",
-      "dermatologia-procedimental": "procedimientos-focales"
-    };
-
-    const areaBySlug: Record<string, string> = {
-      rinomodelacion: "diseno-facial",
-      "toxina-botulinica": "diseno-facial",
-      labios: "diseno-facial",
-      acne: "condiciones-de-piel",
-      melasma: "condiciones-de-piel",
-      verrugas: "procedimientos-focales"
-    };
-
-    return areaBySlug[item.slug] === mapping[family.slug];
-  });
 
   return (
     <main>
@@ -155,39 +111,48 @@ export default async function TreatmentPage({ params }: PageProps) {
       </section>
 
       <section className="border-b border-line bg-background py-20 lg:py-28">
-        <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-6 lg:grid-cols-[.9fr_1.1fr]">
-          <Card className="p-7">
-            <p className="text-xs uppercase tracking-[0.18em] text-champagne">Qué atendemos</p>
-            <div className="mt-6 grid gap-3">
-              {family.treats.map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-2xl border border-line bg-white/[0.025] p-4 text-sm text-muted">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-champagne" />
-                  {item}
-                </div>
-              ))}
-            </div>
-          </Card>
+        <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+          <div className="grid gap-8 lg:grid-cols-[.72fr_1.28fr]">
+            <Card className="h-fit p-7">
+              <p className="text-xs uppercase tracking-[0.18em] text-champagne">Qué atendemos</p>
+              <div className="mt-6 grid gap-3">
+                {family.treats.map((item) => (
+                  <div key={item} className="flex items-center gap-3 rounded-2xl border border-line bg-white/[0.025] p-4 text-sm text-muted">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-champagne" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </Card>
 
-          <Card className="p-7">
-            <p className="text-xs uppercase tracking-[0.18em] text-champagne">Páginas disponibles</p>
-            <div className="mt-6 grid gap-3">
-              {familyTreatments.length ? (
-                familyTreatments.map((item) => (
-                  <Link key={item.slug} href={`/tratamientos/${item.slug}`} className="group rounded-2xl border border-line bg-white/[0.025] p-5 transition hover:border-champagne/40">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-medium text-bone">{item.title}</p>
-                        <p className="mt-2 text-sm leading-6 text-muted">{item.summary}</p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-champagne transition group-hover:translate-x-1" />
-                    </div>
+            <div>
+              <div className="mb-7">
+                <p className="text-xs uppercase tracking-[0.18em] text-champagne">Páginas disponibles</p>
+                <h2 className="mt-4 font-serif text-[clamp(2.4rem,4vw,4rem)] leading-[.95] tracking-[-.055em] text-bone">
+                  Información específica, sin convertir la consulta en un catálogo.
+                </h2>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {familyTreatments.map((item) => (
+                  <Link key={item.slug} href={`/procedimientos/${item.slug}`} className="group rounded-[1.75rem] border border-line bg-white/[0.03] p-6 transition hover:-translate-y-1 hover:border-champagne/40">
+                    <p className="text-xs uppercase tracking-[0.16em] text-champagne">{item.eyebrow}</p>
+                    <h3 className="mt-4 text-2xl font-medium tracking-[-0.04em] text-bone">{item.title}</h3>
+                    <p className="mt-4 text-sm leading-7 text-muted">{item.summary}</p>
+                    <span className="mt-7 inline-flex items-center gap-2 text-sm text-bone">
+                      Ver enfoque <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                    </span>
                   </Link>
-                ))
-              ) : (
-                <p className="text-sm leading-7 text-muted">Esta área se está preparando para revisión y publicación progresiva.</p>
+                ))}
+              </div>
+
+              {!familyTreatments.length && (
+                <Card className="p-6 text-sm leading-7 text-muted">
+                  Esta área está en expansión. La valoración permite orientar el caso aunque la página específica aún no esté publicada.
+                </Card>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </section>
     </main>
