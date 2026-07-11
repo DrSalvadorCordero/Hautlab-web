@@ -26,7 +26,7 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["Se analiza la relación nariz, labios, mentón y tercio medio antes de indicar producto.", "La prioridad es conservar identidad y evitar una nariz sobreproyectada."],
     investment: { label: "$5,500 MXN", note: "Incluye valoración, aplicación, revisión y retoque cuando esté indicado. La cantidad de producto y la viabilidad del procedimiento se confirman durante la valoración." },
     faq: [{ question: "¿La rinomodelación sustituye una cirugía?", answer: "No. Puede mejorar proporciones en casos seleccionados, pero no resuelve todos los problemas estructurales." }, { question: "¿El resultado es inmediato?", answer: "El cambio suele apreciarse de inmediato, aunque la inflamación inicial puede modificar temporalmente la lectura del resultado." }],
-    related: [{ label: "Labios", href: "/procedimientos/labios" }, { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" }],
+    related: [{ label: "Labios", href: "/procedimientos/labios" }, { label: "Mentón", href: "/procedimientos/menton" }],
     whatsappMessage: "Hola, quiero agendar valoración para rinomodelación."
   },
   "toxina-botulinica": {
@@ -41,7 +41,7 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["La dosis se decide según fuerza, asimetría y patrón de movimiento.", "Se conserva expresión y se evita uniformar todos los rostros con el mismo mapa."],
     investment: { label: "$3,500 MXN · tercio superior", note: "La dosis se ajusta a fuerza muscular, patrón de movimiento y objetivos. Otras zonas se cotizan después de valoración." },
     faq: [{ question: "¿Cuándo empieza a notarse?", answer: "El efecto aparece de forma progresiva durante los primeros días y se estabiliza después." }, { question: "¿Qué pasa si dejo de aplicarla?", answer: "El movimiento regresa gradualmente; no empeora el rostro por suspenderla." }],
-    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Labios", href: "/procedimientos/labios" }],
+    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Ojeras", href: "/procedimientos/ojeras" }],
     whatsappMessage: "Hola, quiero agendar valoración para toxina botulínica."
   },
   labios: {
@@ -56,8 +56,40 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["Se evalúa sonrisa, perfil, dientes, mentón y relación con la nariz.", "La forma se prioriza sobre el volumen aislado."],
     investment: { label: "Cotización individual", note: "La inversión depende del producto, la cantidad requerida y el objetivo anatómico. Se confirma después de valoración para evitar vender volumen sin indicación." },
     faq: [{ question: "¿Siempre aumenta mucho el tamaño?", answer: "No. Puede trabajarse definición o soporte sin buscar un aumento evidente." }, { question: "¿Cuánto dura?", answer: "La duración depende del producto, metabolismo, técnica y movilidad de la zona." }],
-    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" }],
+    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Mentón", href: "/procedimientos/menton" }],
     whatsappMessage: "Hola, quiero agendar valoración para labios."
+  },
+  ojeras: {
+    ...common,
+    eyebrow: "Diseño facial",
+    title: "Ojeras",
+    summary: "Valoración de hundimiento, pigmento, bolsas y calidad cutánea antes de decidir si conviene relleno u otra estrategia.",
+    category: { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" },
+    definition: ["La ojera no es una sola entidad. Puede depender de hundimiento, pigmento, vascularidad, bolsas, laxitud o una combinación de factores.", "El ácido hialurónico solo resulta útil cuando el componente anatómico y la calidad de la piel permiten una corrección contenida."],
+    indications: ["Surco marcado con anatomía favorable", "Transición párpado-mejilla deprimida", "Aspecto cansado relacionado con pérdida de soporte"],
+    notIndicated: ["Bolsas predominantes", "Edema frecuente", "Piel muy fina o riesgo de irregularidad"],
+    hautlabApproach: ["Se diferencia primero volumen, pigmento, vascularidad y laxitud.", "No se rellena una ojera únicamente porque se vea oscura; en ciertos casos conviene no colocar producto."],
+    investment: { label: "Cotización individual", note: "La valoración define si el problema requiere relleno, calidad de piel, manejo de pigmento o referencia para otra alternativa." },
+    faq: [{ question: "¿Toda ojera se puede rellenar?", answer: "No. Las bolsas, el edema y ciertos tipos de pigmentación pueden hacer que el relleno no sea la opción correcta." }, { question: "¿Puede verse azulado o irregular?", answer: "Sí, existe riesgo de visibilidad, edema o irregularidad, especialmente si la anatomía o el producto no son adecuados." }],
+    related: [{ label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" }, { label: "Melasma", href: "/procedimientos/melasma" }],
+    whatsappMessage: "Hola, quiero agendar valoración para ojeras."
+  },
+  menton: {
+    ...common,
+    image: "/visuals/hero-architecture.webp",
+    imageAlt: "Composición editorial sobre estructura y perfil facial",
+    eyebrow: "Diseño facial",
+    title: "Mentón",
+    summary: "Evaluación de proyección y proporción del tercio inferior para equilibrar perfil y lectura frontal.",
+    category: { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" },
+    definition: ["El tratamiento del mentón puede utilizar ácido hialurónico para modificar proyección, longitud visual, soporte y transición con mandíbula y labios.", "Su indicación depende de la estructura completa del perfil, no de observar el mentón de forma aislada."],
+    indications: ["Proyección limitada", "Asimetría leve", "Desbalance entre nariz, labios y tercio inferior"],
+    notIndicated: ["Problemas óseos que requieren cirugía", "Expectativas de cambio estructural extremo", "Inflamación o infección activa"],
+    hautlabApproach: ["Se analiza perfil, cierre labial, sonrisa, nariz y mandíbula antes de indicar volumen.", "La meta es mejorar equilibrio, no crear un mentón excesivamente largo o proyectado."],
+    investment: { label: "Cotización individual", note: "El monto depende del producto, cantidad y complejidad anatómica. Se define después de valorar el perfil completo." },
+    faq: [{ question: "¿Un mentón más proyectado siempre mejora el perfil?", answer: "No. La proyección debe guardar relación con nariz, labios, mandíbula y altura facial." }, { question: "¿Se puede combinar con rinomodelación?", answer: "En casos seleccionados sí, porque ambos puntos modifican la lectura del perfil. La indicación se decide de forma conjunta." }],
+    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Labios", href: "/procedimientos/labios" }],
+    whatsappMessage: "Hola, quiero agendar valoración para mentón."
   },
   acne: {
     ...common,
@@ -73,8 +105,25 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["Se ordena primero la inflamación y la barrera cutánea.", "Las secuelas se tratan después de controlar la actividad."],
     investment: { label: "Consulta inicial $1,300 MXN", note: "Los medicamentos, estudios o procedimientos posteriores se indican y cotizan únicamente cuando el diagnóstico y la evolución lo justifican." },
     faq: [{ question: "¿El acné requiere estudios?", answer: "En algunos casos sí, según edad, patrón, síntomas asociados y antecedentes." }, { question: "¿Cuándo se tratan las cicatrices?", answer: "Cuando el acné activo está suficientemente controlado para no seguir generando nuevas lesiones." }],
-    related: [{ label: "Melasma", href: "/procedimientos/melasma" }, { label: "Condiciones de piel", href: "/tratamientos/dermatologia-clinica" }],
+    related: [{ label: "Cicatrices de acné", href: "/procedimientos/cicatrices-acne" }, { label: "Rosácea", href: "/procedimientos/rosacea" }],
     whatsappMessage: "Hola, quiero agendar valoración por acné."
+  },
+  "cicatrices-acne": {
+    ...common,
+    image: "/visuals/skin-macro.webp",
+    imageAlt: "Macro editorial de textura cutánea",
+    eyebrow: "Piel y textura",
+    title: "Cicatrices de acné",
+    summary: "Plan por etapas para mejorar textura, bordes y profundidad después de controlar el acné activo.",
+    category: { label: "Piel y textura", href: "/tratamientos/calidad-de-piel-y-soporte" },
+    definition: ["Las cicatrices de acné pueden ser hundidas, elevadas, estrechas, anchas o mixtas, y no responden igual a una sola técnica.", "Su tratamiento suele requerir combinar procedimientos y evaluar la respuesta entre sesiones."],
+    indications: ["Cicatrices atróficas estables", "Textura irregular", "Secuelas después de controlar brotes activos"],
+    notIndicated: ["Acné inflamatorio no controlado", "Expectativa de borrar toda cicatriz", "Procedimientos intensos sin preparación de la piel"],
+    hautlabApproach: ["Se clasifica el tipo de cicatriz antes de elegir tecnología o técnica.", "El objetivo es mejorar sombras y textura de forma progresiva, no prometer una piel completamente lisa."],
+    investment: { label: "Valoración inicial $1,300 MXN", note: "El costo por sesión depende de la combinación indicada, extensión de la zona y número de sesiones. Se cotiza después de clasificar las cicatrices." },
+    faq: [{ question: "¿Se pueden eliminar por completo?", answer: "No siempre. El objetivo realista es mejorar profundidad, bordes, textura y visibilidad." }, { question: "¿Cuántas sesiones se necesitan?", answer: "Depende del tipo de cicatriz, técnica elegida y respuesta individual; suele plantearse un proceso por etapas." }],
+    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Melasma", href: "/procedimientos/melasma" }],
+    whatsappMessage: "Hola, quiero agendar valoración para cicatrices de acné."
   },
   melasma: {
     ...common,
@@ -88,8 +137,40 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["Se prioriza control sostenido y reducción de recaídas.", "La intensidad del tratamiento se adapta al fototipo y sensibilidad."],
     investment: { label: "Consulta inicial $1,300 MXN", note: "El plan puede incluir tratamiento domiciliario y procedimientos seleccionados. La inversión total depende de sensibilidad, fototipo y evolución." },
     faq: [{ question: "¿Se elimina para siempre?", answer: "No suele hablarse de curación definitiva; el objetivo es controlarlo y reducir recaídas." }, { question: "¿El láser siempre ayuda?", answer: "No. En ciertos casos puede empeorar el pigmento si se usa sin indicación adecuada." }],
-    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Piel y textura", href: "/tratamientos/calidad-de-piel-y-soporte" }],
+    related: [{ label: "Rosácea", href: "/procedimientos/rosacea" }, { label: "Acné", href: "/procedimientos/acne" }],
     whatsappMessage: "Hola, quiero agendar valoración por melasma."
+  },
+  rosacea: {
+    ...common,
+    eyebrow: "Condiciones de piel",
+    title: "Rosácea",
+    summary: "Control de enrojecimiento, sensibilidad, brotes e irritación mediante un plan adaptado a desencadenantes y barrera cutánea.",
+    category: { label: "Condiciones de piel", href: "/tratamientos/dermatologia-clinica" },
+    definition: ["La rosácea es una condición inflamatoria crónica que puede producir enrojecimiento, vasos visibles, ardor, sensibilidad y lesiones similares al acné.", "Su intensidad fluctúa y puede empeorar con calor, sol, alcohol, alimentos, estrés o productos irritantes."],
+    indications: ["Enrojecimiento persistente", "Ardor o sensibilidad", "Brotes inflamatorios recurrentes"],
+    notIndicated: ["Rutinas agresivas", "Uso indiscriminado de exfoliantes", "Procedimientos con la barrera muy alterada"],
+    hautlabApproach: ["Se estabiliza primero la barrera y se identifican desencadenantes relevantes.", "La tecnología o los procedimientos se consideran después, cuando la piel permite intervenir con menor riesgo de irritación."],
+    investment: { label: "Consulta inicial $1,300 MXN", note: "El tratamiento domiciliario y cualquier procedimiento complementario se definen según subtipo, sensibilidad y evolución." },
+    faq: [{ question: "¿La rosácea se cura?", answer: "Suele manejarse como una condición crónica. El objetivo es reducir síntomas, brotes y frecuencia de recaídas." }, { question: "¿Se puede confundir con acné?", answer: "Sí. Algunas variantes producen pápulas y pústulas, pero el tratamiento y la tolerancia cutánea son diferentes." }],
+    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Melasma", href: "/procedimientos/melasma" }],
+    whatsappMessage: "Hola, quiero agendar valoración por rosácea."
+  },
+  alopecia: {
+    ...common,
+    image: "/visuals/clinic-office.webp",
+    imageAlt: "Ambiente de consulta para valoración de caída de cabello",
+    eyebrow: "Condiciones de piel",
+    title: "Caída de cabello y alopecia",
+    summary: "Evaluación del patrón de caída, cuero cabelludo, antecedentes y posibles factores asociados antes de indicar tratamiento.",
+    category: { label: "Condiciones de piel", href: "/tratamientos/dermatologia-clinica" },
+    definition: ["La caída de cabello puede deberse a múltiples causas: patrón hereditario, efluvio, inflamación, alteraciones del cuero cabelludo, medicamentos o factores sistémicos.", "Distinguir el patrón es fundamental porque no todos los casos responden al mismo tratamiento."],
+    indications: ["Aumento reciente de caída", "Disminución de densidad", "Entradas o coronilla progresivas", "Síntomas en cuero cabelludo"],
+    notIndicated: ["Suplementos sin diagnóstico", "Promesas de recuperación completa", "Procedimientos antes de identificar el tipo de caída"],
+    hautlabApproach: ["Se revisan temporalidad, patrón, antecedentes, medicamentos y estado del cuero cabelludo.", "Los estudios se solicitan solo cuando la historia y la exploración sugieren que aportarán información útil."],
+    investment: { label: "Consulta inicial $1,300 MXN", note: "Estudios, medicamentos o procedimientos se indican por separado cuando el diagnóstico lo requiere." },
+    faq: [{ question: "¿Siempre necesito análisis de laboratorio?", answer: "No. Se solicitan cuando los antecedentes, síntomas o patrón de caída hacen razonable buscar factores asociados." }, { question: "¿El cabello perdido siempre vuelve?", answer: "Depende de la causa, el tiempo de evolución y si el folículo conserva capacidad de recuperación." }],
+    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Rosácea", href: "/procedimientos/rosacea" }],
+    whatsappMessage: "Hola, quiero agendar valoración por caída de cabello."
   },
   verrugas: {
     ...common,
@@ -105,7 +186,24 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     hautlabApproach: ["Se evita destruir una lesión sin saber qué es.", "La técnica puede incluir cauterización, crioterapia u otras opciones según el caso."],
     investment: { label: "Valoración desde $1,300 MXN", note: "El procedimiento se cotiza según diagnóstico, número de lesiones, tamaño, localización y técnica requerida." },
     faq: [{ question: "¿Pueden volver?", answer: "Sí. La recurrencia depende del tipo de lesión, localización y respuesta individual." }, { question: "¿Todas se cauterizan?", answer: "No. La técnica se define después de valorar diagnóstico, tamaño, número y zona." }],
-    related: [{ label: "Procedimientos focales", href: "/tratamientos/dermatologia-procedimental" }, { label: "Todas las áreas", href: "/procedimientos" }],
+    related: [{ label: "Lunares", href: "/procedimientos/lunares" }, { label: "Todas las áreas", href: "/procedimientos" }],
     whatsappMessage: "Hola, quiero agendar valoración por verrugas."
+  },
+  lunares: {
+    ...common,
+    image: "/visuals/treatment-room.webp",
+    imageAlt: "Ambiente clínico para valoración de lunares y lesiones de piel",
+    eyebrow: "Procedimientos focales",
+    title: "Lunares y lesiones pigmentadas",
+    summary: "Evaluación clínica y dermatoscópica para decidir observación, seguimiento, retiro o estudio.",
+    category: { label: "Procedimientos focales", href: "/tratamientos/dermatologia-procedimental" },
+    definition: ["Los lunares son lesiones pigmentadas frecuentes, pero no todas las manchas o elevaciones corresponden al mismo diagnóstico.", "La exploración y, cuando está indicado, la dermatoscopia ayudan a decidir si conviene observar, documentar, retirar o estudiar la lesión."],
+    indications: ["Cambio percibido en una lesión", "Molestia o traumatismo repetido", "Duda diagnóstica", "Deseo de retiro después de valoración"],
+    notIndicated: ["Eliminar sin revisar el diagnóstico", "Cauterizar lesiones sospechosas", "Prometer ausencia de cicatriz"],
+    hautlabApproach: ["Se prioriza saber qué es la lesión antes de elegir cómo retirarla.", "Cuando una lesión requiere estudio, la técnica debe preservar material útil y permitir análisis adecuado."],
+    investment: { label: "Valoración inicial $1,300 MXN", note: "El retiro, estudio o seguimiento se cotiza según diagnóstico, localización, técnica y necesidad de análisis." },
+    faq: [{ question: "¿Todos los lunares se pueden cauterizar?", answer: "No. La técnica depende del diagnóstico y de si es necesario conservar tejido para estudio." }, { question: "¿Retirar un lunar deja cicatriz?", answer: "Todo procedimiento que atraviesa la piel puede dejar una marca. Su apariencia depende de técnica, zona, tamaño y cicatrización individual." }],
+    related: [{ label: "Verrugas", href: "/procedimientos/verrugas" }, { label: "Procedimientos focales", href: "/tratamientos/dermatologia-procedimental" }],
+    whatsappMessage: "Hola, quiero agendar valoración de un lunar o lesión pigmentada."
   }
 };
