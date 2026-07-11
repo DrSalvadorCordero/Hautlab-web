@@ -1,15 +1,17 @@
 # HAUTLAB v2 Architecture
 
 ## Goal
-Build a premium, scalable medical-content platform without changing production until the v2 branch is reviewed and approved.
+Build a premium, scalable medical-content platform without changing production until the `v2` branch is reviewed and approved.
 
-## Public information architecture
-- `/` — editorial home
-- `/areas` — four public-facing areas
-- `/tratamientos/[slug]` — treatment pages
-- `/condiciones/[slug]` — skin concern pages
-- `/recursos/[slug]` — educational content
+## Current public information architecture
+- `/` — seven-screen editorial home
+- `/procedimientos` — complete library grouped by four public areas
+- `/procedimientos/[slug]` — canonical individual procedure or condition pages
+- `/tratamientos/[slug]` — area hubs and legacy redirects
 - `/pagos` — secure payment options
+- `/aviso-de-privacidad` — integral privacy notice
+- `/sitemap.xml` — dynamic sitemap
+- `/robots.txt` — crawler policy
 
 Public labels avoid overemphasizing professional category boundaries:
 1. Diseño facial
@@ -23,31 +25,57 @@ Public labels avoid overemphasizing professional category boundaries:
 - Tailwind CSS
 - shadcn-style components
 - Framer Motion
-- next/image
+- `next/image`
 - React Hook Form + Zod
 - Vercel
-- Content layer: typed local content first, Sanity adapter prepared for phase 2
+- Typed local content layer, prepared for a future Sanity adapter
 
-## Content strategy
-The initial source of truth is typed TypeScript data validated with Zod. This keeps the build stable and lets the visual/content model be approved before adding CMS infrastructure.
+## Current content system
+The current source of truth is typed TypeScript data. Individual pages share one reusable layout and include:
+- definition
+- possible indications
+- limits and situations in which treatment is not forced
+- HAUTLAB approach
+- expectations
+- orientative investment
+- FAQ
+- related pages
+- contextual WhatsApp CTA
+- metadata, canonical URL, Open Graph and JSON-LD
 
-Once the model is approved, the same interface can be backed by Sanity without rewriting page components.
+The v2 branch currently contains 18 individual pages. New pages should be added through the same typed model instead of creating isolated templates.
 
-## Editorial rules
+## Editorial and medical rules
 - Do not invent credentials, certifications, protocols or outcomes.
-- Clinical copy must be marked `medicalReview: pending` until approved.
+- Do not promise guaranteed results.
+- Keep prices orientative and subject to assessment when appropriate.
 - No public before/after gallery until consent, selection criteria and publication policy are approved.
 - Avoid unsupported professional-title claims.
-- Use clear descriptions of services, assessment and treatment planning.
+- Present information as educational and subordinate final indication to individual assessment.
 
-## Content workflow
+## Privacy and analytics
+- Optional Meta analytics remains disabled until explicit consent.
+- Tracking is limited to general pages and does not activate on condition- or procedure-specific routes.
+- Names, messages, diagnoses, clinical photographs and treatment-specific parameters are not sent to the pixel.
+- Cookie preferences can be changed from the footer.
+- Google Maps opens only after a deliberate user action.
+
+## Accessibility and performance
+- Keyboard skip link is included.
+- Reduced-motion preferences are respected.
+- Navigation, cards and accordions expose visible focus states.
+- Images use `next/image` and responsive size hints.
+- CI runs dependency installation, TypeScript validation and the Next.js production build on every `v2` change.
+
+## Content governance for the future CMS
+Planned states:
 - `draft`
 - `medical_review`
 - `approved`
 - `published`
 - `archived`
 
-Required governance fields:
+Planned governance fields:
 - `status`
 - `reviewedBy`
 - `reviewedAt`
@@ -55,29 +83,9 @@ Required governance fields:
 - `sources`
 - `disclaimer`
 
-## Phase 1 deliverables
-- v2 branch
-- architecture document
-- design tokens
-- typed content model
-- CMS-agnostic content repository interface
-- six initial page records as draft shells
-
-## Phase 2
-- new seven-screen editorial home
-- mega menu
-- breadcrumbs
-- related-content sidebar
-- reusable treatment page layout
-
-## Phase 3
-Complete and medically review the first six reference pages:
-- Rinomodelación
-- Toxina botulínica
-- Labios
-- Acné
-- Melasma
-- Verrugas
-
 ## Release rule
-Production remains on `main`. The `v2` branch is merged only after visual review, build verification and content approval.
+Production remains on `main`. Merge `v2` only after:
+1. successful CI;
+2. exact preview review;
+3. medical-content and price approval;
+4. deliberate production authorization.
