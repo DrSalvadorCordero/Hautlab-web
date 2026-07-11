@@ -7,21 +7,21 @@ const featured = [
   {
     title: "Rinomodelación",
     eyebrow: "Diseño facial",
-    href: "/tratamientos/medicina-estetica-facial",
+    href: "/procedimientos/rinomodelacion",
     image: "/visuals/hero-architecture.webp",
     text: "Proporción nasal, soporte y transiciones más limpias, sin convertir la nariz en un elemento artificial."
   },
   {
     title: "Toxina botulínica",
     eyebrow: "Expresión",
-    href: "/tratamientos/medicina-estetica-facial",
+    href: "/procedimientos/toxina-botulinica",
     image: "/visuals/skin-macro.webp",
     text: "Menos tensión y líneas dinámicas, conservando identidad, movimiento y lectura natural del rostro."
   },
   {
-    title: "Acné y textura",
+    title: "Acné",
     eyebrow: "Piel y textura",
-    href: "/tratamientos/dermatologia-clinica",
+    href: "/procedimientos/acne",
     image: "/visuals/clinic-office.webp",
     text: "Diagnóstico, barrera, inflamación, pigmento y secuelas ordenados dentro de un plan progresivo."
   }
@@ -50,21 +50,13 @@ export function FeaturedTreatmentsSection() {
             <Reveal key={item.title} delay={index * 0.07}>
               <Link href={item.href} className="group block overflow-hidden rounded-[2rem] border border-line bg-white/[0.03]">
                 <div className="relative aspect-[4/5] overflow-hidden">
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 33vw"
-                    className="object-cover transition duration-700 group-hover:scale-[1.025]"
-                  />
+                  <Image src={item.image} alt={item.title} fill sizes="(max-width: 1024px) 100vw, 33vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background via-background/15 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-6">
                     <p className="text-xs uppercase tracking-[0.2em] text-champagne">{item.eyebrow}</p>
                     <h3 className="mt-3 text-3xl font-medium tracking-[-.045em] text-bone">{item.title}</h3>
                     <p className="mt-4 text-sm leading-7 text-muted">{item.text}</p>
-                    <span className="mt-6 inline-flex items-center gap-2 text-sm text-bone">
-                      Ver enfoque <ArrowUpRight className="h-4 w-4" />
-                    </span>
+                    <span className="mt-6 inline-flex items-center gap-2 text-sm text-bone">Ver enfoque <ArrowUpRight className="h-4 w-4" /></span>
                   </div>
                 </div>
               </Link>
