@@ -12,7 +12,7 @@ export const siteConfig = {
   instagram: "https://www.instagram.com/dr.salvadorcordero",
   instagramHandle: "@dr.salvadorcordero",
   privacyEmail: "dr.salvadorcordero@gmail.com",
-  privacyUpdated: "29 de mayo de 2026",
+  privacyUpdated: "11 de julio de 2026",
   address: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
   mapQuery: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
   location: "Mérida, Yucatán",
