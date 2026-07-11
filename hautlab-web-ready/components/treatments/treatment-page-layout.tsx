@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
+import { CheckCircle2, CircleDollarSign, Clock3, ShieldCheck } from "lucide-react";
 import { Breadcrumbs, type BreadcrumbItem } from "@/components/navigation/breadcrumbs";
 import { TreatmentSidebar, type RelatedLink } from "@/components/navigation/treatment-sidebar";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,7 @@ export type TreatmentPageContent = {
   notIndicated: string[];
   hautlabApproach: string[];
   expectations: Array<{ label: string; value: string }>;
+  investment: { label: string; note: string };
   faq: Array<{ question: string; answer: string }>;
   related: RelatedLink[];
   whatsappMessage: string;
@@ -72,7 +73,7 @@ export function TreatmentPageLayout({ content }: { content: TreatmentPageContent
 
             <section>
               <p className="text-xs uppercase tracking-[0.18em] text-champagne">Enfoque HAUTLAB</p>
-              <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2.5rem,5vw,4.5rem)] leading-[.95] tracking-[-.055em] text-bone">Primero se entiende el rostro. Después se elige la herramienta.</h2>
+              <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2.5rem,5vw,4.5rem)] leading-[.95] tracking-[-.055em] text-bone">Primero se entiende el rostro o la piel. Después se elige la herramienta.</h2>
               <div className="mt-7 space-y-5 text-base leading-8 text-muted">
                 {content.hautlabApproach.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
               </div>
@@ -89,6 +90,15 @@ export function TreatmentPageLayout({ content }: { content: TreatmentPageContent
                   </Card>
                 ))}
               </div>
+            </section>
+
+            <section>
+              <Card className="border-champagne/25 bg-gradient-to-br from-champagne/[0.12] to-white/[0.025] p-7">
+                <CircleDollarSign className="h-6 w-6 text-champagne" />
+                <p className="mt-6 text-xs uppercase tracking-[0.18em] text-champagne">Rango de inversión</p>
+                <h2 className="mt-3 text-3xl font-medium tracking-[-0.04em] text-bone">{content.investment.label}</h2>
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-muted">{content.investment.note}</p>
+              </Card>
             </section>
 
             <section>
