@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const title = `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`;
   const url = `${siteConfig.url}/procedimientos/${slug}`;
+  const socialImage = `${url}/opengraph-image`;
 
   return {
     title,
@@ -29,13 +30,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: "HAUTLAB",
       locale: "es_MX",
       type: "article",
-      images: [{ url: treatment.image, alt: treatment.imageAlt }]
+      images: [{ url: socialImage, width: 1200, height: 630, alt: `${treatment.title} | HAUTLAB` }]
     },
     twitter: {
       card: "summary_large_image",
       title: `${treatment.title} | HAUTLAB`,
       description: treatment.summary,
-      images: [treatment.image]
+      images: [socialImage]
     }
   };
 }
