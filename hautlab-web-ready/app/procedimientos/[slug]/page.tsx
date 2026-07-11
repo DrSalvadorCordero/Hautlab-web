@@ -15,16 +15,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const treatment = treatmentsV2[slug];
   if (!treatment) return {};
 
+  const title = `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`;
+  const url = `${siteConfig.url}/procedimientos/${slug}`;
+
   return {
-    title: `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`,
+    title,
     description: treatment.summary,
-    alternates: { canonical: `${siteConfig.url}/procedimientos/${slug}` },
+    alternates: { canonical: url },
     openGraph: {
       title: `${treatment.title} | HAUTLAB`,
       description: treatment.summary,
-      url: `${siteConfig.url}/procedimientos/${slug}`,
+      url,
+      siteName: "HAUTLAB",
+      locale: "es_MX",
       type: "article",
-      images: [{ url: treatment.image }]
+      images: [{ url: treatment.image, alt: treatment.imageAlt }]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${treatment.title} | HAUTLAB`,
+      description: treatment.summary,
+      images: [treatment.image]
     }
   };
 }
@@ -34,6 +45,7 @@ export default async function ProcedurePage({ params }: PageProps) {
   const treatment = treatmentsV2[slug];
   if (!treatment) notFound();
 
+  const url = `${siteConfig.url}/procedimientos/${slug}`;
   const content = {
     ...treatment,
     breadcrumbs: [...treatment.breadcrumbs, { label: treatment.title }]
@@ -56,13 +68,37 @@ export default async function ProcedurePage({ params }: PageProps) {
       "@type": "ListItem",
       position: index + 1,
       name: item.label,
-      item: item.href ? `${siteConfig.url}${item.href}` : `${siteConfig.url}/procedimientos/${slug}`
+      item: item.href ? `${siteConfig.url}${item.href}` : url
     }))
+  };
+
+  const medicalPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MedicalWebPage",
+    name: treatment.title,
+    description: treatment.summary,
+    url,
+    inLanguage: "es-MX",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "HAUTLAB",
+      url: siteConfig.url
+    },
+    publisher: {
+      "@type": "MedicalClinic",
+      name: "HAUTLAB",
+      url: siteConfig.url,
+      telephone: siteConfig.whatsappDisplay
+    },
+    audience: {
+      "@type": "Patient"
+    }
   };
 
   return (
     <>
       <TreatmentPageLayout content={content} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalPageJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
     </>
