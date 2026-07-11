@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeft, Mail, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
@@ -68,9 +69,9 @@ export default function PrivacyPage() {
                   label="Cambiar analítica"
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-line bg-white/[0.03] px-5 text-sm font-medium text-bone transition hover:border-bone/30 hover:bg-white/[0.06]"
                 />
-                <a href="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-sm text-muted transition hover:text-bone">
+                <Link href="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-sm text-muted transition hover:text-bone">
                   <ArrowLeft className="h-4 w-4" /> Volver al inicio
-                </a>
+                </Link>
               </div>
             </Card>
           </aside>
