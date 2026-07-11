@@ -75,8 +75,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es-MX" className={`${inter.variable} ${playfair.variable}`}>
       <body>
+        <a
+          href="#contenido-principal"
+          className="fixed left-4 top-4 z-[120] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm font-medium text-background shadow-calm transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-champagne"
+        >
+          Saltar al contenido
+        </a>
         <Header />
-        {children}
+        <div id="contenido-principal" tabIndex={-1} className="outline-none">
+          {children}
+        </div>
         <Footer />
         <ConsentManager />
         <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
