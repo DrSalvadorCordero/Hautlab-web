@@ -80,6 +80,7 @@ function ensureMetaPixel(): Fbq {
 
 export function ConsentManager() {
   const pathname = usePathname();
+  const currentPath = pathname ?? "/";
   const lastTrackedPath = useRef<string | null>(null);
   const [consent, setConsent] = useState<ConsentValue | null>(null);
   const [ready, setReady] = useState(false);
@@ -101,7 +102,7 @@ export function ConsentManager() {
   useEffect(() => {
     if (!ready) return;
 
-    const isGeneralPage = GENERAL_TRACKING_PATHS.has(pathname);
+    const isGeneralPage = GENERAL_TRACKING_PATHS.has(currentPath);
 
     if (consent !== "accepted" || !isGeneralPage) {
       window.fbq?.("consent", "revoke");
@@ -112,9 +113,9 @@ export function ConsentManager() {
     const fbq = ensureMetaPixel();
     fbq("consent", "grant");
 
-    if (lastTrackedPath.current !== pathname) {
+    if (lastTrackedPath.current !== currentPath) {
       fbq("track", "PageView");
-      lastTrackedPath.current = pathname;
+      lastTrackedPath.current = currentPath;
     }
 
     const trackClick = (event: MouseEvent) => {
@@ -140,7 +141,7 @@ export function ConsentManager() {
       document.removeEventListener("click", trackClick, true);
       document.removeEventListener("submit", trackSubmit, true);
     };
-  }, [consent, pathname, ready]);
+  }, [consent, currentPath, ready]);
 
   function saveConsent(value: ConsentValue) {
     try {
