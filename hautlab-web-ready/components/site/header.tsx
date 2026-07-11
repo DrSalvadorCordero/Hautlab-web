@@ -13,7 +13,8 @@ const areas = [
       { label: "Labios", href: "/procedimientos/labios" },
       { label: "Ojeras", href: "/procedimientos/ojeras" },
       { label: "Mentón", href: "/procedimientos/menton" },
-      { label: "Mandíbula", href: "/tratamientos/medicina-estetica-facial" }
+      { label: "Mandíbula", href: "/procedimientos/mandibula" },
+      { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" }
     ]
   },
   {
@@ -21,11 +22,11 @@ const areas = [
     href: "/tratamientos/calidad-de-piel-y-soporte",
     items: [
       { label: "Cicatrices de acné", href: "/procedimientos/cicatrices-acne" },
-      { label: "Estrías", href: "/tratamientos/calidad-de-piel-y-soporte" },
-      { label: "Poros", href: "/tratamientos/calidad-de-piel-y-soporte" },
-      { label: "Textura", href: "/tratamientos/calidad-de-piel-y-soporte" },
-      { label: "Manchas", href: "/procedimientos/melasma" },
-      { label: "Peelings", href: "/tratamientos/calidad-de-piel-y-soporte" }
+      { label: "Bioestimuladores", href: "/procedimientos/bioestimuladores" },
+      { label: "Skin booster", href: "/procedimientos/skin-booster" },
+      { label: "Hollywood Peel", href: "/procedimientos/hollywood-peel" },
+      { label: "Peelings médicos", href: "/procedimientos/peelings-medicos" },
+      { label: "Melasma", href: "/procedimientos/melasma" }
     ]
   },
   {
@@ -35,8 +36,8 @@ const areas = [
       { label: "Acné", href: "/procedimientos/acne" },
       { label: "Rosácea", href: "/procedimientos/rosacea" },
       { label: "Melasma", href: "/procedimientos/melasma" },
-      { label: "Dermatitis", href: "/tratamientos/dermatologia-clinica" },
       { label: "Alopecia", href: "/procedimientos/alopecia" },
+      { label: "Dermatitis", href: "/tratamientos/dermatologia-clinica" },
       { label: "Vitíligo", href: "/tratamientos/dermatologia-clinica" }
     ]
   },
@@ -45,62 +46,66 @@ const areas = [
     href: "/tratamientos/dermatologia-procedimental",
     items: [
       { label: "Verrugas", href: "/procedimientos/verrugas" },
-      { label: "Quistes", href: "/tratamientos/dermatologia-procedimental" },
       { label: "Lunares", href: "/procedimientos/lunares" },
       { label: "Dermatoscopia", href: "/procedimientos/lunares" },
+      { label: "Quistes", href: "/tratamientos/dermatologia-procedimental" },
       { label: "Cauterización", href: "/tratamientos/dermatologia-procedimental" },
       { label: "Biopsias", href: "/tratamientos/dermatologia-procedimental" }
     ]
   }
 ];
 
-const mobileNav = [
+const secondaryNav = [
   { label: "Método", href: "/#metodo" },
-  { label: "Áreas", href: "/#tratamientos" },
-  { label: "Destacados", href: "/#destacados" },
   { label: "Testimonios", href: "/#testimonios" },
   { label: "Pagos", href: "/pagos" }
 ];
 
+function AreaGrid({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={compact ? "grid gap-3 sm:grid-cols-2" : "grid gap-4 md:grid-cols-2 lg:grid-cols-4"}>
+      {areas.map((area) => (
+        <div key={area.title} className="rounded-3xl border border-line bg-white/[0.03] p-5 transition hover:border-champagne/40 hover:bg-white/[0.055]">
+          <Link href={area.href} className="text-sm font-medium text-bone transition hover:text-champagne">
+            {area.title}
+          </Link>
+          <ul className="mt-4 space-y-2 text-xs leading-5 text-muted">
+            {area.items.map((item) => (
+              <li key={`${area.title}-${item.label}`}>
+                <Link href={item.href} className="transition hover:text-bone">{item.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-background/82 backdrop-blur-2xl">
-      <div className="mx-auto flex min-h-20 w-[min(1180px,calc(100%-32px))] items-center justify-between gap-6">
-        <Link href="/" className="group leading-none" aria-label="HAUTLAB home">
+      <div className="mx-auto flex min-h-20 w-[min(1180px,calc(100%-32px))] items-center justify-between gap-4 sm:gap-6">
+        <Link href="/" className="group min-w-0 leading-none" aria-label="HAUTLAB, página de inicio">
           <span className="block text-xs font-medium uppercase tracking-[0.28em] text-bone">HAUTLAB</span>
-          <span className="mt-1 block text-[11px] uppercase tracking-[0.18em] text-muted">Dr. Salvador Cordero</span>
+          <span className="mt-1 block truncate text-[10px] uppercase tracking-[0.14em] text-muted sm:text-[11px] sm:tracking-[0.18em]">Dr. Salvador Cordero</span>
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm text-muted lg:flex" aria-label="Navegación principal">
           <Link href="/#metodo" className="transition hover:text-bone">Método</Link>
 
-          <div className="group relative">
-            <button className="inline-flex items-center gap-1 py-7 transition group-hover:text-bone" type="button" aria-haspopup="true">
-              Áreas de atención <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-            <div className="invisible absolute left-1/2 top-full w-[min(920px,88vw)] -translate-x-1/2 translate-y-2 rounded-[2rem] border border-line bg-[#0d0c0b]/98 p-6 opacity-0 shadow-calm backdrop-blur-2xl transition duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {areas.map((area) => (
-                  <div key={area.title} className="rounded-3xl border border-line bg-white/[0.03] p-5 transition hover:border-champagne/40 hover:bg-white/[0.055]">
-                    <Link href={area.href} className="text-sm font-medium text-bone transition hover:text-champagne">
-                      {area.title}
-                    </Link>
-                    <ul className="mt-4 space-y-2 text-xs leading-5 text-muted">
-                      {area.items.map((item) => (
-                        <li key={item.label}>
-                          <Link href={item.href} className="transition hover:text-bone">{item.label}</Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+          <details className="group relative">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1 py-7 transition hover:text-bone [&::-webkit-details-marker]:hidden">
+              Áreas de atención <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+            </summary>
+            <div className="invisible absolute left-1/2 top-full w-[min(920px,88vw)] -translate-x-1/2 translate-y-2 rounded-[2rem] border border-line bg-[#0d0c0b]/98 p-6 opacity-0 shadow-calm backdrop-blur-2xl transition duration-200 group-open:visible group-open:translate-y-0 group-open:opacity-100">
+              <AreaGrid />
               <div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-xs">
                 <span>Diagnóstico primero. Procedimientos por indicación.</span>
-                <Link href="/procedimientos" className="text-bone">Ver todas las áreas →</Link>
+                <Link href="/procedimientos" className="text-bone transition hover:text-champagne">Ver todas las áreas →</Link>
               </div>
             </div>
-          </div>
+          </details>
 
           <Link href="/#testimonios" className="transition hover:text-bone">Testimonios</Link>
           <Link href="/pagos" className="transition hover:text-bone">Pagos</Link>
@@ -109,17 +114,28 @@ export function Header() {
         <Button asChild size="sm" className="shrink-0">
           <a href={buildWhatsAppLink("Hola, quiero agendar una valoración en HAUTLAB.")} target="_blank" rel="noreferrer" data-event="whatsapp_header">
             <CalendarDays className="h-4 w-4" />
-            Agendar valoración
+            <span className="hidden sm:inline">Agendar valoración</span>
+            <span className="sm:hidden">Agendar</span>
           </a>
         </Button>
       </div>
 
       <div className="border-t border-line/50 lg:hidden">
-        <div className="mx-auto flex w-[min(1180px,calc(100%-32px))] gap-5 overflow-x-auto py-3 text-xs uppercase tracking-[0.16em] text-muted">
-          {mobileNav.map((item) => (
-            <Link key={item.href} href={item.href} className="whitespace-nowrap">{item.label}</Link>
-          ))}
-        </div>
+        <details className="group mx-auto w-[min(1180px,calc(100%-32px))]">
+          <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-xs uppercase tracking-[0.16em] text-muted [&::-webkit-details-marker]:hidden">
+            Explorar áreas
+            <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+          </summary>
+          <div className="pb-5">
+            <AreaGrid compact />
+            <nav className="mt-4 flex flex-wrap gap-x-6 gap-y-3 border-t border-line pt-4 text-xs uppercase tracking-[0.14em] text-muted" aria-label="Navegación secundaria">
+              {secondaryNav.map((item) => (
+                <Link key={item.href} href={item.href} className="transition hover:text-bone">{item.label}</Link>
+              ))}
+              <Link href="/procedimientos" className="text-bone">Todos los procedimientos</Link>
+            </nav>
+          </div>
+        </details>
       </div>
     </header>
   );

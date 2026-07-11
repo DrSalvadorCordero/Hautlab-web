@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
 import { treatmentFamilies } from "@/data/site";
+import { extraTreatmentsV2 } from "@/data/treatments-v2-extra";
 import { treatmentsV2 } from "@/data/treatments-v2";
 import { siteConfig } from "@/lib/siteConfig";
+
+const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -19,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75
   }));
 
-  const procedureRoutes: MetadataRoute.Sitemap = Object.keys(treatmentsV2).map((slug) => ({
+  const procedureRoutes: MetadataRoute.Sitemap = Object.keys(allTreatments).map((slug) => ({
     url: `${siteConfig.url}/procedimientos/${slug}`,
     lastModified: now,
     changeFrequency: "monthly",

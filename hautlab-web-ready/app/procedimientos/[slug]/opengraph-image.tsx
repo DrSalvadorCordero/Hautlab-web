@@ -1,13 +1,16 @@
 import { ImageResponse } from "next/og";
+import { extraTreatmentsV2 } from "@/data/treatments-v2-extra";
 import { treatmentsV2 } from "@/data/treatments-v2";
 
 export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
+
 export default async function ProcedureOpenGraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const treatment = treatmentsV2[slug];
+  const treatment = allTreatments[slug];
   const title = treatment?.title || "Procedimientos HAUTLAB";
   const eyebrow = treatment?.eyebrow || "HAUTLAB";
   const summary = treatment?.summary || "Diagnóstico primero. Procedimientos por indicación. Resultados sobrios.";
