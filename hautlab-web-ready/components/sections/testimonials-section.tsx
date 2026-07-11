@@ -8,9 +8,9 @@ export function TestimonialsSection() {
       <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
         <Reveal>
           <div className="mb-12 max-w-3xl">
-            <p className="mb-4 text-xs uppercase tracking-[0.24em] text-champagne">Testimonios</p>
+            <p className="mb-4 text-xs uppercase tracking-[0.24em] text-champagne">Experiencias de atención</p>
             <h2 className="font-serif text-[clamp(2.6rem,5vw,4.8rem)] leading-[.95] tracking-[-.055em] text-bone">
-              Experiencias discretas, reales y sin exageración.
+              Lo que algunos pacientes describen de la consulta y el seguimiento.
             </h2>
           </div>
         </Reveal>
@@ -19,7 +19,7 @@ export function TestimonialsSection() {
           {testimonials.map((item, index) => (
             <Reveal key={`${item.detail}-${index}`} delay={index * 0.05}>
               <Card className="h-full p-6">
-                <p className="text-4xl leading-none text-champagne/70">“</p>
+                <p className="text-4xl leading-none text-champagne/70" aria-hidden="true">“</p>
                 <p className="mt-4 text-sm leading-7 text-muted">{item.quote}</p>
                 <div className="mt-8 border-t border-line pt-5">
                   <p className="text-sm text-bone">{item.name}</p>
@@ -29,6 +29,10 @@ export function TestimonialsSection() {
             </Reveal>
           ))}
         </div>
+
+        <p className="mt-8 max-w-3xl text-xs leading-6 text-quiet">
+          Los comentarios se muestran con iniciales. Cada experiencia es individual y no constituye una garantía de resultados clínicos o estéticos.
+        </p>
       </div>
     </section>
   );
