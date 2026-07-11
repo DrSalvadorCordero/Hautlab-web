@@ -11,8 +11,8 @@ const areas = [
       { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
       { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" },
       { label: "Labios", href: "/procedimientos/labios" },
-      { label: "Ojeras", href: "/tratamientos/medicina-estetica-facial" },
-      { label: "Mentón", href: "/tratamientos/medicina-estetica-facial" },
+      { label: "Ojeras", href: "/procedimientos/ojeras" },
+      { label: "Mentón", href: "/procedimientos/menton" },
       { label: "Mandíbula", href: "/tratamientos/medicina-estetica-facial" }
     ]
   },
@@ -20,11 +20,11 @@ const areas = [
     title: "Piel y textura",
     href: "/tratamientos/calidad-de-piel-y-soporte",
     items: [
-      { label: "Cicatrices", href: "/tratamientos/calidad-de-piel-y-soporte" },
+      { label: "Cicatrices de acné", href: "/procedimientos/cicatrices-acne" },
       { label: "Estrías", href: "/tratamientos/calidad-de-piel-y-soporte" },
       { label: "Poros", href: "/tratamientos/calidad-de-piel-y-soporte" },
       { label: "Textura", href: "/tratamientos/calidad-de-piel-y-soporte" },
-      { label: "Manchas", href: "/tratamientos/calidad-de-piel-y-soporte" },
+      { label: "Manchas", href: "/procedimientos/melasma" },
       { label: "Peelings", href: "/tratamientos/calidad-de-piel-y-soporte" }
     ]
   },
@@ -33,10 +33,10 @@ const areas = [
     href: "/tratamientos/dermatologia-clinica",
     items: [
       { label: "Acné", href: "/procedimientos/acne" },
-      { label: "Rosácea", href: "/tratamientos/dermatologia-clinica" },
+      { label: "Rosácea", href: "/procedimientos/rosacea" },
       { label: "Melasma", href: "/procedimientos/melasma" },
       { label: "Dermatitis", href: "/tratamientos/dermatologia-clinica" },
-      { label: "Alopecia", href: "/tratamientos/dermatologia-clinica" },
+      { label: "Alopecia", href: "/procedimientos/alopecia" },
       { label: "Vitíligo", href: "/tratamientos/dermatologia-clinica" }
     ]
   },
@@ -46,8 +46,8 @@ const areas = [
     items: [
       { label: "Verrugas", href: "/procedimientos/verrugas" },
       { label: "Quistes", href: "/tratamientos/dermatologia-procedimental" },
-      { label: "Lunares", href: "/tratamientos/dermatologia-procedimental" },
-      { label: "Dermatoscopia", href: "/tratamientos/dermatologia-procedimental" },
+      { label: "Lunares", href: "/procedimientos/lunares" },
+      { label: "Dermatoscopia", href: "/procedimientos/lunares" },
       { label: "Cauterización", href: "/tratamientos/dermatologia-procedimental" },
       { label: "Biopsias", href: "/tratamientos/dermatologia-procedimental" }
     ]
