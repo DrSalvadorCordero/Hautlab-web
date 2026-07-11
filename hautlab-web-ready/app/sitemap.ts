@@ -12,7 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const coreRoutes: MetadataRoute.Sitemap = [
     { url: siteConfig.url, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${siteConfig.url}/procedimientos`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${siteConfig.url}/pagos`, lastModified: now, changeFrequency: "monthly", priority: 0.5 }
+    { url: `${siteConfig.url}/pagos`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${siteConfig.url}/aviso-de-privacidad`, lastModified: now, changeFrequency: "yearly", priority: 0.3 }
   ];
 
   const familyRoutes: MetadataRoute.Sitemap = treatmentFamilies.map((family) => ({

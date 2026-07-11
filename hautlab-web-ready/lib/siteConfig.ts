@@ -11,6 +11,8 @@ export const siteConfig = {
   whatsappDisplay: "+52 999 280 9758",
   instagram: "https://www.instagram.com/dr.salvadorcordero",
   instagramHandle: "@dr.salvadorcordero",
+  privacyEmail: "dr.salvadorcordero@gmail.com",
+  privacyUpdated: "29 de mayo de 2026",
   address: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
   mapQuery: "Calle 43 #299A-32A, San Ramón Norte, Mérida, Yucatán, CP 97117",
   location: "Mérida, Yucatán",
