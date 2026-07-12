@@ -39,19 +39,19 @@ export function HeroSection() {
           <div className="rounded-[2rem] border border-line bg-white/[0.045] p-3 shadow-calm backdrop-blur">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[1.45rem] border border-line bg-soft">
               <Image
-                src="/visuals/hero-architecture.webp"
-                alt="Ambiente visual premium HAUTLAB"
+                src="/visuals/dr-salvador-cordero.webp"
+                alt="Retrato del Dr. Salvador Cordero en HAUTLAB, Mérida"
                 fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 48vw"
-                className="object-cover opacity-90"
+                className="object-cover object-[center_18%]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/5 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="rounded-[1.35rem] border border-line bg-background/70 p-5 backdrop-blur-xl">
+                <div className="rounded-[1.35rem] border border-line bg-background/72 p-5 backdrop-blur-xl">
                   <div className="flex items-center gap-3 text-sm text-bone">
                     <ShieldCheck className="h-5 w-5 text-champagne" />
-                    Piel y diseño facial para pacientes que no quieren parecer intervenidos.
+                    Dr. Salvador Cordero · valoración médica y diseño facial en Mérida.
                   </div>
                 </div>
               </div>
