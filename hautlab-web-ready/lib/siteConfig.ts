@@ -14,7 +14,7 @@ export const siteConfig = {
   privacyEmail: "dr.salvadorcordero@gmail.com",
   privacyUpdated: "11 de julio de 2026",
   address: "Calle 43 número 299A x 32A, San Ramón Norte, C.P. 97117, Mérida, Yucatán",
-  mapQuery: "Calle 43 número 299A x 32A, San Ramón Norte, C.P. 97117, Mérida, Yucatán",
+  mapQuery: "Dr. Salvador Cordero | Dermatólogo en Mérida, Calle 43 299A, San Ramón Norte, 97117 Mérida, Yucatán",
   location: "Mérida, Yucatán",
   tagline: "Precisión médica. Estética contenida.",
   triad: "Diagnóstico primero. Procedimientos por indicación. Resultados sobrios.",
