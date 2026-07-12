@@ -1,9 +1,22 @@
+import type { Metadata } from "next";
 import { LeadForm } from "@/components/LeadForm";
+import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-export const metadata = {
+const contactUrl = `${siteConfig.url}/contacto`;
+
+export const metadata: Metadata = {
   title: "Contacto | Dr. Salvador Cordero",
-  description: "Agenda valoración privada con el Dr. Salvador Cordero."
+  description: "Agenda valoración privada con el Dr. Salvador Cordero.",
+  alternates: { canonical: contactUrl },
+  openGraph: {
+    title: "Contacto | HAUTLAB + Dr. Salvador Cordero",
+    description: "Agenda una valoración privada en HAUTLAB Mérida.",
+    url: contactUrl,
+    siteName: "HAUTLAB",
+    locale: "es_MX",
+    type: "website"
+  }
 };
 
 export default function ContactPage() {

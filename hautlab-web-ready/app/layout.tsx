@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     description: siteConfig.description,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Calle 43 #299A-32A, San Ramón Norte",
+      streetAddress: "Calle 43 número 299A x 32A, San Ramón Norte",
       addressLocality: "Mérida",
       addressRegion: "Yucatán",
       postalCode: "97117",
