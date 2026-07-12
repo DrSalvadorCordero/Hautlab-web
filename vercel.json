@@ -1,5 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
   "ignoreCommand": "node -e \"const u=process.env.VERCEL_PROJECT_PRODUCTION_URL||''; process.exit(/(^|\\.)hautlabmx\\.com$|^hautlabmxcom\\.vercel\\.app$/.test(u)?1:0)\""
 }

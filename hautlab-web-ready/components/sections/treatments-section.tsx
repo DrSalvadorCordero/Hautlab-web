@@ -13,13 +13,13 @@ export function TreatmentsSection() {
         <Reveal>
           <div className="mb-12 grid gap-7 lg:grid-cols-[.85fr_1.15fr]">
             <div>
-              <p className="mb-4 text-xs uppercase tracking-[0.24em] text-champagne">Familias de tratamientos</p>
+              <p className="mb-4 text-xs uppercase tracking-[0.24em] text-champagne">Áreas de atención</p>
               <h2 className="font-serif text-[clamp(2.6rem,5vw,4.8rem)] leading-[.95] tracking-[-.055em] text-bone">
-                Todo dividido por intención médica.
+                Una misma lógica: valorar antes de indicar.
               </h2>
             </div>
             <p className="max-w-2xl text-base leading-8 text-muted">
-              Las cuatro familias ordenan el sitio y la consulta. Cada ruta incluye enfoque HAUTLAB, qué trata, rangos de inversión y CTA directo a WhatsApp.
+              Puedes explorar por objetivo, condición o zona. La valoración conecta piel, anatomía, antecedentes y expectativas antes de elegir un procedimiento.
             </p>
           </div>
         </Reveal>
@@ -39,18 +39,18 @@ export function TreatmentsSection() {
                   <h3 className="text-2xl font-medium tracking-[-0.04em] text-bone">{family.title}</h3>
                   <p className="mt-4 text-sm leading-7 text-muted">{family.summary}</p>
                   <div className="mt-6 rounded-3xl border border-line bg-background/40 p-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-champagne">Rango de inversión</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-champagne">Inversión orientativa</p>
                     <p className="mt-2 text-sm leading-6 text-muted">{family.investment}</p>
                   </div>
                   <div className="mt-6 flex flex-wrap gap-3">
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/tratamientos/${family.slug}`}>
-                        Ver enfoque <ArrowRight className="h-4 w-4" />
+                        Explorar área <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
                     <Button asChild variant="ghost" size="sm">
-                      <a href={whatsappForTreatment(family.title)} target="_blank" rel="noreferrer">
-                        WhatsApp
+                      <a href={whatsappForTreatment(family.title)} target="_blank" rel="noreferrer" data-event={`whatsapp_area_${family.slug}`}>
+                        Consultar por WhatsApp
                       </a>
                     </Button>
                   </div>

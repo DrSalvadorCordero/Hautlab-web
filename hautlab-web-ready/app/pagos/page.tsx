@@ -3,11 +3,28 @@ import { ArrowRight, CreditCard, MessageCircle, ReceiptText } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { paymentOptions } from "@/data/site";
+import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+
+const paymentsUrl = `${siteConfig.url}/pagos`;
 
 export const metadata: Metadata = {
   title: "Pagos seguros | HAUTLAB + Dr. Salvador Cordero",
-  description: "Pagos seguros para valoración, apartado o link personalizado de HAUTLAB en Mérida."
+  description: "Pagos seguros para valoración, apartado o link personalizado de HAUTLAB en Mérida.",
+  alternates: { canonical: paymentsUrl },
+  openGraph: {
+    title: "Pagos seguros | HAUTLAB",
+    description: "Opciones de pago, reservación y solicitud de links personalizados para HAUTLAB Mérida.",
+    url: paymentsUrl,
+    siteName: "HAUTLAB",
+    locale: "es_MX",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pagos seguros | HAUTLAB",
+    description: "Opciones de pago y reservación para HAUTLAB Mérida."
+  }
 };
 
 export default function PagosPage() {
@@ -26,7 +43,7 @@ export default function PagosPage() {
             <div className="mt-9 flex flex-wrap gap-3">
               {paymentOptions.map((option) => (
                 <Button key={option.label} asChild size="lg" variant={option.label === "Stripe" ? "default" : "outline"}>
-                  <a href={option.href} target="_blank" rel="noreferrer">
+                  <a href={option.href} target="_blank" rel="noreferrer" data-event={`payment_${option.label.toLowerCase().replaceAll(" ", "_")}_hero`}>
                     Pagar con {option.label} <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
@@ -50,7 +67,7 @@ export default function PagosPage() {
           {paymentOptions.map((option) => {
             const Icon = option.icon;
             return (
-              <a key={option.label} href={option.href} target="_blank" rel="noreferrer">
+              <a key={option.label} href={option.href} target="_blank" rel="noreferrer" data-event={`payment_${option.label.toLowerCase().replaceAll(" ", "_")}_card`} className="rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-champagne">
                 <Card className="h-full p-6 transition hover:-translate-y-1 hover:border-champagne/40">
                   <Icon className="mb-8 h-6 w-6 text-champagne" />
                   <p className="text-xs uppercase tracking-[0.18em] text-champagne">{option.label}</p>
@@ -61,7 +78,7 @@ export default function PagosPage() {
             );
           })}
 
-          <a href={buildWhatsAppLink("Hola, quiero solicitar un link de pago personalizado para HAUTLAB.")} target="_blank" rel="noreferrer">
+          <a href={buildWhatsAppLink("Hola, quiero solicitar un link de pago personalizado para HAUTLAB.")} target="_blank" rel="noreferrer" data-event="whatsapp_payment_link" className="rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-champagne">
             <Card className="h-full p-6 transition hover:-translate-y-1 hover:border-champagne/40">
               <MessageCircle className="mb-8 h-6 w-6 text-champagne" />
               <p className="text-xs uppercase tracking-[0.18em] text-champagne">WhatsApp</p>
@@ -70,7 +87,7 @@ export default function PagosPage() {
             </Card>
           </a>
 
-          <a href={buildWhatsAppLink("Hola, ya realicé mi pago y quiero enviar mi comprobante.")} target="_blank" rel="noreferrer">
+          <a href={buildWhatsAppLink("Hola, ya realicé mi pago y quiero enviar mi comprobante.")} target="_blank" rel="noreferrer" data-event="whatsapp_payment_receipt" className="rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-champagne">
             <Card className="h-full p-6 transition hover:-translate-y-1 hover:border-champagne/40">
               <ReceiptText className="mb-8 h-6 w-6 text-champagne" />
               <p className="text-xs uppercase tracking-[0.18em] text-champagne">Comprobante</p>

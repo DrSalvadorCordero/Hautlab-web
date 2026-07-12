@@ -26,70 +26,70 @@ export const methodSteps = [
 export const treatmentFamilies = [
   {
     slug: "medicina-estetica-facial",
-    title: "Medicina estética facial",
+    title: "Diseño facial",
     icon: Syringe,
-    summary: "Toxina botulínica, rinomodelación, rellenos y armonización con enfoque conservador.",
-    approach: "Diseño anatómico y proporción facial. Se prioriza naturalidad, soporte y límites seguros.",
+    summary: "Rinomodelación, toxina botulínica, labios, ojeras y soporte facial con enfoque conservador.",
+    approach: "Lectura anatómica y proporción facial. Se priorizan naturalidad, soporte, movimiento y límites seguros.",
     treats: ["Rinomodelación", "Toxina botulínica", "Labios", "Ojeras", "Mentón", "Mandíbula", "Armonización facial"],
-    investment: "Desde $3,500 a $15,000+ MXN según zona, producto e indicación.",
-    whatsappLabel: "Quiero valoración para medicina estética facial"
-  },
-  {
-    slug: "dermatologia-clinica",
-    title: "Dermatología clínica",
-    icon: Stethoscope,
-    summary: "Acné, rosácea, manchas, dermatitis, alopecia, uñas y piel sensible.",
-    approach: "Consulta médica con diagnóstico, rutina terapéutica y seguimiento. Se evita tratar síntomas sin entender la causa.",
-    treats: ["Acné", "Rosácea", "Melasma", "Dermatitis", "Alopecia", "Uñas", "Lesiones benignas"],
-    investment: "Consulta dermatológica desde $1,300 MXN. Tratamientos según diagnóstico.",
-    whatsappLabel: "Quiero consulta dermatológica"
+    investment: "Desde $3,500 MXN según zona, producto e indicación.",
+    whatsappLabel: "Quiero valoración para diseño facial"
   },
   {
     slug: "calidad-de-piel-y-soporte",
-    title: "Calidad de piel y soporte",
+    title: "Piel y textura",
     icon: Activity,
-    summary: "Bioestimulación, peelings, textura, poros, cicatrices, estrías y tecnología.",
-    approach: "Se trabaja barrera, textura, pigmento, colágeno y soporte. A veces el cambio correcto no es volumen.",
-    treats: ["Textura", "Poros", "Manchas", "Cicatrices", "Estrías", "Bioestimulación", "Peelings médicos"],
-    investment: "Desde $2,500 a $18,000+ MXN según técnica, zona y número de sesiones.",
-    whatsappLabel: "Quiero mejorar calidad de piel"
+    summary: "Textura, poros, cicatrices, estrías, pigmento, bioestimulación y procedimientos de soporte.",
+    approach: "Se trabaja barrera, textura, pigmento, colágeno y soporte. A veces el cambio correcto no es añadir volumen.",
+    treats: ["Textura", "Poros", "Manchas", "Cicatrices", "Estrías", "Bioestimulación", "Peelings"],
+    investment: "La inversión depende de técnica, extensión y número de sesiones.",
+    whatsappLabel: "Quiero valoración para piel y textura"
+  },
+  {
+    slug: "dermatologia-clinica",
+    title: "Condiciones de piel",
+    icon: Stethoscope,
+    summary: "Acné, rosácea, melasma, dermatitis, caída de cabello, uñas y piel sensible.",
+    approach: "Consulta médica con diagnóstico, rutina terapéutica y seguimiento. Se evita tratar síntomas sin entender el patrón completo.",
+    treats: ["Acné", "Rosácea", "Melasma", "Dermatitis", "Alopecia", "Uñas", "Piel sensible"],
+    investment: "Valoración médica desde $1,300 MXN. Tratamiento según diagnóstico.",
+    whatsappLabel: "Quiero una valoración médica de piel"
   },
   {
     slug: "dermatologia-procedimental",
-    title: "Dermatología procedimental",
+    title: "Procedimientos focales",
     icon: BadgeCheck,
-    summary: "Lesiones benignas, verrugas, dermatoscopia y procedimientos focales.",
-    approach: "Procedimientos focales con criterio médico, evaluación previa y explicación clara de límites, cuidados y evolución.",
-    treats: ["Verrugas", "Lesiones benignas", "Dermatoscopia", "Cauterización", "Procedimientos focales", "Revisión de lunares"],
-    investment: "Desde $1,300 MXN valoración. Procedimientos según lesión, número y técnica.",
-    whatsappLabel: "Quiero valoración de lesión o procedimiento dermatológico"
+    summary: "Verrugas, lunares, quistes, dermatoscopia y procedimientos dirigidos a lesiones específicas.",
+    approach: "Evaluación previa y selección de técnica según diagnóstico, localización, seguridad y resultado esperado.",
+    treats: ["Verrugas", "Lunares", "Quistes", "Dermatoscopia", "Cauterización", "Biopsias", "Lesiones benignas"],
+    investment: "Valoración desde $1,300 MXN. Procedimientos según lesión, número y técnica.",
+    whatsappLabel: "Quiero valoración de una lesión o procedimiento focal"
   }
 ];
 
 export const testimonials = [
   {
     name: "L. M.",
-    detail: "Encuesta verificada",
+    detail: "Opinión de paciente",
     quote: "Maravilloso tratamiento. El profesionalismo del Dr. Salvador es altamente recomendable. Genera confianza en su trato y explicación."
   },
   {
     name: "C. C.",
-    detail: "Medicina estética facial",
+    detail: "Atención facial",
     quote: "Es el mejor. Atento, amable, con mucha dedicación y experiencia. Me encanta su trabajo."
   },
   {
     name: "C. C.",
-    detail: "Encuesta verificada",
+    detail: "Opinión de paciente",
     quote: "Excelente atención, súper cuidadoso. Muy profesional y amable."
   },
   {
     name: "I. C.",
-    detail: "Procedimiento estético",
+    detail: "Experiencia de atención",
     quote: "Me gustó mucho su trabajo. Explica muy claramente cada procedimiento. Muy satisfecha."
   },
   {
     name: "S. C.",
-    detail: "Consulta dermatológica",
+    detail: "Consulta de piel",
     quote: "Excelente consulta, súper completa y explicada a la perfección."
   },
   {
@@ -99,12 +99,12 @@ export const testimonials = [
   },
   {
     name: "T. S.",
-    detail: "Patient survey",
+    detail: "Patient feedback",
     quote: "Dr. Salvador listened to what I wanted instead of telling me what he thought I should get. I appreciated that."
   },
   {
     name: "J. R.",
-    detail: "Resultados",
+    detail: "Experiencia de atención",
     quote: "El mejor de todos, encantada con mis resultados. Definitivamente la mejor opción."
   }
 ];
