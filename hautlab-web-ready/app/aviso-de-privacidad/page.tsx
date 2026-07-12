@@ -7,10 +7,25 @@ import { CookieSettingsButton } from "@/components/privacy/cookie-settings-butto
 import { Card } from "@/components/ui/card";
 import { siteConfig } from "@/lib/siteConfig";
 
+const privacyUrl = `${siteConfig.url}/aviso-de-privacidad`;
+
 export const metadata: Metadata = {
   title: "Aviso de Privacidad Integral | HAUTLAB",
   description: "Aviso de Privacidad Integral de Dr. Salvador Cordero Romero / HAUTLAB para pacientes, prospectos y titulares de datos personales.",
-  alternates: { canonical: `${siteConfig.url}/aviso-de-privacidad` }
+  alternates: { canonical: privacyUrl },
+  openGraph: {
+    title: "Aviso de Privacidad Integral | HAUTLAB",
+    description: "Consulta el Aviso de Privacidad Integral de HAUTLAB y los mecanismos para ejercer derechos ARCO.",
+    url: privacyUrl,
+    siteName: "HAUTLAB",
+    locale: "es_MX",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aviso de Privacidad Integral | HAUTLAB",
+    description: "Consulta el Aviso de Privacidad Integral de HAUTLAB y los mecanismos para ejercer derechos ARCO."
+  }
 };
 
 function PrivacySection({ number, title, children }: { number: string; title: string; children: ReactNode }) {

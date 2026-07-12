@@ -36,7 +36,8 @@ async function main() {
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  record(locs.length === 26, `sitemap contiene 26 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.length === 27, `sitemap contiene 27 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.includes(`${productionOrigin}/contacto`), "sitemap incluye la página de contacto");
 
   for (const loc of locs) {
     const productionUrl = new URL(loc);
