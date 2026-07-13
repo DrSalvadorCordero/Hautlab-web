@@ -39,11 +39,10 @@ export function HeroSection() {
           <div className="rounded-[2rem] border border-line bg-white/[0.045] p-3 shadow-calm backdrop-blur">
             <div className="relative aspect-[2/3] overflow-hidden rounded-[1.45rem] border border-line bg-soft">
               <Image
-                src="/dr-salvador-cordero-portrait.jpg"
+                src="/visuals/dr-salvador-cordero-portrait.jpg"
                 alt="Retrato del Dr. Salvador Cordero en HAUTLAB, Mérida"
                 fill
                 priority
-                unoptimized
                 sizes="(max-width: 1024px) 100vw, 48vw"
                 className="object-cover object-center"
               />
