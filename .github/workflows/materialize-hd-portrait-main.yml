@@ -1,4 +1,4 @@
-name: Materialize verified portrait from Git history
+name: Materialize verified portrait from Canva
 
 on:
   push:
@@ -14,32 +14,52 @@ jobs:
   materialize:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout portrait fix branch with history
+      - name: Checkout portrait fix branch
         uses: actions/checkout@v4
         with:
           ref: fix-hd-portrait-and-maps
           fetch-depth: 0
 
-      - name: Restore and verify full JPEG
+      - name: Download full-resolution Canva render
+        env:
+          PORTRAIT_URL: 'https://media.canva.com/v2/document-image/hash:-276904490/height:1728/id:DAHPQgxsf-U/type:B/width:1152?brand=BAFxyAopMFI&csig=AAAAAAAAAAAAAAAAAAAAAFeo-qqxhT0MvzpYLDoU8zo_KjCnjGo63BtSkuxRmjZE&disableexport=T&exp=1783946566&fallback=https%3A%2F%2Fs3.amazonaws.com%2Fdocument-export.canva.com%2Fxsf-U%2FDAHPQgxsf-U%2F1%2Fthumbnail%2F0001.png%3FX-Amz-Algorithm%3DAWS4-HMAC-SHA256%26X-Amz-Credential%3DAKIAQYCGKMUHXSTDDERN%252F20260712%252Fus-east-1%252Fs3%252Faws4_request%26X-Amz-Date%3D20260712T121507Z%26X-Amz-Expires%3D88059%26X-Amz-Signature%3Dd663dbe74135cf722817e5b127ec2aa868bad60c34bb7e24acb1b1d462eb917d%26X-Amz-SignedHeaders%3Dhost%26response-expires%3DMon%252C%252013%2520Jul%25202026%252012%253A42%253A46%2520GMT&osig=AAAAAAAAAAAAAAAAAAAAAHRNLqFz2bBVAEA5hHO1J2aWgcXqRVrgx3Wxy20xJ9Yf&page=1&signed=brand%2Cdisableexport%2Cfallback%2Cpage%2Cversion&signer=document-rpc&version=1'
         run: |
           set -euo pipefail
-          git show 18bf18038712dac7497af50d982678b0e1be1f76:hautlab-web-ready/assets-src/portrait-hd/part00.b64 > /tmp/portrait.b64
-          base64 --decode /tmp/portrait.b64 > hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-hd.jpg
+          curl --fail --location --retry 3 "$PORTRAIT_URL" --output /tmp/portrait-source
+          test -s /tmp/portrait-source
+          file /tmp/portrait-source
+          wc -c /tmp/portrait-source
+
+      - name: Convert and verify JPEG
+        run: |
+          set -euo pipefail
           python -m pip install --quiet Pillow
           python <<'PY'
           from pathlib import Path
           from PIL import Image
 
-          path = Path('hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-hd.jpg')
-          size = path.stat().st_size
-          if size < 250000:
-              raise SystemExit(f'JPEG unexpectedly small: {size} bytes')
-          with Image.open(path) as image:
+          src = Path('/tmp/portrait-source')
+          dst = Path('hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-hd.jpg')
+
+          with Image.open(src) as image:
               image.load()
-              if image.size != (1152, 1728):
-                  raise SystemExit(f'Unexpected dimensions: {image.size}')
-              if image.format != 'JPEG':
-                  raise SystemExit(f'Unexpected format: {image.format}')
+              print('Downloaded dimensions:', image.size)
+              if image.width < 900 or image.height < 1350:
+                  raise SystemExit(f'Render too small: {image.size}')
+              rgb = image.convert('RGB')
+              if rgb.size != (1152, 1728):
+                  rgb = rgb.resize((1152, 1728), Image.Resampling.LANCZOS)
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              rgb.save(dst, 'JPEG', quality=92, optimize=True, progressive=False, subsampling=0)
+
+          with Image.open(dst) as result:
+              result.load()
+              if result.size != (1152, 1728):
+                  raise SystemExit(f'Unexpected JPEG dimensions: {result.size}')
+
+          size = dst.stat().st_size
+          if size < 180000:
+              raise SystemExit(f'JPEG unexpectedly small: {size} bytes')
           print(f'Portrait verified: 1152x1728, {size} bytes')
           PY
           sha256sum hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-hd.jpg
@@ -50,9 +70,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-hd.jpg
-          if git diff --cached --quiet; then
-            echo 'Portrait already current.'
-            exit 0
-          fi
-          git commit -m 'Restore verified 1152x1728 portrait binary'
+          git commit -m 'Materialize verified 1152x1728 portrait binary'
           git push origin HEAD:fix-hd-portrait-and-maps
