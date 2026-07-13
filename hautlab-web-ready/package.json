@@ -3,8 +3,8 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/materialize-portrait-final.mjs && next dev",
+    "build": "node scripts/materialize-portrait-final.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
