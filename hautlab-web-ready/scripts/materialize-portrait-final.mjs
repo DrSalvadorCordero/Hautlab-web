@@ -6,7 +6,10 @@ const root = process.cwd();
 const sourceDir = path.join(root, "assets-src", "portrait-final");
 const outputDir = path.join(root, "public", "visuals");
 const outputPath = path.join(outputDir, "dr-salvador-cordero-portrait-final.webp");
-const sourceParts = ["part00.b64", "part01.b64", "part02.b64"];
+const sourceParts = Array.from(
+  { length: 12 },
+  (_, index) => `part${String(index).padStart(2, "0")}.b64`
+);
 
 const base64 = (await Promise.all(
   sourceParts.map((part) => readFile(path.join(sourceDir, part), "utf8"))
