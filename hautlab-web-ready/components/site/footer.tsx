@@ -4,7 +4,7 @@ import { CookieSettingsButton } from "@/components/privacy/cookie-settings-butto
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteConfig.address)}`;
+const mapsUrl = "https://maps.app.goo.gl/8CoPkGjpuYDi8QqE6?g_st=ic";
 
 export function Footer() {
   const year = new Date().getFullYear();
