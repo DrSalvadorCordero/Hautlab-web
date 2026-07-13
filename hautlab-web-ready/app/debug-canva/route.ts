@@ -19,3 +19,5 @@ export async function GET() {
     magic: Array.from(bytes.slice(0, 12))
   });
 }
+
+// Deployment probe: 2026-07-13T11:56Z
