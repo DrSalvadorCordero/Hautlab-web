@@ -11,11 +11,22 @@ export async function GET() {
   });
 
   const body = await source.text();
+  const urls = Array.from(body.matchAll(/https?:\\?\/?\\?\/?[^\"'<>\\s]{20,}/g), (match) => match[0])
+    .filter((url) => /canva|amazonaws|thumbnail|document-image|xsf-U|DAHPQgxsf-U/i.test(url))
+    .slice(0, 100);
+  const markers = ["document-image", "DAHPQgxsf-U", "xsf-U", "thumbnail", "media.canva.com", "amazonaws.com"]
+    .map((marker) => ({ marker, index: body.indexOf(marker) }));
+  const contexts = markers
+    .filter(({ index }) => index >= 0)
+    .map(({ marker, index }) => ({ marker, context: body.slice(Math.max(0, index - 500), index + 1500) }));
+
   return Response.json({
     status: source.status,
     url: source.url,
     contentType: source.headers.get("content-type"),
     length: body.length,
-    sample: body.slice(0, 2000)
+    markers,
+    urls,
+    contexts
   });
 }
