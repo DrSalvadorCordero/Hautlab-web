@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { analyticsConfig, generalTrackingPaths } from "@/lib/analytics-config";
 
 type ConsentValue = "accepted" | "rejected";
+type GoogleConsentValue = "granted" | "denied";
+type GtagFunction = (...args: unknown[]) => void;
 type MetaPixelFunction = (...args: unknown[]) => void;
 type QueuedMetaPixel = MetaPixelFunction & {
   callMethod?: MetaPixelFunction;
@@ -18,6 +21,8 @@ type QueuedMetaPixel = MetaPixelFunction & {
 
 declare global {
   interface Window {
+    dataLayer?: unknown[];
+    gtag?: GtagFunction;
     fbq?: MetaPixelFunction;
     _fbq?: MetaPixelFunction;
   }
@@ -25,8 +30,8 @@ declare global {
 
 const STORAGE_KEY = "hautlab_cookie_consent_v1";
 const OPEN_EVENT = "hautlab:open-consent";
-const PIXEL_ID = "1377800767233124";
-const GENERAL_TRACKING_PATHS = new Set<string>(["/", "/pagos"]);
+const GOOGLE_SCRIPT_ID = "hautlab-google-tag";
+const META_SCRIPT_ID = "hautlab-meta-pixel";
 
 function getStoredConsent(): ConsentValue | null {
   try {
@@ -37,16 +42,83 @@ function getStoredConsent(): ConsentValue | null {
   }
 }
 
-function expireMetaCookies() {
+function expireCookies(prefixes: string[]) {
   const host = window.location.hostname.replace(/^www\./, "");
   const domains = ["", window.location.hostname, `.${host}`];
+  const names = document.cookie
+    .split(";")
+    .map((entry) => entry.split("=")[0]?.trim())
+    .filter((name): name is string => Boolean(name))
+    .filter((name) => prefixes.some((prefix) => name.startsWith(prefix)));
 
-  for (const name of ["_fbp", "_fbc"]) {
+  for (const name of names) {
     for (const domain of domains) {
       const domainPart = domain ? `; domain=${domain}` : "";
       document.cookie = `${name}=; Max-Age=0; path=/${domainPart}; SameSite=Lax`;
     }
   }
+}
+
+function ensureGoogleLayer(): GtagFunction {
+  window.dataLayer = window.dataLayer ?? [];
+
+  if (!window.gtag) {
+    window.gtag = function (..._args: unknown[]) {
+      window.dataLayer?.push(arguments);
+    } as GtagFunction;
+  }
+
+  const root = document.documentElement;
+  if (root.dataset.hautlabGoogleConsentDefault !== "true") {
+    window.gtag("consent", "default", {
+      analytics_storage: "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      wait_for_update: 500
+    });
+    root.dataset.hautlabGoogleConsentDefault = "true";
+  }
+
+  return window.gtag;
+}
+
+function setGoogleConsent(value: GoogleConsentValue) {
+  const gtag = ensureGoogleLayer();
+  gtag("consent", "update", {
+    analytics_storage: value,
+    ad_storage: value,
+    ad_user_data: value,
+    ad_personalization: value
+  });
+}
+
+function ensureGoogleTag(): GtagFunction {
+  const gtag = ensureGoogleLayer();
+
+  if (!document.getElementById(GOOGLE_SCRIPT_ID)) {
+    const script = document.createElement("script");
+    script.id = GOOGLE_SCRIPT_ID;
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(analyticsConfig.ga4MeasurementId)}`;
+    document.head.appendChild(script);
+  }
+
+  const root = document.documentElement;
+  if (root.dataset.hautlabGoogleConfigured !== "true") {
+    gtag("js", new Date());
+    gtag("config", analyticsConfig.ga4MeasurementId, {
+      send_page_view: false,
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false
+    });
+    gtag("config", analyticsConfig.googleAdsId, {
+      allow_ad_personalization_signals: false
+    });
+    root.dataset.hautlabGoogleConfigured = "true";
+  }
+
+  return gtag;
 }
 
 function ensureMetaPixel(): MetaPixelFunction {
@@ -70,27 +142,45 @@ function ensureMetaPixel(): MetaPixelFunction {
   window.fbq = queuedPixel;
   window._fbq = queuedPixel;
 
-  const script = document.createElement("script");
-  script.async = true;
-  script.src = "https://connect.facebook.net/en_US/fbevents.js";
-  document.head.appendChild(script);
+  if (!document.getElementById(META_SCRIPT_ID)) {
+    const script = document.createElement("script");
+    script.id = META_SCRIPT_ID;
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    document.head.appendChild(script);
+  }
 
-  queuedPixel("set", "autoConfig", false, PIXEL_ID);
+  queuedPixel("set", "autoConfig", false, analyticsConfig.metaPixelId);
   queuedPixel("consent", "grant");
-  queuedPixel("init", PIXEL_ID);
+  queuedPixel("init", analyticsConfig.metaPixelId);
 
   return queuedPixel;
+}
+
+function normalizeEventName(value: string | undefined) {
+  if (!value) return null;
+  const normalized = value.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").slice(0, 40);
+  return normalized || null;
+}
+
+function isPaymentUrl(url: URL) {
+  return ["buy.stripe.com", "mpago.la", "mercadopago.com", "www.mercadopago.com"].some(
+    (host) => url.hostname === host || url.hostname.endsWith(`.${host}`)
+  );
 }
 
 export function ConsentManager() {
   const pathname = usePathname();
   const currentPath = pathname ?? "/";
   const lastTrackedPath = useRef<string | null>(null);
+  const trackedScrollPaths = useRef(new Set<string>());
+  const trackedEngagementPaths = useRef(new Set<string>());
   const [consent, setConsent] = useState<ConsentValue | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    setGoogleConsent("denied");
     const stored = getStoredConsent();
     setConsent(stored);
     setOpen(stored === null);
@@ -106,44 +196,134 @@ export function ConsentManager() {
   useEffect(() => {
     if (!ready) return;
 
-    const isGeneralPage = GENERAL_TRACKING_PATHS.has(currentPath);
+    const isGeneralPage = generalTrackingPaths.has(currentPath);
 
     if (consent !== "accepted" || !isGeneralPage) {
+      setGoogleConsent("denied");
       window.fbq?.("consent", "revoke");
       lastTrackedPath.current = null;
       return;
     }
 
+    const gtag = ensureGoogleTag();
     const fbq = ensureMetaPixel();
+    setGoogleConsent("granted");
     fbq("consent", "grant");
 
+    const sendGoogleEvent = (eventName: string, parameters: Record<string, unknown> = {}) => {
+      gtag("event", eventName, {
+        page_path: currentPath,
+        ...parameters
+      });
+    };
+
     if (lastTrackedPath.current !== currentPath) {
+      sendGoogleEvent("page_view", {
+        page_title: document.title,
+        page_location: `${window.location.origin}${currentPath}`
+      });
       fbq("track", "PageView");
       lastTrackedPath.current = currentPath;
     }
+
+    const sendLeadConversion = (method: "whatsapp" | "phone" | "form") => {
+      sendGoogleEvent("generate_lead", { method });
+      gtag("event", "conversion", {
+        send_to: `${analyticsConfig.googleAdsId}/${analyticsConfig.googleAdsLeadLabel}`
+      });
+    };
 
     const trackClick = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
 
       const anchor = target.closest("a");
-      if (!anchor) return;
+      if (!(anchor instanceof HTMLAnchorElement)) return;
 
-      const href = anchor.getAttribute("href") ?? "";
-      if (href.includes("wa.me/")) fbq("track", "Lead");
-      if (href.includes("buy.stripe.com") || href.includes("mpago.la")) fbq("track", "InitiateCheckout");
+      const customEvent = normalizeEventName(anchor.dataset.event);
+      if (customEvent) sendGoogleEvent(customEvent, { event_category: "engagement" });
+
+      let url: URL;
+      try {
+        url = new URL(anchor.href, window.location.origin);
+      } catch {
+        return;
+      }
+
+      if (url.hostname === "wa.me" || url.hostname.endsWith("whatsapp.com")) {
+        sendGoogleEvent("whatsapp_click", { link_type: "whatsapp" });
+        sendLeadConversion("whatsapp");
+        fbq("track", "Lead");
+        fbq("trackCustom", "WhatsAppClick");
+        return;
+      }
+
+      if (url.protocol === "tel:") {
+        sendGoogleEvent("phone_click", { link_type: "phone" });
+        sendLeadConversion("phone");
+        fbq("track", "Contact");
+        return;
+      }
+
+      if (url.hostname === "maps.app.goo.gl" || url.pathname.includes("/maps")) {
+        sendGoogleEvent("maps_click", { link_type: "maps" });
+        fbq("trackCustom", "MapClick");
+        return;
+      }
+
+      if (isPaymentUrl(url)) {
+        sendGoogleEvent("payment_click", { payment_provider: url.hostname });
+        sendGoogleEvent("begin_checkout", { payment_provider: url.hostname });
+        fbq("track", "InitiateCheckout");
+        return;
+      }
+
+      if (url.hostname.endsWith("instagram.com")) {
+        sendGoogleEvent("instagram_click", { link_type: "social" });
+      }
+
+      if (url.protocol === "mailto:") {
+        sendGoogleEvent("email_click", { link_type: "email" });
+      }
     };
 
     const trackSubmit = (event: Event) => {
-      if (event.target instanceof HTMLFormElement) fbq("track", "Lead");
+      if (!(event.target instanceof HTMLFormElement)) return;
+      sendGoogleEvent("form_submit", { form_id: event.target.id || "general" });
+      sendLeadConversion("form");
+      fbq("track", "Lead");
     };
+
+    const trackScroll = () => {
+      if (trackedScrollPaths.current.has(currentPath)) return;
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollableHeight <= 0) return;
+      const progress = (window.scrollY / scrollableHeight) * 100;
+      if (progress < 75) return;
+
+      trackedScrollPaths.current.add(currentPath);
+      sendGoogleEvent("scroll_75", { percent_scrolled: 75 });
+      fbq("trackCustom", "Scroll75");
+      window.removeEventListener("scroll", trackScroll);
+    };
+
+    const engagementTimer = window.setTimeout(() => {
+      if (trackedEngagementPaths.current.has(currentPath)) return;
+      trackedEngagementPaths.current.add(currentPath);
+      sendGoogleEvent("engaged_45_seconds", { engagement_time_msec: 45000 });
+      fbq("trackCustom", "Engaged45Seconds");
+    }, 45000);
 
     document.addEventListener("click", trackClick, true);
     document.addEventListener("submit", trackSubmit, true);
+    window.addEventListener("scroll", trackScroll, { passive: true });
+    trackScroll();
 
     return () => {
       document.removeEventListener("click", trackClick, true);
       document.removeEventListener("submit", trackSubmit, true);
+      window.removeEventListener("scroll", trackScroll);
+      window.clearTimeout(engagementTimer);
     };
   }, [consent, currentPath, ready]);
 
@@ -155,8 +335,9 @@ export function ConsentManager() {
     }
 
     if (value === "rejected") {
+      setGoogleConsent("denied");
       window.fbq?.("consent", "revoke");
-      expireMetaCookies();
+      expireCookies(["_ga", "_gid", "_gat", "_gcl_", "_fbp", "_fbc"]);
     }
 
     setConsent(value);
@@ -175,7 +356,7 @@ export function ConsentManager() {
           <div>
             <p id="cookie-title" className="text-base font-medium text-bone">Privacidad y analítica</p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              HAUTLAB usa analítica publicitaria opcional para medir visitas generales, solicitudes por WhatsApp y clics de pago. No se activa en páginas de condiciones o procedimientos específicos y no enviamos nombres, mensajes, diagnósticos ni datos clínicos.
+              HAUTLAB usa Google Analytics, Google Ads y Meta Pixel de forma opcional para medir visitas generales, solicitudes por WhatsApp, llamadas, ubicación y clics de pago. No se activa en páginas de condiciones o procedimientos específicos y no enviamos nombres, mensajes, diagnósticos ni datos clínicos.
             </p>
             <p className="mt-2 text-xs leading-5 text-quiet">
               Puedes cambiar tu decisión después desde el footer. Consulta el <Link href="/aviso-de-privacidad" className="text-bone underline decoration-line underline-offset-4">aviso de privacidad</Link>.
