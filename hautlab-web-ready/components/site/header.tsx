@@ -84,8 +84,8 @@ function AreaGrid({ compact = false }: { compact?: boolean }) {
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-background/82 backdrop-blur-2xl">
-      <div className="mx-auto flex min-h-20 w-[min(1180px,calc(100%-32px))] items-center justify-between gap-4 sm:gap-6">
+    <header className="relative z-50 border-b border-line bg-background/92 backdrop-blur-2xl lg:sticky lg:top-0">
+      <div className="mx-auto flex min-h-16 w-[min(1180px,calc(100%-32px))] items-center justify-between gap-4 sm:min-h-20 sm:gap-6">
         <Link href="/" className="group min-w-0 leading-none" aria-label="HAUTLAB, página de inicio">
           <span className="block text-xs font-medium uppercase tracking-[0.28em] text-bone">HAUTLAB</span>
           <span className="mt-1 block truncate text-[10px] uppercase tracking-[0.14em] text-muted sm:text-[11px] sm:tracking-[0.18em]">Dr. Salvador Cordero</span>
