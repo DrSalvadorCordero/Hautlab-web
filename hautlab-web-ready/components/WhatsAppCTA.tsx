@@ -1,7 +1,6 @@
 "use client";
 
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import { trackEvent } from "@/lib/tracking";
 
 export function WhatsAppCTA() {
   return (
@@ -10,7 +9,7 @@ export function WhatsAppCTA() {
       href={buildWhatsAppLink()}
       target="_blank"
       rel="noreferrer"
-      onClick={() => trackEvent("whatsapp_click", { location: "floating_cta" })}
+      data-event="whatsapp_floating_cta"
     >
       Agendar por WhatsApp
     </a>
