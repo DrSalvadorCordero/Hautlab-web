@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import { trackEvent } from "@/lib/tracking";
 
 export function LeadForm() {
   const [name, setName] = useState("");
@@ -11,7 +10,6 @@ export function LeadForm() {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    trackEvent("lead_submit", { location: "contact_form", interest });
 
     const text = [
       "Hola, quiero agendar una valoración con el Dr. Salvador Cordero.",
@@ -26,7 +24,7 @@ export function LeadForm() {
   }
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
+    <form id="lead-form" className="form" onSubmit={handleSubmit}>
       <input
         className="input"
         type="text"
