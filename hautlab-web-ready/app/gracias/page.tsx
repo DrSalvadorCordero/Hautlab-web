@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Gracias | Dr. Salvador Cordero",
-  description: "Gracias por contactar al consultorio del Dr. Salvador Cordero."
+  description: "Gracias por contactar al consultorio del Dr. Salvador Cordero.",
+  robots: { index: false, follow: false }
 };
 
 export default function ThanksPage() {

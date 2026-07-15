@@ -9,12 +9,14 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif", display: "swap" });
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: siteConfig.title,
   description: siteConfig.description,
   alternates: { canonical: siteConfig.url },
+  verification: googleSiteVerification ? { google: googleSiteVerification } : undefined,
   openGraph: {
     title: siteConfig.title,
     description: siteConfig.description,
