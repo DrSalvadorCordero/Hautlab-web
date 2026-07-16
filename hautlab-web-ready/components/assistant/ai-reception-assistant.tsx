@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Bot, ExternalLink, Loader2, MessageCircle, Send, ShieldCheck, Sparkles, X } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { assistantQuickQuestions, assistantWelcome } from "@/lib/assistant-knowledge";
 import { trackHautlabEvent } from "@/lib/client-analytics";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -108,11 +108,12 @@ export function AIReceptionAssistant() {
       });
 
       const payload = (await response.json()) as AssistantApiResponse;
-      if (!response.ok || !payload.reply) {
+      const reply = payload.reply;
+      if (!response.ok || !reply) {
         throw new Error(payload.error || "No pude responder en este momento.");
       }
 
-      setMessages((current) => [...current, createMessage("assistant", payload.reply as string)]);
+      setMessages((current) => [...current, createMessage("assistant", reply)]);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -122,11 +123,6 @@ export function AIReceptionAssistant() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void sendMessage(input);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -248,7 +244,7 @@ export function AIReceptionAssistant() {
               </a>
             )}
 
-            <form onSubmit={handleSubmit} className="flex items-end gap-2">
+            <div className="flex items-end gap-2">
               <label htmlFor="hautlab-assistant-input" className="sr-only">
                 Escribe tu pregunta
               </label>
@@ -265,14 +261,15 @@ export function AIReceptionAssistant() {
                 disabled={loading}
               />
               <button
-                type="submit"
+                type="button"
+                onClick={() => void sendMessage(input)}
                 disabled={loading || !input.trim()}
                 className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-champagne text-background transition hover:bg-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/50 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Enviar pregunta"
               >
                 <Send className="h-4 w-4" />
               </button>
-            </form>
+            </div>
 
             <div className="mt-3 flex items-start gap-2 text-[10px] leading-4 text-quiet">
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
