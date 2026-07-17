@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { buildAssistantInstructions } from "@/lib/assistant-knowledge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Temporary connectivity check for the preview environment.
+// Temporary smoke test for the preview environment.
 export async function GET() {
   const rawApiKey = process.env.OPENAI_API_KEY;
   const apiKey = rawApiKey?.trim();
@@ -33,16 +34,43 @@ export async function GET() {
       body: JSON.stringify({
         model,
         store: false,
-        input: "Responde únicamente: OK",
-        max_output_tokens: 32
+        instructions: buildAssistantInstructions(),
+        input: [
+          {
+            role: "user",
+            content: "¿Cuánto cuesta la consulta dermatológica?"
+          }
+        ],
+        reasoning: { effort: "low" },
+        max_output_tokens: 420
       }),
       signal: AbortSignal.timeout(20_000)
     });
 
+    if (!response.ok) {
+      return NextResponse.json(
+        { status: "openai_error", httpStatus: response.status },
+        { status: 502, headers: { "Cache-Control": "no-store, max-age=0" } }
+      );
+    }
+
+    const payload = (await response.json()) as {
+      output_text?: string;
+      output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
+    };
+
+    const reply =
+      payload.output_text?.trim() ||
+      payload.output
+        ?.flatMap((item) => item.content ?? [])
+        .find((content) => content.type === "output_text" && content.text?.trim())
+        ?.text?.trim() ||
+      null;
+
     return NextResponse.json(
-      { status: response.ok ? "ready" : "openai_error", httpStatus: response.status },
+      { status: reply ? "ready" : "empty_response", reply },
       {
-        status: response.ok ? 200 : 502,
+        status: reply ? 200 : 502,
         headers: { "Cache-Control": "no-store, max-age=0" }
       }
     );
