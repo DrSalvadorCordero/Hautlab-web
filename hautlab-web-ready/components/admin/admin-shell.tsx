@@ -42,7 +42,7 @@ export function AdminShell({
                 }
               }}
             />
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </header>
