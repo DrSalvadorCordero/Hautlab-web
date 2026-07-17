@@ -4,12 +4,20 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const rawApiKey = process.env.OPENAI_API_KEY;
+  const apiKey = rawApiKey?.trim();
   const model = process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-5-mini";
 
-  if (!apiKey || /\s/.test(apiKey)) {
+  if (!apiKey) {
     return NextResponse.json(
-      { status: "invalid_configuration" },
+      { status: "missing_key" },
+      { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
+  }
+
+  if (/\s/.test(apiKey) || rawApiKey !== apiKey) {
+    return NextResponse.json(
+      { status: "invalid_key_format" },
       { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } }
     );
   }
