@@ -12,8 +12,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         variables: {
           colorPrimary: "#c5a46d",
           colorBackground: "#151311",
-          colorText: "#f5efe6",
-          colorTextSecondary: "#aaa198",
+          colorForeground: "#f5efe6",
+          colorMutedForeground: "#aaa198",
           borderRadius: "1rem"
         }
       }}
