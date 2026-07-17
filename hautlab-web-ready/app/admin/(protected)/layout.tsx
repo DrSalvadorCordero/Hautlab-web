@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { getAdminAccess } from "@/lib/admin-access";
@@ -37,9 +38,9 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
           <p className="mt-5 leading-7 text-muted">
             Un administrador debe invitar esta cuenta a la organización antes de que pueda entrar al panel.
           </p>
-          <a href="/" className="mt-8 inline-flex rounded-full border border-line px-5 py-3 text-sm transition hover:border-champagne hover:text-champagne">
+          <Link href="/" className="mt-8 inline-flex rounded-full border border-line px-5 py-3 text-sm transition hover:border-champagne hover:text-champagne">
             Volver al sitio
-          </a>
+          </Link>
         </section>
       </main>
     );
