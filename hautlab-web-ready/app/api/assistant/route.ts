@@ -181,8 +181,9 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey || /\s/.test(apiKey)) {
+    console.error("HAUTLAB assistant configuration error", { reason: "invalid_api_key_format" });
     return json(
       { error: "El asistente está temporalmente fuera de servicio. Puedes continuar por WhatsApp." },
       503
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_CHAT_MODEL ?? "gpt-5.6-luna",
+        model: process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-5-mini",
         store: false,
         instructions: buildAssistantInstructions(),
         input: messages,
