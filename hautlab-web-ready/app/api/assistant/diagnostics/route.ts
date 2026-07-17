@@ -34,7 +34,7 @@ export async function GET() {
         model,
         store: false,
         input: "Responde únicamente: OK",
-        max_output_tokens: 8
+        max_output_tokens: 32
       }),
       signal: AbortSignal.timeout(20_000)
     });
