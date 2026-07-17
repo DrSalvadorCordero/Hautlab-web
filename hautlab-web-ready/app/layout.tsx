@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
+import { AIReceptionAssistant } from "@/components/assistant/ai-reception-assistant";
 import { ConsentManager } from "@/components/privacy/consent-manager";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
@@ -88,6 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
         <Footer />
+        <AIReceptionAssistant />
         <ConsentManager />
         <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>

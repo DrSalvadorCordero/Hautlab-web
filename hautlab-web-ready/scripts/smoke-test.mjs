@@ -53,6 +53,7 @@ async function main() {
 
   const homeResponse = await request("/");
   const homeHtml = await homeResponse.text();
+  record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
 
@@ -75,6 +76,27 @@ async function main() {
     "Permissions-Policy bloquea cámara, micrófono y geolocalización"
   );
 
+  const invalidAssistantResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: [] })
+  });
+  record(invalidAssistantResponse.status === 400, "el asistente rechaza conversaciones inválidas");
+
+  const emergencyAssistantResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "Tengo pérdida súbita de visión" }]
+    })
+  });
+  const emergencyAssistantPayload = await emergencyAssistantResponse.json();
+  record(emergencyAssistantResponse.status === 200, "el asistente responde sin IA ante una urgencia");
+  record(
+    typeof emergencyAssistantPayload.reply === "string" && emergencyAssistantPayload.reply.includes("urgencias"),
+    "el asistente canaliza señales de alarma a urgencias"
+  );
+
   const robotsResponse = await request("/robots.txt");
   const robots = await robotsResponse.text();
   record(robotsResponse.status === 200, "/robots.txt responde 200");
@@ -95,7 +117,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, redirecciones, privacidad, cabeceras y 404 validados.`);
+  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, asistente, redirecciones, privacidad, cabeceras y 404 validados.`);
 }
 
 main().catch((error) => {
