@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Temporary connectivity check for the preview environment.
 export async function GET() {
   const rawApiKey = process.env.OPENAI_API_KEY;
   const apiKey = rawApiKey?.trim();
