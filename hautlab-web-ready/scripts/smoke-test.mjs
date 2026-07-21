@@ -36,8 +36,10 @@ async function main() {
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  record(locs.length === 27, `sitemap contiene 27 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.length === 29, `sitemap contiene 29 URLs canónicas (encontradas: ${locs.length})`);
   record(locs.includes(`${productionOrigin}/contacto`), "sitemap incluye la página de contacto");
+  record(locs.includes(`${productionOrigin}/cabina`), "sitemap incluye la Cabina Dermatocosmética");
+  record(locs.includes(`${productionOrigin}/cabina/karen-cruz`), "sitemap incluye el perfil de Karen Cruz");
 
   for (const loc of locs) {
     const productionUrl = new URL(loc);
@@ -54,8 +56,22 @@ async function main() {
   const homeResponse = await request("/");
   const homeHtml = await homeResponse.text();
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
+  record(homeHtml.includes("Cabina Dermatocosmética"), "la navegación pública incluye la cabina");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
+
+  const cabinaResponse = await request("/cabina");
+  const cabinaHtml = await cabinaResponse.text();
+  record(cabinaResponse.status === 200, "/cabina responde 200");
+  record(cabinaHtml.includes("Cabina Dermatocosmética HAUTLAB"), "/cabina muestra el H1 aprobado");
+  record(cabinaHtml.includes("Karen Cruz"), "/cabina identifica a Karen Cruz");
+  record(cabinaHtml.includes("Cédula Profesional 11804418"), "/cabina muestra el respaldo médico");
+  record(cabinaHtml.includes("HealthAndBeautyBusiness"), "/cabina publica schema de la unidad");
+
+  const karenResponse = await request("/cabina/karen-cruz");
+  const karenHtml = await karenResponse.text();
+  record(karenResponse.status === 200, "/cabina/karen-cruz responde 200");
+  record(karenHtml.includes("Coordinadora de Cabina Dermatocosmética HAUTLAB"), "el perfil conserva la jerarquía de HAUTLAB");
 
   const expectedHeaders = {
     "x-content-type-options": "nosniff",
@@ -117,7 +133,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, asistente, redirecciones, privacidad, cabeceras y 404 validados.`);
+  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, cabina, asistente, redirecciones, privacidad, cabeceras y 404 validados.`);
 }
 
 main().catch((error) => {
