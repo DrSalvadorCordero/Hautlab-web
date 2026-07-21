@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Settings, Sparkles, Users } from "lucide-react";
 
 const navigation = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard },
+  { href: "/admin/cabina", label: "Cabina", icon: Sparkles },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings }
 ];
