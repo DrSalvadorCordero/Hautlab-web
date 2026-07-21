@@ -6,4 +6,4 @@ export const analyticsConfig = {
   metaPixelId: process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "849809287547294"
 } as const;
 
-export const generalTrackingPaths = new Set(["/", "/pagos", "/contacto", "/gracias"]);
+export const generalTrackingPaths = new Set(["/", "/pagos", "/contacto", "/gracias", "/cabina", "/cabina/karen-cruz"]);
