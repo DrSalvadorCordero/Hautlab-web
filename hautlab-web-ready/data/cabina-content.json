@@ -26,10 +26,28 @@
       "El enfoque no consiste en aplicar tratamientos estandarizados, sino en seleccionar y ajustar cada protocolo con precisión."
     ]
   },
+  "booking": {
+    "generalMessage": "Hola, me gustaría recibir información y agendar una valoración para la Cabina Dermatocosmética de HAUTLAB.",
+    "informationMessage": "Hola, me gustaría recibir información sobre la Cabina Dermatocosmética de HAUTLAB.",
+    "primaryLabel": "Reservar valoración",
+    "servicesLabel": "Conocer los tratamientos"
+  },
   "hours": [
     "Atención únicamente con cita previa.",
     "Disponibilidad y horarios de cabina confirmados por WhatsApp."
   ],
+  "promotions": [],
+  "reviews": [],
   "reviewsPlaceholder": "Las opiniones verificadas de pacientes de la Cabina Dermatocosmética serán publicadas próximamente.",
-  "updatedAt": "2026-07-20"
+  "gallery": [
+    { "id": "karen-portrait", "label": "Retrato profesional de Karen", "path": null },
+    { "id": "cabin-preparation", "label": "Karen preparando la cabina", "path": null },
+    { "id": "non-invasive-protocol", "label": "Karen realizando un protocolo no invasivo", "path": null },
+    { "id": "space-details", "label": "Detalles del espacio", "path": null },
+    { "id": "organized-products", "label": "Productos organizados", "path": null },
+    { "id": "prepared-bed", "label": "Camilla preparada", "path": null },
+    { "id": "hautlab-signage", "label": "Fachada o señalización de HAUTLAB", "path": null },
+    { "id": "medical-backing", "label": "Imagen del Dr. Salvador Cordero para respaldo médico", "path": "/visuals/dr-salvador-cordero-portrait-final.webp" }
+  ],
+  "updatedAt": "2026-07-21"
 }
