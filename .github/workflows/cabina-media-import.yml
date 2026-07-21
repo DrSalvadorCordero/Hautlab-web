@@ -1,0 +1,81 @@
+name: Import Cabina media
+
+on:
+  push:
+    branches:
+      - chore/cabina-media
+    paths:
+      - "media-parts/**"
+      - ".github/workflows/cabina-media-import.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import-media:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: chore/cabina-media
+          fetch-depth: 0
+
+      - name: Decode approved WebP images
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p hautlab-web-ready/public/visuals/cabina
+          for name in \
+            karen-portrait \
+            cabin-preparation \
+            non-invasive-protocol \
+            space-details \
+            organized-products \
+            prepared-bed \
+            hautlab-signage
+          do
+            cat media-parts/${name}.part-* | tr -d '\n\r ' | base64 --decode > hautlab-web-ready/public/visuals/cabina/${name}.webp
+            file hautlab-web-ready/public/visuals/cabina/${name}.webp
+          done
+
+      - name: Connect images to Cabina content
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          path = Path("hautlab-web-ready/data/cabina-content.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          public = "/visuals/cabina/"
+          mapping = {
+              "karen-portrait": public + "karen-portrait.webp",
+              "cabin-preparation": public + "cabin-preparation.webp",
+              "non-invasive-protocol": public + "non-invasive-protocol.webp",
+              "space-details": public + "space-details.webp",
+              "organized-products": public + "organized-products.webp",
+              "prepared-bed": public + "prepared-bed.webp",
+              "hautlab-signage": public + "hautlab-signage.webp",
+          }
+          data["coordinator"]["photo"] = mapping["karen-portrait"]
+          for item in data["gallery"]:
+              if item["id"] in mapping:
+                  item["path"] = mapping[item["id"]]
+          data["updatedAt"] = "2026-07-21"
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+      - name: Remove temporary import material
+        shell: bash
+        run: |
+          rm -rf media-parts
+          rm -f .github/workflows/cabina-media-import.yml
+
+      - name: Commit imported media
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "media: add approved Cabina imagery"
+          git push origin HEAD:chore/cabina-media
