@@ -17,6 +17,30 @@ export type CabinaFaqItem = {
   answer: string;
 };
 
+export type CabinaPromotion = {
+  id: string;
+  title: string;
+  description: string;
+  validUntil: string;
+  visible: boolean;
+};
+
+export type CabinaReview = {
+  id: string;
+  initials: string;
+  quote: string;
+  service: string;
+  date: string;
+  sourceUrl: string;
+  visible: boolean;
+};
+
+export type CabinaGalleryItem = {
+  id: string;
+  label: string;
+  path: string | null;
+};
+
 export type CabinaCoreContent = {
   unitName: string;
   displayBrand: string;
@@ -42,8 +66,17 @@ export type CabinaCoreContent = {
     title: string;
     paragraphs: string[];
   };
+  booking: {
+    generalMessage: string;
+    informationMessage: string;
+    primaryLabel: string;
+    servicesLabel: string;
+  };
   hours: string[];
+  promotions: CabinaPromotion[];
+  reviews: CabinaReview[];
   reviewsPlaceholder: string;
+  gallery: CabinaGalleryItem[];
   updatedAt: string;
 };
 
@@ -63,3 +96,5 @@ export const cabinaContent: CabinaContent = {
 };
 
 export const visibleCabinaServices = services.filter((service) => service.visible);
+export const visibleCabinaPromotions = core.promotions.filter((promotion) => promotion.visible);
+export const visibleCabinaReviews = core.reviews.filter((review) => review.visible);
