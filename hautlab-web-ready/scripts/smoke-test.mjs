@@ -72,6 +72,9 @@ async function main() {
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
   record(homeHtml.includes("Cabina Dermatocosmética"), "la navegación pública incluye la cabina");
   record(homeHtml.includes("href=\"/en\""), "la navegación española expone la versión inglesa");
+  record(hasLanguageAlternate(homeHtml, "es-MX", productionOrigin), "la portada declara alterna en español");
+  record(hasLanguageAlternate(homeHtml, "en", `${productionOrigin}/en`), "la portada declara alterna en inglés");
+  record(hasLanguageAlternate(homeHtml, "x-default", productionOrigin), "la portada declara x-default");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
 
@@ -119,6 +122,8 @@ async function main() {
   record(cabinaHtml.includes("Karen Cruz"), "/cabina identifica a Karen Cruz");
   record(cabinaHtml.includes("Cédula Profesional 11804418"), "/cabina muestra el respaldo médico");
   record(cabinaHtml.includes("HealthAndBeautyBusiness"), "/cabina publica schema de la unidad");
+  record(!hasLanguageAlternate(cabinaHtml, "en", `${productionOrigin}/en`), "/cabina no declara una traducción inglesa inexistente");
+  record(!hasLanguageAlternate(cabinaHtml, "x-default", productionOrigin), "/cabina no hereda x-default de la portada");
 
   const karenResponse = await request("/cabina/karen-cruz");
   const karenHtml = await karenResponse.text();
