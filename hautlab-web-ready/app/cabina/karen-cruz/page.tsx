@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ImageIcon, ShieldCheck, Stethoscope, UserRound } from "lucide-react";
+import { ArrowRight, ShieldCheck, Stethoscope, UserRound } from "lucide-react";
 import { CabinaAnalytics } from "@/components/cabina/cabina-analytics";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -27,14 +27,20 @@ export const metadata: Metadata = {
 };
 
 export default function KarenCruzPage() {
+  const karenPhoto = cabinaContent.coordinator.photo ?? cabinaContent.gallery.find((item) => item.id === "karen-portrait")?.path ?? null;
+  const doctorPhoto = cabinaContent.gallery.find((item) => item.id === "medical-backing")?.path ?? "/visuals/dr-salvador-cordero-portrait-final.webp";
+
   const personJsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `${pageUrl}#person`,
     name: cabinaContent.coordinator.name,
-    jobTitle: "Coordinadora de Cabina Dermatocosmética HAUTLAB",
+    jobTitle: cabinaContent.coordinator.role,
     url: pageUrl,
+    image: karenPhoto ? `${siteConfig.url}${karenPhoto}` : undefined,
     worksFor: {
       "@type": "MedicalClinic",
+      "@id": `${siteConfig.url}#clinic`,
       name: "HAUTLAB",
       url: siteConfig.url
     },
@@ -59,18 +65,22 @@ export default function KarenCruzPage() {
       <section className="border-b border-line bg-aurora py-16 lg:py-24">
         <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-10 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
           <div className="relative min-h-[560px] overflow-hidden rounded-[2rem] border border-line bg-[#11100e] shadow-calm">
-            <div className="absolute inset-0 grid place-items-center p-8 text-center">
-              <div>
-                <UserRound className="mx-auto h-14 w-14 text-champagne" />
-                <p className="mt-6 text-xs uppercase tracking-[0.2em] text-champagne">Retrato profesional pendiente</p>
-                <p className="mx-auto mt-4 max-w-sm text-sm leading-7 text-muted">Se utilizará una fotografía real de Karen con uniforme clínico sobrio, fondo HAUTLAB y luz editorial.</p>
+            {karenPhoto ? (
+              <Image src={karenPhoto} alt="Karen Cruz, coordinadora de la Cabina Dermatocosmética de HAUTLAB" fill priority sizes="(max-width: 1024px) 100vw, 44vw" className="object-cover" />
+            ) : (
+              <div className="absolute inset-0 grid place-items-center p-8 text-center">
+                <div>
+                  <UserRound className="mx-auto h-14 w-14 text-champagne" />
+                  <p className="mt-6 text-xs uppercase tracking-[0.2em] text-champagne">Retrato profesional pendiente</p>
+                  <p className="mx-auto mt-4 max-w-sm text-sm leading-7 text-muted">Se utilizará una fotografía real de Karen con uniforme clínico sobrio, fondo HAUTLAB y luz editorial.</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-champagne">HAUTLAB · Cabina Dermatocosmética</p>
-            <h1 className="mt-5 font-serif text-[clamp(3.3rem,7vw,6.4rem)] leading-[.9] tracking-[-.065em] text-bone">Karen Cruz</h1>
+            <h1 className="mt-5 font-serif text-[clamp(3.3rem,7vw,6.4rem)] leading-[.9] tracking-[-.065em] text-bone">{cabinaContent.coordinator.name}</h1>
             <p className="mt-5 text-lg font-medium text-bone">{cabinaContent.coordinator.role}</p>
             <p className="mt-7 max-w-3xl text-base leading-8 text-muted">{cabinaContent.coordinator.description}</p>
             <Card className="mt-7 p-6">
@@ -79,8 +89,8 @@ export default function KarenCruzPage() {
             </Card>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href={buildWhatsAppLink("Hola, me gustaría agendar con la Cabina Dermatocosmética de HAUTLAB coordinada por Karen Cruz.")} target="_blank" rel="noreferrer" data-event="cabina_karen_reserve">
-                  Reservar valoración <ArrowRight className="h-4 w-4" />
+                <a href={buildWhatsAppLink(cabinaContent.booking.generalMessage)} target="_blank" rel="noreferrer" data-event="cabina_karen_reserve">
+                  {cabinaContent.booking.primaryLabel} <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg"><Link href="/cabina">Ver servicios</Link></Button>
@@ -128,7 +138,7 @@ export default function KarenCruzPage() {
           </div>
 
           <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-line bg-soft shadow-calm">
-            <Image src="/visuals/dr-salvador-cordero-portrait-final.webp" alt="Dr. Salvador Cordero, dirección clínica de HAUTLAB en Mérida" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover" />
+            <Image src={doctorPhoto} alt="Dr. Salvador Cordero, dirección clínica de HAUTLAB en Mérida" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-background/65 via-transparent to-transparent" />
           </div>
         </div>
