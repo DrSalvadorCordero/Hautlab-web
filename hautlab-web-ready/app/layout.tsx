@@ -4,6 +4,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ConsentManager } from "@/components/privacy/consent-manager";
+import { ConsentManagerEn } from "@/components/privacy/consent-manager-en";
 import { SiteShell } from "@/components/site/site-shell";
 import { siteConfig } from "@/lib/siteConfig";
 import "./globals.css";
@@ -109,7 +110,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {isEnglish ? "Skip to content" : "Saltar al contenido"}
           </a>
           <SiteShell>{children}</SiteShell>
-          <ConsentManager />
+          {isEnglish ? <ConsentManagerEn /> : <ConsentManager />}
           <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         </AuthProvider>
       </body>
