@@ -15,10 +15,17 @@ export function Footer() {
       <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-10 py-12 lg:grid-cols-[1.05fr_.95fr]">
         <div className="space-y-8">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-bone">HAUTLAB + Dr. Salvador Cordero</p>
+            <p className="text-xs uppercase tracking-[0.28em] text-bone">HAUTLAB | Dermatología, Medicina Estética y Cabina Dermatocosmética</p>
             <p className="mt-4 max-w-xl text-sm leading-7">
-              {siteConfig.tagline} Valoración de piel y diseño facial con diagnóstico primero, procedimientos por indicación y resultados sobrios.
+              {siteConfig.tagline} Valoración de piel, diseño facial y protocolos dermatocosméticos con criterio, seguimiento y resultados sobrios.
             </p>
+            <div className="mt-5 space-y-1 text-xs leading-5 text-quiet">
+              <p className="text-bone">Dr. Salvador Cordero</p>
+              <p>Médico Cirujano · Dermatología Clínica y Estética</p>
+              <p>Cédula Profesional 11804418</p>
+              <p className="pt-2">Cabina Dermatocosmética coordinada por Karen Cruz.</p>
+              <p>Atención únicamente con cita previa.</p>
+            </div>
           </div>
 
           <div className="grid gap-4 text-sm sm:grid-cols-2">
@@ -30,7 +37,7 @@ export function Footer() {
             <div className="rounded-3xl border border-line bg-white/[0.03] p-5">
               <Clock className="mb-4 h-5 w-5 text-champagne" />
               <p className="text-bone">Horarios</p>
-              <p className="mt-2 leading-6">{siteConfig.hours}</p>
+              <p className="mt-2 leading-6">Atención únicamente con cita previa. Los horarios de la cabina se confirman de manera independiente.</p>
             </div>
           </div>
 
@@ -38,6 +45,7 @@ export function Footer() {
             <a className={`${linkClass} text-bone`} href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
               WhatsApp {siteConfig.whatsappDisplay}
             </a>
+            <Link className={linkClass} href="/cabina" data-event="cabina_footer_link">Cabina Dermatocosmética</Link>
             <a className={linkClass} href={siteConfig.instagram} target="_blank" rel="noreferrer">
               <Instagram className="mr-2 inline h-4 w-4" /> {siteConfig.instagramHandle}
             </a>
@@ -52,7 +60,7 @@ export function Footer() {
             <p className="text-xs uppercase tracking-[0.2em] text-champagne">Ubicación</p>
             <h2 className="mt-5 font-serif text-[clamp(2.4rem,5vw,4.4rem)] leading-[.92] tracking-[-.055em] text-bone">San Ramón Norte.</h2>
             <p className="mt-6 max-w-md text-sm leading-7 text-muted">
-              Consulta privada en Mérida. El mapa no se carga automáticamente; se abre únicamente cuando decides consultarlo.
+              HAUTLAB y su Cabina Dermatocosmética operan dentro de la misma dirección física en Mérida. El mapa se abre únicamente cuando decides consultarlo.
             </p>
           </div>
           <a className="mt-8 inline-flex w-fit items-center gap-2 text-sm text-bone transition hover:text-champagne" href={mapsUrl} target="_blank" rel="noreferrer">
@@ -66,7 +74,7 @@ export function Footer() {
           <p>© {year} HAUTLAB. Todos los derechos reservados.</p>
           <p className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-champagne" />
-            Información orientativa. No sustituye una valoración médica individual.
+            Información orientativa. La cabina no sustituye una valoración médica individual.
           </p>
         </div>
       </div>
