@@ -13,11 +13,27 @@ async function request(path, options = {}) {
   return fetch(url, { redirect: "manual", ...options });
 }
 
+function attributeFromTag(tag, name) {
+  const match = tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, "i"));
+  return match?.[1] || null;
+}
+
 function canonicalFromHtml(html) {
-  const relFirst = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i);
-  if (relFirst) return relFirst[1];
-  const hrefFirst = html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i);
-  return hrefFirst?.[1] || null;
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => match[0]);
+  const canonical = links.find((tag) => attributeFromTag(tag, "rel")?.toLowerCase() === "canonical");
+  return canonical ? attributeFromTag(canonical, "href") : null;
+}
+
+function hasLanguageAlternate(html, language, expectedHref) {
+  const normalizedLanguage = language.toLowerCase();
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => match[0]);
+
+  return links.some((tag) => {
+    const rel = attributeFromTag(tag, "rel")?.toLowerCase().split(/\s+/) ?? [];
+    const hrefLang = attributeFromTag(tag, "hreflang")?.toLowerCase();
+    const href = attributeFromTag(tag, "href");
+    return rel.includes("alternate") && hrefLang === normalizedLanguage && href === expectedHref;
+  });
 }
 
 async function checkRedirect(path, expectedPath, allowedStatuses = [307, 308]) {
@@ -65,8 +81,8 @@ async function main() {
   record(/<html[^>]*lang=["']en["']/i.test(englishHtml), "/en declara el idioma HTML en inglés");
   record(canonicalFromHtml(englishHtml) === `${productionOrigin}/en`, "/en declara canonical internacional correcto");
   record(englishHtml.includes("Clinical judgment. Restrained aesthetics."), "/en muestra el posicionamiento internacional aprobado");
-  record(englishHtml.includes("hreflang=\"es-MX\""), "/en declara alterna en español");
-  record(englishHtml.includes("hreflang=\"x-default\""), "/en declara x-default");
+  record(hasLanguageAlternate(englishHtml, "es-MX", productionOrigin), "/en declara alterna en español");
+  record(hasLanguageAlternate(englishHtml, "x-default", productionOrigin), "/en declara x-default");
   record(!englishHtml.includes("Pregunta a HAUTLAB"), "la versión inglesa no monta el asistente exclusivamente español");
   record(englishHtml.includes("Mexican Professional License 11804418"), "/en conserva la identificación profesional");
 
