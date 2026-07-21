@@ -1,27 +1,62 @@
+import { headers } from "next/headers";
 import Image from "next/image";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Languages, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-export function HeroSection() {
+function personalizedCopy(audience: string | null) {
+  if (audience === "quintana-roo") {
+    return {
+      eyebrow: "HAUTLAB · Atención en Mérida para pacientes de Quintana Roo",
+      title: "Dermatología clínica y medicina estética en Mérida, con coordinación previa al viaje.",
+      triad: "Valoración médica, procedimientos por indicación y seguimiento definido antes de regresar.",
+      note: "Cancún, Playa del Carmen, Tulum y otras ciudades de Quintana Roo pueden coordinar disponibilidad antes de trasladarse."
+    };
+  }
+
+  if (audience === "campeche") {
+    return {
+      eyebrow: "HAUTLAB · Atención en Mérida para pacientes de Campeche",
+      title: "Piel y diseño facial en Mérida, con un plan clínico antes de viajar.",
+      triad: "Diagnóstico primero. Tiempos realistas. Seguimiento claramente definido.",
+      note: "La valoración y las posibilidades de tratamiento el mismo día se coordinan antes del traslado."
+    };
+  }
+
+  return {
+    eyebrow: "HAUTLAB + Dr. Salvador Cordero",
+    title: siteConfig.tagline,
+    triad: siteConfig.triad,
+    note: siteConfig.philosophy
+  };
+}
+
+export async function HeroSection() {
+  const requestHeaders = await headers();
+  const audience = requestHeaders.get("x-hautlab-audience");
+  const copy = personalizedCopy(audience);
+  const internationalVisitor = audience === "international";
+
   return (
-    <section className="relative overflow-hidden border-b border-line bg-aurora">
+    <section className="relative overflow-hidden border-b border-line bg-aurora" data-audience={audience ?? "general"}>
       <div className="absolute inset-0 opacity-25 [background:linear-gradient(90deg,rgba(242,238,231,.06)_1px,transparent_1px),linear-gradient(180deg,rgba(242,238,231,.04)_1px,transparent_1px)] [background-size:72px_72px]" />
       <div className="relative mx-auto grid min-h-[calc(100svh-80px)] w-[min(1180px,calc(100%-32px))] items-center gap-12 py-16 lg:grid-cols-[1.05fr_.95fr] lg:py-20">
         <Reveal>
           <div>
-            <p className="mb-6 text-xs uppercase tracking-[0.28em] text-champagne">HAUTLAB + Dr. Salvador Cordero</p>
+            <p className="mb-6 text-xs uppercase tracking-[0.28em] text-champagne">{copy.eyebrow}</p>
             <h1 className="max-w-4xl font-serif text-[clamp(3.2rem,7vw,6.8rem)] leading-[.9] tracking-[-.065em] text-bone">
-              {siteConfig.tagline}
+              {copy.title}
             </h1>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-muted md:text-xl">
-              {siteConfig.triad}
-            </p>
-            <p className="mt-5 max-w-xl text-base leading-7 text-quiet">
-              {siteConfig.philosophy}
-            </p>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-muted md:text-xl">{copy.triad}</p>
+            <p className="mt-5 max-w-xl text-base leading-7 text-quiet">{copy.note}</p>
+            {internationalVisitor && (
+              <Link href="/en" hrefLang="en" className="mt-6 inline-flex items-center gap-2 rounded-full border border-champagne/35 bg-white/[0.035] px-4 py-2 text-sm text-bone transition hover:border-champagne hover:text-champagne" data-event="english_geo_prompt">
+                <Languages className="h-4 w-4" /> English information for visiting patients
+              </Link>
+            )}
             <div className="mt-9 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <a href={buildWhatsAppLink("Hola, quiero agendar una valoración privada en HAUTLAB.")} target="_blank" rel="noreferrer" data-event="whatsapp_hero_primary">

@@ -3,12 +3,9 @@ const productionOrigin = "https://www.hautlabmx.com";
 const failures = [];
 
 function record(condition, message) {
-  if (condition) {
-    console.log(`✓ ${message}`);
-  } else {
-    failures.push(message);
-    console.error(`✗ ${message}`);
-  }
+  if (condition) return;
+  failures.push(message);
+  console.error(`✗ ${message}`);
 }
 
 async function request(path, options = {}) {
@@ -16,11 +13,27 @@ async function request(path, options = {}) {
   return fetch(url, { redirect: "manual", ...options });
 }
 
+function attributeFromTag(tag, name) {
+  const match = tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, "i"));
+  return match?.[1] || null;
+}
+
 function canonicalFromHtml(html) {
-  const relFirst = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i);
-  if (relFirst) return relFirst[1];
-  const hrefFirst = html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i);
-  return hrefFirst?.[1] || null;
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => match[0]);
+  const canonical = links.find((tag) => attributeFromTag(tag, "rel")?.toLowerCase() === "canonical");
+  return canonical ? attributeFromTag(canonical, "href") : null;
+}
+
+function hasLanguageAlternate(html, language, expectedHref) {
+  const normalizedLanguage = language.toLowerCase();
+  const links = [...html.matchAll(/<link\b[^>]*>/gi)].map((match) => match[0]);
+
+  return links.some((tag) => {
+    const rel = attributeFromTag(tag, "rel")?.toLowerCase().split(/\s+/) ?? [];
+    const hrefLang = attributeFromTag(tag, "hreflang")?.toLowerCase();
+    const href = attributeFromTag(tag, "href");
+    return rel.includes("alternate") && hrefLang === normalizedLanguage && href === expectedHref;
+  });
 }
 
 async function checkRedirect(path, expectedPath, allowedStatuses = [307, 308]) {
@@ -36,7 +49,8 @@ async function main() {
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  record(locs.length === 29, `sitemap contiene 29 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.length === 30, `sitemap contiene 30 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.includes(`${productionOrigin}/en`), "sitemap incluye la versión internacional en inglés");
   record(locs.includes(`${productionOrigin}/contacto`), "sitemap incluye la página de contacto");
   record(locs.includes(`${productionOrigin}/cabina`), "sitemap incluye la Cabina Dermatocosmética");
   record(locs.includes(`${productionOrigin}/cabina/karen-cruz`), "sitemap incluye el perfil de Karen Cruz");
@@ -57,8 +71,46 @@ async function main() {
   const homeHtml = await homeResponse.text();
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
   record(homeHtml.includes("Cabina Dermatocosmética"), "la navegación pública incluye la cabina");
+  record(homeHtml.includes("href=\"/en\""), "la navegación española expone la versión inglesa");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
+
+  const englishResponse = await request("/en");
+  const englishHtml = await englishResponse.text();
+  record(englishResponse.status === 200, "/en responde 200");
+  record(/<html[^>]*lang=["']en["']/i.test(englishHtml), "/en declara el idioma HTML en inglés");
+  record(canonicalFromHtml(englishHtml) === `${productionOrigin}/en`, "/en declara canonical internacional correcto");
+  record(englishHtml.includes("Clinical judgment. Restrained aesthetics."), "/en muestra el posicionamiento internacional aprobado");
+  record(hasLanguageAlternate(englishHtml, "es-MX", productionOrigin), "/en declara alterna en español");
+  record(hasLanguageAlternate(englishHtml, "x-default", productionOrigin), "/en declara x-default");
+  record(!englishHtml.includes("Pregunta a HAUTLAB"), "la versión inglesa no monta el asistente exclusivamente español");
+  record(englishHtml.includes("Mexican Professional License 11804418"), "/en conserva la identificación profesional");
+
+  const quintanaResponse = await request("/", {
+    headers: {
+      "x-vercel-ip-country": "MX",
+      "x-vercel-ip-country-region": "ROO",
+      "x-vercel-ip-city": "Cancun"
+    }
+  });
+  const quintanaHtml = await quintanaResponse.text();
+  record(
+    quintanaHtml.includes("Atención en Mérida para pacientes de Quintana Roo"),
+    "la portada adapta el mensaje para Quintana Roo sin redirección"
+  );
+
+  const internationalResponse = await request("/", {
+    headers: {
+      "x-vercel-ip-country": "US",
+      "x-vercel-ip-country-region": "TX",
+      "x-vercel-ip-city": "Austin"
+    }
+  });
+  const internationalHtml = await internationalResponse.text();
+  record(
+    internationalHtml.includes("English information for visiting patients"),
+    "la portada ofrece la versión inglesa a visitantes internacionales"
+  );
 
   const cabinaResponse = await request("/cabina");
   const cabinaHtml = await cabinaResponse.text();
@@ -89,7 +141,7 @@ async function main() {
   );
   record(
     (homeResponse.headers.get("permissions-policy") || "").includes("camera=()"),
-    "Permissions-Policy bloquea cámara, micrófono y geolocalización"
+    "Permissions-Policy bloquea cámara, micrófono y geolocalización del navegador"
   );
 
   const invalidAssistantResponse = await request("/api/assistant", {
@@ -133,7 +185,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, cabina, asistente, redirecciones, privacidad, cabeceras y 404 validados.`);
+  console.log(`Smoke test correcto: ${locs.length} URLs canónicas, inglés, geolocalización, cabina, asistente, privacidad, cabeceras y 404 validados.`);
 }
 
 main().catch((error) => {
