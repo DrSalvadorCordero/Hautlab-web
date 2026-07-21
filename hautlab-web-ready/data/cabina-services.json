@@ -1,0 +1,74 @@
+[
+  {
+    "id": "limpieza-profunda",
+    "name": "Facial de limpieza profunda",
+    "description": "Protocolo orientado a retirar impurezas, mejorar la apariencia de poros y controlar acumulación de sebo y células superficiales.",
+    "duration": "Duración por confirmar",
+    "indications": "Piel con acumulación superficial, poros visibles o exceso de sebo, después de valoración.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "piel-grasa-acneica",
+    "name": "Protocolo para piel grasa y tendencia acneica",
+    "description": "Sesión personalizada para piel con brillo, comedones, textura irregular o tendencia a brotes. No sustituye la consulta dermatológica cuando existe acné inflamatorio o persistente.",
+    "duration": "Duración por confirmar",
+    "indications": "Piel grasa, comedones o tendencia a brotes no inflamatorios, según valoración.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "piel-sensible",
+    "name": "Protocolo para piel sensible",
+    "description": "Sesión diseñada para piel reactiva, sensibilizada o con alteración de la barrera cutánea, utilizando productos y maniobras seleccionadas según tolerancia.",
+    "duration": "Duración por confirmar",
+    "indications": "Piel sensible o sensibilizada sin signos que requieran diagnóstico médico previo.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "hidratacion",
+    "name": "Hidratación dermatocosmética",
+    "description": "Protocolo enfocado en restaurar confort, luminosidad y apariencia uniforme en piel deshidratada o expuesta a tratamientos irritantes.",
+    "duration": "Duración por confirmar",
+    "indications": "Deshidratación, tirantez o pérdida de confort, después de revisar tolerancia y rutina.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "luminosidad",
+    "name": "Protocolo de luminosidad",
+    "description": "Sesión personalizada para mejorar la apariencia opaca, textura superficial y uniformidad visual de la piel.",
+    "duration": "Duración por confirmar",
+    "indications": "Aspecto opaco o textura superficial irregular sin pigmentación activa no diagnosticada.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "preparacion-eventos",
+    "name": "Preparación de piel para eventos",
+    "description": "Protocolo diseñado para optimizar hidratación, textura y apariencia general antes de una fecha especial. Debe realizarse con anticipación suficiente y de acuerdo con la tolerancia de la piel.",
+    "duration": "Duración por confirmar",
+    "indications": "Preparación planificada de piel estable antes de un evento.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "seguimiento-postprocedimiento",
+    "name": "Seguimiento postprocedimiento",
+    "description": "Sesiones de acompañamiento dermatocosmético para pacientes que han recibido procedimientos médicos o estéticos en HAUTLAB, cuando estén indicadas por el médico.",
+    "duration": "Según indicación",
+    "indications": "Únicamente cuando forme parte del plan indicado por el Dr. Salvador Cordero.",
+    "price": "Cotización individual",
+    "visible": true
+  },
+  {
+    "id": "personalizado-hautlab",
+    "name": "Protocolo personalizado HAUTLAB",
+    "description": "Sesión desarrollada después de una valoración individual para combinar técnicas, activos y tecnología de acuerdo con las necesidades específicas de la piel.",
+    "duration": "Según protocolo",
+    "indications": "Necesidades que requieren una combinación individualizada dentro del alcance dermatocosmético.",
+    "price": "Cotización individual",
+    "visible": true
+  }
+]
