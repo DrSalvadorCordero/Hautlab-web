@@ -1,0 +1,53 @@
+{
+  "unitName": "HAUTLAB | Cabina Dermatocosmética",
+  "displayBrand": "HAUTLAB",
+  "displayUnit": "Cabina Dermatocosmética",
+  "coordinator": {
+    "name": "Karen Cruz",
+    "role": "Coordinadora de Cabina Dermatocosmética HAUTLAB",
+    "description": "Karen coordina la experiencia, preparación y ejecución de los protocolos dermatocosméticos de HAUTLAB. Su trabajo se enfoca en la atención personalizada, el seguimiento de cada paciente y la aplicación ordenada de protocolos faciales dentro de los estándares de calidad, imagen y seguridad de HAUTLAB.",
+    "medicalBoundary": "Los procedimientos médicos, diagnósticos dermatológicos, prescripciones y tratamientos invasivos son realizados exclusivamente por el Dr. Salvador Cordero.",
+    "photo": null
+  },
+  "medicalDirection": {
+    "name": "Dr. Salvador Cordero",
+    "role": "Médico Cirujano · Dermatología Clínica y Estética",
+    "license": "Cédula Profesional 11804418"
+  },
+  "hero": {
+    "title": "Cabina Dermatocosmética HAUTLAB",
+    "subtitle": "Protocolos faciales personalizados, tecnología estética y cuidado profesional de la piel dentro del ecosistema clínico de HAUTLAB.",
+    "description": "Cada protocolo se selecciona de acuerdo con las características de la piel, los objetivos del paciente y la valoración previa. La cabina es coordinada por Karen Cruz y cuenta con respaldo clínico y supervisión profesional."
+  },
+  "positioning": {
+    "title": "Cuidado dermatocosmético con criterio",
+    "paragraphs": [
+      "La Cabina Dermatocosmética de HAUTLAB integra protocolos faciales, tecnología estética y seguimiento personalizado en un entorno profesional. Cada sesión se adapta al tipo de piel, sensibilidad, antecedentes, objetivos y respuesta clínica de cada paciente.",
+      "El enfoque no consiste en aplicar tratamientos estandarizados, sino en seleccionar y ajustar cada protocolo con precisión."
+    ]
+  },
+  "booking": {
+    "generalMessage": "Hola, me gustaría recibir información y agendar una valoración para la Cabina Dermatocosmética de HAUTLAB.",
+    "informationMessage": "Hola, me gustaría recibir información sobre la Cabina Dermatocosmética de HAUTLAB.",
+    "primaryLabel": "Reservar valoración",
+    "servicesLabel": "Conocer los tratamientos"
+  },
+  "hours": [
+    "Atención únicamente con cita previa.",
+    "Disponibilidad y horarios de cabina confirmados por WhatsApp."
+  ],
+  "promotions": [],
+  "reviews": [],
+  "reviewsPlaceholder": "Las opiniones verificadas de pacientes de la Cabina Dermatocosmética serán publicadas próximamente.",
+  "gallery": [
+    { "id": "karen-portrait", "label": "Retrato profesional de Karen", "path": null },
+    { "id": "cabin-preparation", "label": "Karen preparando la cabina", "path": null },
+    { "id": "non-invasive-protocol", "label": "Karen realizando un protocolo no invasivo", "path": null },
+    { "id": "space-details", "label": "Detalles del espacio", "path": null },
+    { "id": "organized-products", "label": "Productos organizados", "path": null },
+    { "id": "prepared-bed", "label": "Camilla preparada", "path": null },
+    { "id": "hautlab-signage", "label": "Fachada o señalización de HAUTLAB", "path": null },
+    { "id": "medical-backing", "label": "Imagen del Dr. Salvador Cordero para respaldo médico", "path": "/visuals/dr-salvador-cordero-portrait-final.webp" }
+  ],
+  "updatedAt": "2026-07-21"
+}

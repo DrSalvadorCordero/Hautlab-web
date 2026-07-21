@@ -57,6 +57,7 @@ const areas = [
 
 const secondaryNav = [
   { label: "Método", href: "/#metodo" },
+  { label: "Cabina Dermatocosmética", href: "/cabina" },
   { label: "Testimonios", href: "/#testimonios" },
   { label: "Pagos", href: "/pagos" }
 ];
@@ -91,7 +92,7 @@ export function Header() {
           <span className="mt-1 block truncate text-[10px] uppercase tracking-[0.14em] text-muted sm:text-[11px] sm:tracking-[0.18em]">Dr. Salvador Cordero</span>
         </Link>
 
-        <nav className="hidden items-center gap-7 text-sm text-muted lg:flex" aria-label="Navegación principal">
+        <nav className="hidden items-center gap-5 text-sm text-muted xl:flex" aria-label="Navegación principal">
           <Link href="/#metodo" className="transition hover:text-bone">Método</Link>
 
           <details className="group relative">
@@ -107,6 +108,7 @@ export function Header() {
             </div>
           </details>
 
+          <Link href="/cabina" data-event="cabina_nav_desktop" className="text-bone transition hover:text-champagne">Cabina Dermatocosmética</Link>
           <Link href="/#testimonios" className="transition hover:text-bone">Testimonios</Link>
           <Link href="/pagos" className="transition hover:text-bone">Pagos</Link>
         </nav>
@@ -120,13 +122,16 @@ export function Header() {
         </Button>
       </div>
 
-      <div className="border-t border-line/50 lg:hidden">
+      <div className="border-t border-line/50 xl:hidden">
         <details className="group mx-auto w-[min(1180px,calc(100%-32px))]">
           <summary className="flex cursor-pointer list-none items-center justify-between py-3 text-xs uppercase tracking-[0.16em] text-muted [&::-webkit-details-marker]:hidden">
             Explorar áreas
             <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
           </summary>
           <div className="pb-5">
+            <Link href="/cabina" data-event="cabina_nav_mobile" className="mb-4 flex min-h-12 items-center justify-between rounded-2xl border border-champagne/30 bg-white/[0.04] px-4 text-sm font-medium text-bone">
+              Cabina Dermatocosmética <span aria-hidden="true">→</span>
+            </Link>
             <AreaGrid compact />
             <nav className="mt-4 flex flex-wrap gap-x-6 gap-y-3 border-t border-line pt-4 text-xs uppercase tracking-[0.14em] text-muted" aria-label="Navegación secundaria">
               {secondaryNav.map((item) => (

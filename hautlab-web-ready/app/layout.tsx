@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
-import { AIReceptionAssistant } from "@/components/assistant/ai-reception-assistant";
+import { AuthProvider } from "@/components/auth/auth-provider";
 import { ConsentManager } from "@/components/privacy/consent-manager";
-import { Footer } from "@/components/site/footer";
-import { Header } from "@/components/site/header";
+import { SiteShell } from "@/components/site/site-shell";
 import { siteConfig } from "@/lib/siteConfig";
 import "./globals.css";
 
@@ -78,20 +77,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es-MX" className={`${inter.variable} ${playfair.variable}`}>
       <body>
-        <a
-          href="#contenido-principal"
-          className="fixed left-4 top-4 z-[120] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm font-medium text-background shadow-calm transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-champagne"
-        >
-          Saltar al contenido
-        </a>
-        <Header />
-        <div id="contenido-principal" tabIndex={-1} className="outline-none">
-          {children}
-        </div>
-        <Footer />
-        <AIReceptionAssistant />
-        <ConsentManager />
-        <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <AuthProvider>
+          <a
+            href="#contenido-principal"
+            className="fixed left-4 top-4 z-[120] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm font-medium text-background shadow-calm transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-champagne"
+          >
+            Saltar al contenido
+          </a>
+          <SiteShell>{children}</SiteShell>
+          <ConsentManager />
+          <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        </AuthProvider>
       </body>
     </html>
   );
