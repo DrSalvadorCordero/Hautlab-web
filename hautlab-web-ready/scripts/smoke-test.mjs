@@ -3,12 +3,9 @@ const productionOrigin = "https://www.hautlabmx.com";
 const failures = [];
 
 function record(condition, message) {
-  if (condition) {
-    console.log(`✓ ${message}`);
-  } else {
-    failures.push(message);
-    console.error(`✗ ${message}`);
-  }
+  if (condition) return;
+  failures.push(message);
+  console.error(`✗ ${message}`);
 }
 
 async function request(path, options = {}) {
@@ -172,7 +169,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\nSmoke test correcto: ${locs.length} URLs canónicas, inglés, geolocalización, cabina, asistente, privacidad, cabeceras y 404 validados.`);
+  console.log(`Smoke test correcto: ${locs.length} URLs canónicas, inglés, geolocalización, cabina, asistente, privacidad, cabeceras y 404 validados.`);
 }
 
 main().catch((error) => {
