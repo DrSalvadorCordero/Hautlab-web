@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { CalendarDays, ChevronDown, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -111,6 +111,9 @@ export function Header() {
           <Link href="/cabina" data-event="cabina_nav_desktop" className="text-bone transition hover:text-champagne">Cabina Dermatocosmética</Link>
           <Link href="/#testimonios" className="transition hover:text-bone">Testimonios</Link>
           <Link href="/pagos" className="transition hover:text-bone">Pagos</Link>
+          <Link href="/en" hrefLang="en" className="inline-flex items-center gap-1.5 text-bone transition hover:text-champagne" data-event="english_nav_desktop">
+            <Languages className="h-4 w-4" /> EN
+          </Link>
         </nav>
 
         <Button asChild size="sm" className="shrink-0">
@@ -138,6 +141,9 @@ export function Header() {
                 <Link key={item.href} href={item.href} className="transition hover:text-bone">{item.label}</Link>
               ))}
               <Link href="/procedimientos" className="text-bone">Todos los procedimientos</Link>
+              <Link href="/en" hrefLang="en" data-event="english_nav_mobile" className="inline-flex items-center gap-1.5 text-bone">
+                <Languages className="h-4 w-4" /> English
+              </Link>
             </nav>
           </div>
         </details>
