@@ -17,14 +17,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: siteConfig.title,
   description: siteConfig.description,
-  alternates: {
-    canonical: siteConfig.url,
-    languages: {
-      "es-MX": siteConfig.url,
-      en: `${siteConfig.url}/en`,
-      "x-default": siteConfig.url
-    }
-  },
   verification: googleSiteVerification ? { google: googleSiteVerification } : undefined,
   openGraph: {
     title: siteConfig.title,
@@ -32,7 +24,6 @@ export const metadata: Metadata = {
     url: siteConfig.url,
     siteName: "HAUTLAB",
     locale: "es_MX",
-    alternateLocale: ["en_US"],
     type: "website"
   },
   twitter: {
