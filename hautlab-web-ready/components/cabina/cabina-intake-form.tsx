@@ -5,6 +5,11 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { trackHautlabEvent } from "@/lib/client-analytics";
+import {
+  attributionForWhatsApp,
+  dispatchValidatedLead,
+  getLeadAttribution
+} from "@/lib/lead-attribution";
 
 const inputClass =
   "min-h-12 w-full rounded-2xl border border-line bg-white/[0.035] px-4 py-3 text-sm text-bone outline-none transition placeholder:text-quiet focus:border-champagne/55 focus:ring-2 focus:ring-champagne/20";
@@ -16,6 +21,8 @@ export function CabinaIntakeForm() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const value = (name: string) => String(form.get(name) ?? "").trim();
+    const attribution = getLeadAttribution();
+    const sourceNote = attributionForWhatsApp(attribution);
 
     const message = [
       "Hola, me gustaría agendar una valoración para la Cabina Dermatocosmética de HAUTLAB.",
@@ -30,12 +37,21 @@ export function CabinaIntakeForm() {
       value("allergies") && `Alergias: ${value("allergies")}.`,
       value("pregnancy") && `Embarazo o lactancia: ${value("pregnancy")}.`,
       value("date") && `Fecha deseada: ${value("date")}.`,
-      value("time") && `Horario preferido: ${value("time")}.`
+      value("time") && `Horario preferido: ${value("time")}.`,
+      sourceNote
     ]
       .filter(Boolean)
       .join(" ");
 
     trackHautlabEvent("cabina_form_submit", { form_id: "cabina-intake" });
+    dispatchValidatedLead(
+      {
+        formId: "cabina-intake",
+        pathway: "cabina",
+        city: "Mérida"
+      },
+      attribution
+    );
     setSubmitted(true);
     window.location.href = buildWhatsAppLink(message);
   }

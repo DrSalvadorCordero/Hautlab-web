@@ -46,10 +46,10 @@ export const treatmentFamilies = [
   },
   {
     slug: "dermatologia-clinica",
-    title: "Condiciones de piel",
+    title: "Dermatología clínica",
     icon: Stethoscope,
-    summary: "Acné, rosácea, melasma, dermatitis, caída de cabello, uñas y piel sensible.",
-    approach: "Consulta médica con diagnóstico, rutina terapéutica y seguimiento. Se evita tratar síntomas sin entender el patrón completo.",
+    summary: "Valoración médica de piel, cabello y uñas en Mérida: acné, rosácea, melasma, dermatitis, caída de cabello, uñas y piel sensible.",
+    approach: "Historia clínica, exploración, diagnóstico diferencial, plan terapéutico y seguimiento. Se evita tratar síntomas aislados sin entender el patrón completo.",
     treats: ["Acné", "Rosácea", "Melasma", "Dermatitis", "Alopecia", "Uñas", "Piel sensible"],
     investment: "Valoración médica desde $1,300 MXN. Tratamiento según diagnóstico.",
     whatsappLabel: "Quiero una valoración médica de piel"

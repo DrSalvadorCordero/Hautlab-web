@@ -1,5 +1,14 @@
 import type { TreatmentPageContent } from "@/components/treatments/treatment-page-layout";
 
+const review = (sources: Array<{ label: string; href: string }>) => ({
+  author: "Dr. Salvador Cordero Romero",
+  professionalTitle: "Médico Cirujano",
+  practiceArea: "Dermatología Clínica y Estética",
+  license: "Cédula Profesional 11804418",
+  reviewedAt: "23 de julio de 2026",
+  sources
+});
+
 const common = {
   breadcrumbs: [{ label: "Inicio", href: "/" }, { label: "Procedimientos", href: "/procedimientos" }],
   image: "/visuals/skin-macro.webp",
@@ -24,10 +33,57 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Irregularidades leves del dorso", "Punta con soporte limitado", "Transiciones poco armónicas"],
     notIndicated: ["Riesgo anatómico alto", "Expectativas irreales", "Casos que requieren cirugía"],
     hautlabApproach: ["Se analiza la relación nariz, labios, mentón y tercio medio antes de indicar producto.", "La prioridad es conservar identidad y evitar una nariz sobreproyectada."],
+    clinicalDetails: {
+      evaluation: [
+        "Anatomía nasal, grosor de piel, vascularización visible y proporción con labios, mentón y tercio medio.",
+        "Antecedentes de rellenos, cirugía, traumatismos, hilos, implantes o complicaciones previas.",
+        "Objetivo real del paciente y límites de lo que puede corregirse sin cirugía."
+      ],
+      recovery: [
+        "Inflamación, sensibilidad y pequeños hematomas pueden modificar la lectura inicial durante los primeros días.",
+        "El resultado inmediato no se considera definitivo hasta que descienden inflamación y edema.",
+        "La revisión permite valorar integración, simetría y si existe indicación real de retoque."
+      ],
+      risks: [
+        "Asimetría, edema, dolor, hematoma, irregularidad, infección, nódulos o reacción inflamatoria.",
+        "La inyección intravascular puede comprometer piel y tejidos; aunque es infrecuente, puede causar necrosis.",
+        "Las complicaciones visuales o neurológicas son raras, graves y potencialmente permanentes."
+      ],
+      alternatives: [
+        "No intervenir cuando el margen de seguridad o el beneficio esperado son insuficientes.",
+        "Valorar cirugía cuando el objetivo requiere reducción, corrección funcional o modificación estructural.",
+        "Trabajar proporción de mentón o perfil cuando la nariz no es el único punto que explica el desbalance."
+      ],
+      warningSigns: [
+        "Dolor intenso o progresivo, piel pálida, moteada, grisácea o con coloración que se extiende.",
+        "Pérdida súbita de visión, visión borrosa nueva, caída del párpado, debilidad, dificultad para hablar o cefalea neurológica.",
+        "Fiebre, secreción, aumento rápido de enrojecimiento o inflamación que empeora."
+      ]
+    },
+    expectations: [
+      { label: "Sesión", value: "Se realiza únicamente después de confirmar candidatura anatómica." },
+      { label: "Recuperación", value: "Inflamación y hematomas leves son posibles; la evolución se revisa." },
+      { label: "Resultado", value: "Inmediato pero no definitivo hasta que desciende la inflamación." }
+    ],
     investment: { label: "$5,500 MXN", note: "Incluye valoración, aplicación, revisión y retoque cuando esté indicado. La cantidad de producto y la viabilidad del procedimiento se confirman durante la valoración." },
     faq: [{ question: "¿La rinomodelación sustituye una cirugía?", answer: "No. Puede mejorar proporciones en casos seleccionados, pero no resuelve todos los problemas estructurales." }, { question: "¿El resultado es inmediato?", answer: "El cambio suele apreciarse de inmediato, aunque la inflamación inicial puede modificar temporalmente la lectura del resultado." }],
-    related: [{ label: "Labios", href: "/procedimientos/labios" }, { label: "Mentón", href: "/procedimientos/menton" }],
-    whatsappMessage: "Hola, quiero agendar valoración para rinomodelación."
+    related: [
+      { label: "Mentón", href: "/procedimientos/menton" },
+      { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" },
+      { label: "Labios", href: "/procedimientos/labios" },
+      { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración para rinomodelación.",
+    medicalReview: review([
+      {
+        label: "FDA · Dermal Fillers (Soft Tissue Fillers): riesgos, indicaciones y seguridad",
+        href: "https://www.fda.gov/medical-devices/aesthetic-cosmetic-devices/dermal-fillers-soft-tissue-fillers"
+      },
+      {
+        label: "FDA · Dermal Filler Do’s and Don’ts",
+        href: "https://www.fda.gov/consumers/consumer-updates/dermal-filler-dos-and-donts-wrinkles-lips-and-more"
+      }
+    ])
   },
   "toxina-botulinica": {
     ...common,
@@ -39,10 +95,57 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Entrecejo marcado", "Líneas dinámicas de frente", "Patas de gallo"],
     notIndicated: ["Expectativa de rostro totalmente inmóvil", "Alteraciones neuromusculares sin valoración", "Embarazo o lactancia"],
     hautlabApproach: ["La dosis se decide según fuerza, asimetría y patrón de movimiento.", "Se conserva expresión y se evita uniformar todos los rostros con el mismo mapa."],
+    clinicalDetails: {
+      evaluation: [
+        "Patrón de movimiento, fuerza muscular, asimetrías en reposo y durante la gesticulación.",
+        "Antecedentes de toxina, respuesta, duración, efectos adversos y tratamientos recientes.",
+        "Enfermedades neuromusculares, medicamentos relevantes, embarazo, lactancia e infección en zonas de aplicación."
+      ],
+      recovery: [
+        "Puede existir dolor localizado, hematoma o cefalea transitoria.",
+        "El efecto aparece de forma progresiva; no se juzga el resultado final en las primeras horas.",
+        "La revisión se programa cuando el efecto ya puede valorarse de forma estable."
+      ],
+      risks: [
+        "Asimetría, ceja o párpado descendido, sonrisa alterada, ojo seco o resultado insuficiente/excesivo.",
+        "Los productos de toxina no son intercambiables unidad por unidad.",
+        "La difusión del efecto puede producir debilidad, dificultad para hablar, deglutir o respirar; requiere atención inmediata."
+      ],
+      alternatives: [
+        "No tratar si las líneas son estáticas, el objetivo no depende principalmente de movimiento o el riesgo supera el beneficio.",
+        "Manejo de calidad de piel cuando textura, fotodaño o deshidratación son el componente predominante.",
+        "Plan combinado por etapas cuando estructura, piel y movimiento participan en la expresión."
+      ],
+      warningSigns: [
+        "Dificultad para respirar, tragar o hablar; debilidad generalizada o visión doble.",
+        "Inflamación intensa, ronchas generalizadas o síntomas de reacción alérgica.",
+        "Alteración ocular o facial progresiva que no corresponde al efecto explicado."
+      ]
+    },
+    expectations: [
+      { label: "Inicio", value: "El efecto aparece gradualmente durante los primeros días." },
+      { label: "Revisión", value: "Se valora cuando el efecto se estabiliza, no de forma inmediata." },
+      { label: "Duración", value: "Es temporal y varía según dosis, zona, fuerza y respuesta individual." }
+    ],
     investment: { label: "$3,500 MXN · tercio superior", note: "La dosis se ajusta a fuerza muscular, patrón de movimiento y objetivos. Otras zonas se cotizan después de valoración." },
     faq: [{ question: "¿Cuándo empieza a notarse?", answer: "El efecto aparece de forma progresiva durante los primeros días y se estabiliza después." }, { question: "¿Qué pasa si dejo de aplicarla?", answer: "El movimiento regresa gradualmente; no empeora el rostro por suspenderla." }],
-    related: [{ label: "Rinomodelación", href: "/procedimientos/rinomodelacion" }, { label: "Ojeras", href: "/procedimientos/ojeras" }],
-    whatsappMessage: "Hola, quiero agendar valoración para toxina botulínica."
+    related: [
+      { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" },
+      { label: "Ojeras", href: "/procedimientos/ojeras" },
+      { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
+      { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración para toxina botulínica.",
+    medicalReview: review([
+      {
+        label: "FDA · BOTOX Cosmetic: información de prescripción 2024",
+        href: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2024/103000s5316s5319s5323s5326s5331lbl.pdf"
+      },
+      {
+        label: "FDA · Alerta sobre productos de toxina botulínica y riesgos",
+        href: "https://www.fda.gov/news-events/press-announcements/fda-warns-companies-over-illegal-marketing-botox-and-related-products"
+      }
+    ])
   },
   labios: {
     ...common,
@@ -103,10 +206,57 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Brotes persistentes", "Comedones", "Inflamación", "Manchas y cicatrices"],
     notIndicated: ["Automedicación sin diagnóstico", "Cambios constantes de rutina", "Procedimientos agresivos con inflamación activa"],
     hautlabApproach: ["Se ordena primero la inflamación y la barrera cutánea.", "Las secuelas se tratan después de controlar la actividad."],
+    clinicalDetails: {
+      evaluation: [
+        "Tipo de lesión, severidad, distribución, duración, cicatrices y pigmentación residual.",
+        "Productos y medicamentos usados, respuesta previa, tolerancia cutánea y adherencia real.",
+        "Factores hormonales o sistémicos cuando la historia clínica justifica ampliar el estudio."
+      ],
+      recovery: [
+        "El control es progresivo y suele requerir ajustes; cambiar el plan antes de tiempo dificulta valorar respuesta.",
+        "Algunos tratamientos producen resequedad, irritación o una fase inicial de adaptación.",
+        "Las cicatrices se abordan después de controlar suficientemente la actividad inflamatoria."
+      ],
+      risks: [
+        "La automedicación puede aumentar irritación, manchas, resistencia antimicrobiana o retrasar el tratamiento correcto.",
+        "Los efectos adversos dependen del tratamiento indicado y deben explicarse antes de iniciarlo.",
+        "Procedimientos agresivos sobre acné activo pueden aumentar inflamación y riesgo de cicatriz o pigmentación."
+      ],
+      alternatives: [
+        "Tratamiento tópico, sistémico o combinado según severidad y características del paciente.",
+        "Procedimientos complementarios seleccionados, sin sustituir el control médico de la actividad.",
+        "Mantenimiento individualizado para disminuir recaídas después del control inicial."
+      ],
+      warningSigns: [
+        "Nódulos dolorosos, cicatrización rápida, brote súbito intenso o afectación extensa de pecho y espalda.",
+        "Cambios marcados del estado de ánimo, síntomas sistémicos o reacción importante durante un tratamiento.",
+        "Embarazo o posibilidad de embarazo antes de usar medicamentos contraindicados."
+      ]
+    },
+    expectations: [
+      { label: "Diagnóstico", value: "Se clasifica el patrón antes de elegir tratamiento." },
+      { label: "Respuesta", value: "El control es gradual y requiere constancia y seguimiento." },
+      { label: "Secuelas", value: "Manchas y cicatrices se tratan después de controlar brotes activos." }
+    ],
     investment: { label: "Consulta inicial $1,300 MXN", note: "Los medicamentos, estudios o procedimientos posteriores se indican y cotizan únicamente cuando el diagnóstico y la evolución lo justifican." },
     faq: [{ question: "¿El acné requiere estudios?", answer: "En algunos casos sí, según edad, patrón, síntomas asociados y antecedentes." }, { question: "¿Cuándo se tratan las cicatrices?", answer: "Cuando el acné activo está suficientemente controlado para no seguir generando nuevas lesiones." }],
-    related: [{ label: "Cicatrices de acné", href: "/procedimientos/cicatrices-acne" }, { label: "Rosácea", href: "/procedimientos/rosacea" }],
-    whatsappMessage: "Hola, quiero agendar valoración por acné."
+    related: [
+      { label: "Cicatrices de acné", href: "/procedimientos/cicatrices-acne" },
+      { label: "Peelings médicos", href: "/procedimientos/peelings-medicos" },
+      { label: "Rosácea", href: "/procedimientos/rosacea" },
+      { label: "Dermatología clínica", href: "/tratamientos/dermatologia-clinica" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración por acné.",
+    medicalReview: review([
+      {
+        label: "American Academy of Dermatology · Guía clínica de acné",
+        href: "https://www.aad.org/member/clinical-quality/guidelines/acne"
+      },
+      {
+        label: "American Academy of Dermatology · Diagnóstico y tratamiento del acné",
+        href: "https://www.aad.org/public/diseases/acne/derm-treat/treat"
+      }
+    ])
   },
   "cicatrices-acne": {
     ...common,
@@ -120,10 +270,57 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Cicatrices atróficas estables", "Textura irregular", "Secuelas después de controlar brotes activos"],
     notIndicated: ["Acné inflamatorio no controlado", "Expectativa de borrar toda cicatriz", "Procedimientos intensos sin preparación de la piel"],
     hautlabApproach: ["Se clasifica el tipo de cicatriz antes de elegir tecnología o técnica.", "El objetivo es mejorar sombras y textura de forma progresiva, no prometer una piel completamente lisa."],
+    clinicalDetails: {
+      evaluation: [
+        "Actividad del acné, tendencia a pigmentación, tipo de cicatriz y profundidad predominante.",
+        "Presencia de cicatrices rolling, boxcar, ice-pick, elevadas o combinadas.",
+        "Fototipo, medicamentos, procedimientos previos y tiempo disponible para recuperación."
+      ],
+      recovery: [
+        "La recuperación cambia según la combinación indicada y puede incluir edema, enrojecimiento, costras o descamación.",
+        "La remodelación de colágeno es progresiva y no se evalúa únicamente durante los primeros días.",
+        "Con frecuencia se requieren varias sesiones y técnicas diferentes."
+      ],
+      risks: [
+        "Hiperpigmentación o hipopigmentación, eritema persistente, infección, brote de acné o nueva cicatriz.",
+        "Una técnica inadecuada para el tipo de cicatriz puede producir poco beneficio con recuperación innecesaria.",
+        "No existe un procedimiento único capaz de borrar todas las cicatrices."
+      ],
+      alternatives: [
+        "Subcisión, técnicas focales, peelings, microneedling, radiofrecuencia fraccionada u otras estrategias según el patrón.",
+        "Camuflaje cosmético y fotoprotección mientras se controla actividad o pigmentación.",
+        "No intervenir hasta que el acné activo y la barrera cutánea estén suficientemente estables."
+      ],
+      warningSigns: [
+        "Dolor creciente, secreción, fiebre, ampollas extensas o enrojecimiento que se expande después de un procedimiento.",
+        "Pigmentación intensa o zonas pálidas que aparecen de forma progresiva.",
+        "Reactivación importante de acné, herpes u otra infección."
+      ]
+    },
+    expectations: [
+      { label: "Primero", value: "El acné activo debe estar controlado antes de tratar secuelas." },
+      { label: "Plan", value: "La técnica se elige por tipo de cicatriz, no por tendencia." },
+      { label: "Evolución", value: "La mejoría es gradual y suele requerir sesiones combinadas." }
+    ],
     investment: { label: "Valoración inicial $1,300 MXN", note: "El costo por sesión depende de la combinación indicada, extensión de la zona y número de sesiones. Se cotiza después de clasificar las cicatrices." },
     faq: [{ question: "¿Se pueden eliminar por completo?", answer: "No siempre. El objetivo realista es mejorar profundidad, bordes, textura y visibilidad." }, { question: "¿Cuántas sesiones se necesitan?", answer: "Depende del tipo de cicatriz, técnica elegida y respuesta individual; suele plantearse un proceso por etapas." }],
-    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Melasma", href: "/procedimientos/melasma" }],
-    whatsappMessage: "Hola, quiero agendar valoración para cicatrices de acné."
+    related: [
+      { label: "Acné", href: "/procedimientos/acne" },
+      { label: "Peelings médicos", href: "/procedimientos/peelings-medicos" },
+      { label: "Piel y textura", href: "/tratamientos/calidad-de-piel-y-soporte" },
+      { label: "Skin booster", href: "/procedimientos/skin-booster" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración para cicatrices de acné.",
+    medicalReview: review([
+      {
+        label: "American Academy of Dermatology · Consulta y tratamiento de cicatrices de acné",
+        href: "https://www.aad.org/public/diseases/acne/derm-treat/scars/treatment"
+      },
+      {
+        label: "American Academy of Dermatology · Tratamiento médico del acné",
+        href: "https://www.aad.org/public/diseases/acne/derm-treat/treat"
+      }
+    ])
   },
   melasma: {
     ...common,
@@ -135,10 +332,57 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Pigmentación facial simétrica", "Recaídas frecuentes", "Respuesta parcial a cremas"],
     notIndicated: ["Promesas de eliminación definitiva", "Procedimientos intensos sin preparar la piel", "Falta de fotoprotección"],
     hautlabApproach: ["Se prioriza control sostenido y reducción de recaídas.", "La intensidad del tratamiento se adapta al fototipo y sensibilidad."],
+    clinicalDetails: {
+      evaluation: [
+        "Distribución, tonalidad, evolución, embarazo, hormonas, exposición solar y productos irritantes.",
+        "Diagnósticos diferenciales cuando la pigmentación es unilateral, atípica o acompañada de otros cambios.",
+        "Fototipo, sensibilidad, tratamientos previos y capacidad real de mantener fotoprotección."
+      ],
+      recovery: [
+        "La mejoría es gradual y las recaídas son posibles incluso después de una buena respuesta.",
+        "La fotoprotección y el mantenimiento forman parte del tratamiento, no son recomendaciones accesorias.",
+        "Los procedimientos se espacian y ajustan según tolerancia y estabilidad del pigmento."
+      ],
+      risks: [
+        "Irritación, dermatitis, rebote pigmentario o hiperpigmentación postinflamatoria.",
+        "El uso indiscriminado de mezclas, esteroides o despigmentantes puede adelgazar o sensibilizar la piel.",
+        "Láseres, peelings u otras energías mal indicadas pueden empeorar el pigmento."
+      ],
+      alternatives: [
+        "Fotoprotección, tratamiento tópico y mantenimiento individualizado.",
+        "Procedimientos seleccionados solo cuando el fototipo, la barrera y la estabilidad lo permiten.",
+        "Observación o corrección cosmética cuando el riesgo de irritación supera el beneficio esperado."
+      ],
+      warningSigns: [
+        "Pigmentación de aparición súbita, unilateral, con inflamación, descamación marcada o cambio de una lesión específica.",
+        "Ardor intenso, ampollas, costras o empeoramiento rápido después de un producto o procedimiento.",
+        "Uso prolongado de fórmulas no identificadas o productos que provocan adelgazamiento visible de la piel."
+      ]
+    },
+    expectations: [
+      { label: "Objetivo", value: "Controlar y aclarar progresivamente; no prometer eliminación definitiva." },
+      { label: "Base", value: "Fotoprotección y mantenimiento sostenido." },
+      { label: "Procedimientos", value: "Solo cuando fototipo, sensibilidad y estabilidad lo permiten." }
+    ],
     investment: { label: "Consulta inicial $1,300 MXN", note: "El plan puede incluir tratamiento domiciliario y procedimientos seleccionados. La inversión total depende de sensibilidad, fototipo y evolución." },
     faq: [{ question: "¿Se elimina para siempre?", answer: "No suele hablarse de curación definitiva; el objetivo es controlarlo y reducir recaídas." }, { question: "¿El láser siempre ayuda?", answer: "No. En ciertos casos puede empeorar el pigmento si se usa sin indicación adecuada." }],
-    related: [{ label: "Rosácea", href: "/procedimientos/rosacea" }, { label: "Acné", href: "/procedimientos/acne" }],
-    whatsappMessage: "Hola, quiero agendar valoración por melasma."
+    related: [
+      { label: "Peelings médicos", href: "/procedimientos/peelings-medicos" },
+      { label: "Rosácea", href: "/procedimientos/rosacea" },
+      { label: "Hollywood Peel", href: "/procedimientos/hollywood-peel" },
+      { label: "Dermatología clínica", href: "/tratamientos/dermatologia-clinica" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración por melasma.",
+    medicalReview: review([
+      {
+        label: "American Academy of Dermatology · Diagnóstico y tratamiento del melasma",
+        href: "https://www.aad.org/public/diseases/a-z/melasma-treatment"
+      },
+      {
+        label: "American Academy of Dermatology · Melasma: cuidados y prevención de recaídas",
+        href: "https://www.aad.org/public/diseases/a-z/melasma-self-care"
+      }
+    ])
   },
   rosacea: {
     ...common,
@@ -167,10 +411,56 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
     indications: ["Aumento reciente de caída", "Disminución de densidad", "Entradas o coronilla progresivas", "Síntomas en cuero cabelludo"],
     notIndicated: ["Suplementos sin diagnóstico", "Promesas de recuperación completa", "Procedimientos antes de identificar el tipo de caída"],
     hautlabApproach: ["Se revisan temporalidad, patrón, antecedentes, medicamentos y estado del cuero cabelludo.", "Los estudios se solicitan solo cuando la historia y la exploración sugieren que aportarán información útil."],
+    clinicalDetails: {
+      evaluation: [
+        "Patrón, temporalidad, densidad, miniaturización, inflamación, descamación y distribución de la pérdida.",
+        "Antecedentes familiares, enfermedades, cirugía, dieta, pérdida de peso, estrés y medicamentos.",
+        "Tricoscopia o estudios dirigidos cuando cambian el diagnóstico o la conducta."
+      ],
+      recovery: [
+        "El ciclo del cabello hace que la respuesta se valore en meses, no en días.",
+        "Algunos tratamientos requieren mantenimiento para conservar el beneficio.",
+        "La respuesta depende de la causa, duración y viabilidad del folículo."
+      ],
+      risks: [
+        "Tratar sin diagnóstico puede retrasar la identificación de alopecias inflamatorias o cicatriciales.",
+        "Suplementos y procedimientos no sustituyen el manejo de la causa.",
+        "Los efectos adversos y contraindicaciones cambian según el medicamento o procedimiento elegido."
+      ],
+      alternatives: [
+        "Tratamiento tópico, oral o antiinflamatorio según el diagnóstico.",
+        "Corrección de factores asociados solo cuando se documentan.",
+        "Camuflaje, fibras, sistemas capilares o referencia para trasplante en candidatos seleccionados."
+      ],
+      warningSigns: [
+        "Pérdida súbita en placas, dolor, ardor, pústulas, costras o descamación intensa.",
+        "Pérdida de cejas, pestañas o vello corporal, o áreas lisas con apariencia cicatricial.",
+        "Caída acompañada de síntomas sistémicos o deterioro rápido."
+      ]
+    },
+    expectations: [
+      { label: "Diagnóstico", value: "Se distingue caída difusa, patrón androgenético e inflamación." },
+      { label: "Tiempo", value: "La respuesta se valora en meses por el ciclo del folículo." },
+      { label: "Mantenimiento", value: "Puede ser necesario según la causa y el tratamiento indicado." }
+    ],
     investment: { label: "Consulta inicial $1,300 MXN", note: "Estudios, medicamentos o procedimientos se indican por separado cuando el diagnóstico lo requiere." },
     faq: [{ question: "¿Siempre necesito análisis de laboratorio?", answer: "No. Se solicitan cuando los antecedentes, síntomas o patrón de caída hacen razonable buscar factores asociados." }, { question: "¿El cabello perdido siempre vuelve?", answer: "Depende de la causa, el tiempo de evolución y si el folículo conserva capacidad de recuperación." }],
-    related: [{ label: "Acné", href: "/procedimientos/acne" }, { label: "Rosácea", href: "/procedimientos/rosacea" }],
-    whatsappMessage: "Hola, quiero agendar valoración por caída de cabello."
+    related: [
+      { label: "Dermatología clínica", href: "/tratamientos/dermatologia-clinica" },
+      { label: "Peelings médicos", href: "/procedimientos/peelings-medicos" },
+      { label: "Procedimientos", href: "/procedimientos" }
+    ],
+    whatsappMessage: "Hola, quiero agendar valoración por caída de cabello.",
+    medicalReview: review([
+      {
+        label: "American Academy of Dermatology · Diagnóstico y tratamiento de la caída de cabello",
+        href: "https://www.aad.org/public/diseases/hair-loss/treatment"
+      },
+      {
+        label: "PubMed · Revisión sistemática del manejo de alopecia androgenética (2024)",
+        href: "https://pubmed.ncbi.nlm.nih.gov/38852607/"
+      }
+    ])
   },
   verrugas: {
     ...common,

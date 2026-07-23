@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TreatmentPageLayout } from "@/components/treatments/treatment-page-layout";
+import { procedureContentDate } from "@/data/content-dates";
 import { treatmentCatalog } from "@/data/treatment-catalog";
 import { siteConfig } from "@/lib/siteConfig";
 
@@ -22,6 +23,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description: treatment.summary,
+    authors: treatment.medicalReview
+      ? [{ name: treatment.medicalReview.author, url: `${siteConfig.url}#doctor` }]
+      : undefined,
     alternates: { canonical: url },
     openGraph: {
       title: `${treatment.title} | HAUTLAB`,
@@ -47,6 +51,7 @@ export default async function ProcedurePage({ params }: PageProps) {
   if (!treatment) notFound();
 
   const url = `${siteConfig.url}/procedimientos/${slug}`;
+  const modifiedAt = procedureContentDate(slug).toISOString();
   const content = {
     ...treatment,
     breadcrumbs: [...treatment.breadcrumbs, { label: treatment.title }]
@@ -75,25 +80,37 @@ export default async function ProcedurePage({ params }: PageProps) {
 
   const medicalPageJsonLd = {
     "@context": "https://schema.org",
-    "@type": "MedicalWebPage",
-    name: treatment.title,
-    description: treatment.summary,
-    url,
-    inLanguage: "es-MX",
-    isPartOf: {
-      "@type": "WebSite",
-      name: "HAUTLAB",
-      url: siteConfig.url
-    },
-    publisher: {
-      "@type": "MedicalClinic",
-      name: "HAUTLAB",
-      url: siteConfig.url,
-      telephone: siteConfig.whatsappDisplay
-    },
-    audience: {
-      "@type": "Patient"
-    }
+    "@graph": [
+      {
+        "@type": "MedicalWebPage",
+        "@id": `${url}#webpage`,
+        name: treatment.title,
+        description: treatment.summary,
+        url,
+        inLanguage: "es-MX",
+        dateModified: modifiedAt,
+        isPartOf: { "@id": `${siteConfig.url}#website` },
+        publisher: { "@id": `${siteConfig.url}#clinic` },
+        author: { "@id": `${siteConfig.url}#doctor` },
+        audience: { "@type": "Patient" },
+        citation: treatment.medicalReview?.sources.map((source) => source.href)
+      },
+      {
+        "@type": "Service",
+        "@id": `${url}#service`,
+        name: `Valoración para ${treatment.title}`,
+        serviceType: treatment.title,
+        description: treatment.summary,
+        url,
+        provider: { "@id": `${siteConfig.url}#clinic` },
+        areaServed: { "@type": "City", name: "Mérida, Yucatán" },
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "MXN",
+          description: treatment.investment.label
+        }
+      }
+    ]
   };
 
   return (

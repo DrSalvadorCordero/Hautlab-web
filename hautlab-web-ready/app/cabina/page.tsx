@@ -103,7 +103,7 @@ export default function CabinaPage() {
         },
         employee: [
           { "@id": `${siteConfig.url}/cabina/karen-cruz#person` },
-          { "@id": `${siteConfig.url}#physician` }
+          { "@id": `${siteConfig.url}#doctor` }
         ],
         hasOfferCatalog: {
           "@type": "OfferCatalog",
@@ -128,11 +128,12 @@ export default function CabinaPage() {
         worksFor: { "@id": `${siteConfig.url}#clinic` }
       },
       {
-        "@type": "Physician",
-        "@id": `${siteConfig.url}#physician`,
+        "@type": "Person",
+        "@id": `${siteConfig.url}#doctor`,
         name: cabinaContent.medicalDirection.name,
         jobTitle: cabinaContent.medicalDirection.role,
         identifier: cabinaContent.medicalDirection.license,
+        knowsAbout: siteConfig.practiceArea,
         worksFor: { "@id": `${siteConfig.url}#clinic` }
       }
     ]

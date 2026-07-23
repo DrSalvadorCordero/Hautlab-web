@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/admin-access";
+import { exceedsContentLength, isSameOriginRequest } from "@/lib/server/admin-request-security";
 
 export const runtime = "nodejs";
 
@@ -13,6 +15,32 @@ const allowedMimeTypes = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"]
 ]);
+
+function noStoreJson(value: unknown, init?: ResponseInit) {
+  const headers = new Headers(init?.headers);
+  headers.set("Cache-Control", "no-store");
+  return NextResponse.json(value, { ...init, headers });
+}
+
+function hasValidSignature(bytes: Buffer, mimeType: string) {
+  if (mimeType === "image/jpeg") {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (mimeType === "image/png") {
+    return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  }
+  if (mimeType === "image/webp") {
+    return bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
+  }
+  if (mimeType === "image/avif") {
+    return (
+      bytes.length >= 12 &&
+      bytes.toString("ascii", 4, 8) === "ftyp" &&
+      /avif|avis/.test(bytes.toString("ascii", 8, Math.min(bytes.length, 32)))
+    );
+  }
+  return false;
+}
 
 function safeSlug(value: string) {
   return value
@@ -42,20 +70,34 @@ async function githubRequest(path: string, init?: RequestInit) {
 export async function POST(request: Request) {
   const access = await getAdminAccess();
   const canPublish = access.isOwner || access.organizationRole === "org:admin";
-  if (!canPublish) return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  if (!token) return NextResponse.json({ error: "publishing_not_configured" }, { status: 503 });
+  if (!canPublish) return noStoreJson({ error: "forbidden" }, { status: 403 });
+  if (!isSameOriginRequest(request)) return noStoreJson({ error: "invalid_origin" }, { status: 403 });
+  if (!token) return noStoreJson({ error: "publishing_not_configured" }, { status: 503 });
+  if (exceedsContentLength(request, maxBytes, true)) {
+    return noStoreJson({ error: "image_too_large" }, { status: 413 });
+  }
 
-  const formData = await request.formData();
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return noStoreJson({ error: "invalid_form_data" }, { status: 400 });
+  }
   const file = formData.get("file");
   const slot = safeSlug(String(formData.get("slot") ?? "cabina-image"));
 
-  if (!(file instanceof File)) return NextResponse.json({ error: "file_required" }, { status: 400 });
+  if (!(file instanceof File)) return noStoreJson({ error: "file_required" }, { status: 400 });
   const extension = allowedMimeTypes.get(file.type);
-  if (!extension) return NextResponse.json({ error: "unsupported_image_type" }, { status: 415 });
-  if (file.size <= 0 || file.size > maxBytes) return NextResponse.json({ error: "image_too_large" }, { status: 413 });
+  if (!extension) return noStoreJson({ error: "unsupported_image_type" }, { status: 415 });
+  if (file.size <= 0 || file.size > maxBytes) return noStoreJson({ error: "image_too_large" }, { status: 413 });
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const fileName = `${slot || "cabina-image"}-${Date.now()}.${extension}`;
+  if (!hasValidSignature(bytes, file.type)) {
+    return noStoreJson({ error: "invalid_image_content" }, { status: 415 });
+  }
+
+  const digest = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
+  const fileName = `${slot || "cabina-image"}-${digest}.${extension}`;
   const repositoryPath = `hautlab-web-ready/public/visuals/cabina/${fileName}`;
   const publicPath = `/visuals/cabina/${fileName}`;
 
@@ -70,10 +112,10 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) throw new Error(`media_write_${response.status}`);
-    return NextResponse.json({ ok: true, path: publicPath, branch });
+    return noStoreJson({ ok: true, path: publicPath, branch });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown";
     console.error("Cabina media publishing failed", { reason });
-    return NextResponse.json({ error: "media_publishing_failed" }, { status: 502 });
+    return noStoreJson({ error: "media_publishing_failed" }, { status: 502 });
   }
 }
