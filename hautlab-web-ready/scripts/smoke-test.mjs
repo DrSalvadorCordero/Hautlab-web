@@ -220,6 +220,14 @@ async function main() {
   const adminContentResponse = await request("/api/admin/cabina-content");
   record(adminContentResponse.status === 401, "la API de contenido administrativo rechaza acceso anónimo");
 
+  const adminPageResponse = await request("/admin");
+  const adminPageHtml = await adminPageResponse.text();
+  record(adminPageResponse.status === 200, "/admin permanece cerrado sin responder 500 cuando Clerk no está configurado");
+  record(
+    adminPageHtml.includes("Autenticación pendiente de configuración"),
+    "/admin explica qué falta configurar sin exponer el panel"
+  );
+
   const adminPublishResponse = await request("/api/admin/cabina-content", {
     method: "PUT",
     headers: { "Content-Type": "application/json", Origin: "https://example.com" },

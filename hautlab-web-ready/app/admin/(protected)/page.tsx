@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CreateOrganization } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { Bot, CalendarDays, FileText, Users } from "lucide-react";
+import { isClerkConfigured } from "@/lib/auth-config";
 
 const modules = [
   {
@@ -35,6 +36,8 @@ const modules = [
 ];
 
 export default async function AdminDashboardPage() {
+  if (!isClerkConfigured()) return null;
+
   const session = await auth();
   const user = await currentUser();
   const firstName = user?.firstName || "Salvador";

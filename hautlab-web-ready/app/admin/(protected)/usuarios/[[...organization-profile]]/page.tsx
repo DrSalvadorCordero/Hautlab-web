@@ -1,7 +1,10 @@
 import { CreateOrganization, OrganizationProfile } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { isClerkConfigured } from "@/lib/auth-config";
 
 export default async function AdminUsersPage() {
+  if (!isClerkConfigured()) return null;
+
   const session = await auth();
 
   if (!session.orgId) {
