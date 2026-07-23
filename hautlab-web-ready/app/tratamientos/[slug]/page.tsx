@@ -45,9 +45,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!family) return {};
 
   const url = `${siteConfig.url}/tratamientos/${family.slug}`;
+  const isClinicalDermatology = family.slug === "dermatologia-clinica";
   return {
-    title: `${family.title} | HAUTLAB + Dr. Salvador Cordero`,
-    description: `${family.summary} ${family.approach}`,
+    title: isClinicalDermatology
+      ? "Dermatología clínica en Mérida | Dr. Salvador Cordero · HAUTLAB"
+      : `${family.title} | HAUTLAB + Dr. Salvador Cordero`,
+    description: isClinicalDermatology
+      ? "Consulta médica de piel, cabello y uñas en San Ramón Norte, Mérida. Valoración, diagnóstico diferencial, tratamiento y seguimiento individualizado."
+      : `${family.summary} ${family.approach}`,
     alternates: { canonical: url },
     openGraph: {
       title: `${family.title} | HAUTLAB`,
@@ -77,9 +82,44 @@ export default async function TreatmentAreaPage({ params }: PageProps) {
     .sort((a, b) => a.title.localeCompare(b.title, "es"));
 
   const Icon = family.icon;
+  const isClinicalDermatology = family.slug === "dermatologia-clinica";
+  const pageUrl = `${siteConfig.url}/tratamientos/${family.slug}`;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        name: isClinicalDermatology ? "Dermatología clínica en Mérida" : family.title,
+        description: `${family.summary} ${family.approach}`,
+        url: pageUrl,
+        inLanguage: "es-MX",
+        dateModified: isClinicalDermatology ? "2026-07-23T12:00:00.000Z" : "2026-07-11T12:00:00.000Z",
+        isPartOf: { "@id": `${siteConfig.url}#website` },
+        author: { "@id": `${siteConfig.url}#doctor` }
+      },
+      {
+        "@type": "Service",
+        "@id": `${pageUrl}#service`,
+        name: family.title,
+        serviceType: family.title,
+        description: family.summary,
+        provider: { "@id": `${siteConfig.url}#clinic` },
+        areaServed: { "@type": "City", name: "Mérida, Yucatán" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Inicio", item: siteConfig.url },
+          { "@type": "ListItem", position: 2, name: family.title, item: pageUrl }
+        ]
+      }
+    ]
+  };
 
   return (
-    <main>
+    <>
+      <main>
       <section className="border-b border-line bg-aurora py-16 lg:py-24">
         <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-10 lg:grid-cols-[1.05fr_.95fr] lg:items-end">
           <div>
@@ -113,6 +153,62 @@ export default async function TreatmentAreaPage({ params }: PageProps) {
           </Card>
         </div>
       </section>
+
+      {isClinicalDermatology && (
+        <section className="border-b border-line bg-soft/25 py-20 lg:py-28">
+          <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 lg:grid-cols-[.8fr_1.2fr]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-champagne">Consulta médica en Mérida</p>
+              <h2 className="mt-4 font-serif text-[clamp(2.7rem,5vw,4.8rem)] leading-[.94] tracking-[-.055em] text-bone">
+                Piel, cabello y uñas se valoran dentro del contexto completo.
+              </h2>
+              <p className="mt-6 text-sm leading-7 text-muted">
+                Atención con cita en San Ramón Norte. La consulta médica tiene una inversión de {siteConfig.consultationPrice}.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["01", "Historia clínica", "Evolución, síntomas, tratamientos previos, medicamentos, alergias y factores que modifican el caso."],
+                ["02", "Exploración", "Revisión dirigida de piel, cabello o uñas y comparación de patrones clínicos relevantes."],
+                ["03", "Diagnóstico diferencial", "Se define qué explica mejor el problema y qué estudios aportarían información real, si fueran necesarios."],
+                ["04", "Plan y seguimiento", "Tratamiento por prioridades, tolerancia, objetivos, tiempos y criterios para ajustar la conducta."]
+              ].map(([number, title, text]) => (
+                <Card key={number} className="p-6">
+                  <p className="text-xs tracking-[0.2em] text-champagne">{number}</p>
+                  <h3 className="mt-6 text-xl font-medium text-bone">{title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-muted">{text}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <div className="mx-auto mt-10 w-[min(1180px,calc(100%-32px))] rounded-[1.75rem] border border-line bg-background/50 p-6 sm:p-7">
+            <p className="text-xs uppercase tracking-[0.18em] text-champagne">Autoría y alcance profesional</p>
+            <div className="mt-5 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
+              <div>
+                <p className="text-lg font-medium text-bone">{siteConfig.legalDoctorName}</p>
+                <p className="mt-2 text-sm text-muted">{siteConfig.professionalTitle} · {siteConfig.practiceArea}</p>
+                <p className="mt-1 text-xs text-quiet">{siteConfig.professionalLicense}</p>
+                <p className="mt-4 text-xs text-quiet">Última revisión médica: 23 de julio de 2026.</p>
+              </div>
+              <div className="space-y-3 text-xs leading-5 text-muted">
+                <p>
+                  La información pública orienta sobre el proceso de valoración; no confirma diagnósticos ni sustituye una consulta individual.
+                </p>
+                <a
+                  href="https://www.aad.org/member/clinical-quality/guidelines"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex text-bone underline decoration-line underline-offset-4"
+                >
+                  Guías clínicas de la American Academy of Dermatology
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="border-b border-line bg-background py-20 lg:py-28">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
@@ -159,6 +255,8 @@ export default async function TreatmentAreaPage({ params }: PageProps) {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+    </>
   );
 }

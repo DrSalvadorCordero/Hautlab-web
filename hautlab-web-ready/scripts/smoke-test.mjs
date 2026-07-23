@@ -49,7 +49,13 @@ async function main() {
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  const lastModifiedDates = [...sitemap.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].map((match) => match[1]);
   record(locs.length === 30, `sitemap contiene 30 URLs canónicas (encontradas: ${locs.length})`);
+  record(lastModifiedDates.length === locs.length, "cada URL del sitemap declara una fecha editorial");
+  record(
+    new Set(lastModifiedDates).size > 1,
+    "el sitemap conserva fechas editoriales reales y no asigna una fecha de compilación idéntica"
+  );
   record(locs.includes(`${productionOrigin}/en`), "sitemap incluye la versión internacional en inglés");
   record(locs.includes(`${productionOrigin}/contacto`), "sitemap incluye la página de contacto");
   record(locs.includes(`${productionOrigin}/cabina`), "sitemap incluye la Cabina Dermatocosmética");
@@ -77,6 +83,8 @@ async function main() {
   record(hasLanguageAlternate(homeHtml, "x-default", productionOrigin), "la portada declara x-default");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
+  record(!homeHtml.includes("Physician"), "el schema no infla la acreditación profesional");
+  record(homeHtml.includes("MedicalClinic"), "la portada identifica la clínica con schema");
 
   const englishResponse = await request("/en");
   const englishHtml = await englishResponse.text();
@@ -130,6 +138,45 @@ async function main() {
   record(karenResponse.status === 200, "/cabina/karen-cruz responde 200");
   record(karenHtml.includes("Coordinadora de Cabina Dermatocosmética HAUTLAB"), "el perfil conserva la jerarquía de HAUTLAB");
 
+  const contactResponse = await request("/contacto");
+  const contactHtml = await contactResponse.text();
+  record(contactResponse.status === 200, "/contacto responde 200");
+  record(contactHtml.includes('id="contacto-hautlab"'), "/contacto presenta el formulario estructurado");
+  record(contactHtml.includes("aviso de privacidad"), "el formulario enlaza el aviso de privacidad");
+  record(contactHtml.includes("Tipo de atención"), "el formulario segmenta la ruta de atención");
+
+  const deletionResponse = await request("/data-deletion");
+  const deletionHtml = await deletionResponse.text();
+  record(deletionResponse.status === 200, "/data-deletion responde 200");
+  record(deletionHtml.includes("Data deletion instructions"), "/data-deletion publica instrucciones verificables");
+  record(
+    /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(deletionHtml) ||
+      /<meta[^>]+content=["'][^"']*noindex[^"']*["'][^>]+name=["']robots/i.test(deletionHtml),
+    "/data-deletion evita indexación"
+  );
+
+  const clinicalHubResponse = await request("/tratamientos/dermatologia-clinica");
+  const clinicalHubHtml = await clinicalHubResponse.text();
+  record(clinicalHubResponse.status === 200, "el hub de dermatología clínica responde 200");
+  record(clinicalHubHtml.includes("Consulta médica en Mérida"), "el hub explica el proceso local de consulta");
+  record(clinicalHubHtml.includes("Última revisión médica"), "el hub declara revisión médica");
+
+  for (const slug of [
+    "rinomodelacion",
+    "toxina-botulinica",
+    "acne",
+    "cicatrices-acne",
+    "melasma",
+    "alopecia"
+  ]) {
+    const response = await request(`/procedimientos/${slug}`);
+    const html = await response.text();
+    record(response.status === 200, `/procedimientos/${slug} responde 200`);
+    record(html.includes("Revisión médica y fuentes"), `/procedimientos/${slug} declara revisión y fuentes`);
+    record(html.includes("Riesgos y límites"), `/procedimientos/${slug} explica riesgos y límites`);
+    record(html.includes("Alternativas"), `/procedimientos/${slug} presenta alternativas`);
+  }
+
   const expectedHeaders = {
     "x-content-type-options": "nosniff",
     "x-frame-options": "SAMEORIGIN",
@@ -170,6 +217,16 @@ async function main() {
     "el asistente canaliza señales de alarma a urgencias"
   );
 
+  const adminContentResponse = await request("/api/admin/cabina-content");
+  record(adminContentResponse.status === 401, "la API de contenido administrativo rechaza acceso anónimo");
+
+  const adminPublishResponse = await request("/api/admin/cabina-content", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Origin: "https://example.com" },
+    body: JSON.stringify({ core: {}, services: [], faq: [] })
+  });
+  record(adminPublishResponse.status === 403, "la API administrativa bloquea publicaciones sin autorización");
+
   const robotsResponse = await request("/robots.txt");
   const robots = await robotsResponse.text();
   record(robotsResponse.status === 200, "/robots.txt responde 200");
@@ -183,6 +240,7 @@ async function main() {
   await checkRedirect("/tratamientos", "/procedimientos", [308]);
   await checkRedirect("/dermatologia-clinica", "/tratamientos/dermatologia-clinica", [308]);
   await checkRedirect("/tratamientos/rinomodelacion", "/procedimientos/rinomodelacion", [307, 308]);
+  await checkRedirect("/aviso-privacidad", "/aviso-de-privacidad", [308]);
 
   if (failures.length > 0) {
     console.error(`\nSmoke test falló con ${failures.length} problema(s):`);
@@ -190,7 +248,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Smoke test correcto: ${locs.length} URLs canónicas, inglés, geolocalización, cabina, asistente, privacidad, cabeceras y 404 validados.`);
+  console.log(`Smoke test correcto: ${locs.length} URLs canónicas, contenido clínico, contacto, inglés, geolocalización, cabina, asistente, privacidad, cabeceras y 404 validados.`);
 }
 
 main().catch((error) => {

@@ -220,7 +220,7 @@ export function ConsentManager() {
     if (lastTrackedPath.current !== currentPath) {
       sendGoogleEvent("page_view", {
         page_title: document.title,
-        page_location: `${window.location.origin}${currentPath}`
+        page_location: window.location.href
       });
       fbq("track", "PageView");
       lastTrackedPath.current = currentPath;
@@ -287,9 +287,19 @@ export function ConsentManager() {
       }
     };
 
-    const trackSubmit = (event: Event) => {
-      if (!(event.target instanceof HTMLFormElement)) return;
-      sendGoogleEvent("form_submit", { form_id: event.target.id || "general" });
+    const trackValidatedLead = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return;
+      const detail =
+        event.detail && typeof event.detail === "object"
+          ? (event.detail as Record<string, unknown>)
+          : {};
+      const safeDetail = Object.fromEntries(
+        ["form_id", "pathway", "city", "source", "medium", "campaign"]
+          .map((key) => [key, typeof detail[key] === "string" ? detail[key] : undefined] as const)
+          .filter((entry) => Boolean(entry[1]))
+      );
+
+      sendGoogleEvent("form_submit", safeDetail);
       sendLeadConversion("form");
       fbq("track", "Lead");
     };
@@ -315,13 +325,13 @@ export function ConsentManager() {
     }, 45000);
 
     document.addEventListener("click", trackClick, true);
-    document.addEventListener("submit", trackSubmit, true);
+    window.addEventListener("hautlab:validated-lead", trackValidatedLead);
     window.addEventListener("scroll", trackScroll, { passive: true });
     trackScroll();
 
     return () => {
       document.removeEventListener("click", trackClick, true);
-      document.removeEventListener("submit", trackSubmit, true);
+      window.removeEventListener("hautlab:validated-lead", trackValidatedLead);
       window.removeEventListener("scroll", trackScroll);
       window.clearTimeout(engagementTimer);
     };

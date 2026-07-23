@@ -207,15 +207,15 @@ export default async function EnglishHomePage() {
           postalCode: "97117",
           addressCountry: "MX"
         },
-        founder: { "@id": `${siteConfig.url}#physician` },
+        founder: { "@id": `${siteConfig.url}#doctor` },
         sameAs: [siteConfig.instagram]
       },
       {
-        "@type": "Physician",
-        "@id": `${siteConfig.url}#physician`,
-        name: "Dr. Salvador Cordero Romero",
-        jobTitle: "Médico Cirujano",
-        identifier: "Mexican Professional License 11804418",
+        "@type": "Person",
+        "@id": `${siteConfig.url}#doctor`,
+        name: siteConfig.legalDoctorName,
+        jobTitle: siteConfig.professionalTitle,
+        identifier: siteConfig.professionalLicense,
         description: "Medical practice focused on clinical dermatology, medical aesthetics and facial design.",
         knowsAbout: ["Clinical dermatology", "Medical aesthetics", "Facial design", "Skin quality"],
         worksFor: { "@id": `${siteConfig.url}#clinic` }

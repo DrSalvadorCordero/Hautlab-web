@@ -9,6 +9,14 @@ const familyPaths = new Set([
 
 const fixedRelatedPaths = new Set(["/procedimientos", ...familyPaths]);
 const slugPattern = /^[a-z0-9-]+$/;
+const medicallyExpanded = new Set([
+  "rinomodelacion",
+  "toxina-botulinica",
+  "acne",
+  "melasma",
+  "alopecia",
+  "cicatrices-acne"
+]);
 
 export function validateTreatmentCatalog(catalog: Record<string, TreatmentPageContent>) {
   const errors: string[] = [];
@@ -22,6 +30,26 @@ export function validateTreatmentCatalog(catalog: Record<string, TreatmentPageCo
     if (!treatment.image.startsWith("/")) errors.push(`${slug}: la imagen debe usar una ruta interna absoluta.`);
     if (!familyPaths.has(treatment.category.href)) errors.push(`${slug}: categoría con ruta no reconocida (${treatment.category.href}).`);
     if (treatment.faq.length < 2) errors.push(`${slug}: se requieren al menos dos preguntas frecuentes.`);
+    if (treatment.related.length < 2 || treatment.related.length > 6) {
+      errors.push(`${slug}: se requieren entre dos y seis enlaces relacionados.`);
+    }
+
+    if (medicallyExpanded.has(slug)) {
+      if (!treatment.clinicalDetails) errors.push(`${slug}: falta profundidad clínica.`);
+      if (!treatment.medicalReview) errors.push(`${slug}: falta revisión médica y fuentes.`);
+      if ((treatment.clinicalDetails?.evaluation.length ?? 0) < 3) {
+        errors.push(`${slug}: la valoración previa está incompleta.`);
+      }
+      if ((treatment.medicalReview?.sources.length ?? 0) < 2) {
+        errors.push(`${slug}: se requieren al menos dos fuentes.`);
+      }
+
+      for (const source of treatment.medicalReview?.sources ?? []) {
+        if (!source.href.startsWith("https://")) {
+          errors.push(`${slug}: la fuente debe usar HTTPS (${source.href}).`);
+        }
+      }
+    }
 
     const priorSlug = titles.get(treatment.title);
     if (priorSlug) errors.push(`${slug}: título duplicado con ${priorSlug} (${treatment.title}).`);
