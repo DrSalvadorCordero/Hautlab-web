@@ -69,6 +69,10 @@ jobs:
           curl -fsS http://127.0.0.1:3000/ >/dev/null
           npm run smoke-test 2>&1 | tee /tmp/hautlab-smoke.log
 
+          curl -fsS -D /tmp/hautlab-og-headers -o /tmp/hautlab-og.png http://127.0.0.1:3000/opengraph-image
+          grep -qi '^content-type: image/png' /tmp/hautlab-og-headers
+          test -s /tmp/hautlab-og.png
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -78,5 +82,6 @@ jobs:
             /tmp/hautlab-audit.json
             /tmp/hautlab-smoke.log
             /tmp/hautlab-next.log
+            /tmp/hautlab-og-headers
           if-no-files-found: ignore
           retention-days: 3
