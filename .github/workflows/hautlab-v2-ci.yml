@@ -73,6 +73,10 @@ jobs:
           grep -qi '^content-type: image/png' /tmp/hautlab-og-headers
           test -s /tmp/hautlab-og.png
 
+          curl -fsS -L -D /tmp/hautlab-icon-headers -o /tmp/hautlab-icon.svg http://127.0.0.1:3000/favicon.ico
+          grep -qi '^content-type: image/svg+xml' /tmp/hautlab-icon-headers
+          grep -q '<svg' /tmp/hautlab-icon.svg
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,5 +87,6 @@ jobs:
             /tmp/hautlab-smoke.log
             /tmp/hautlab-next.log
             /tmp/hautlab-og-headers
+            /tmp/hautlab-icon-headers
           if-no-files-found: ignore
           retention-days: 3
