@@ -7,7 +7,13 @@ import { geoHeaders } from "@/lib/geo-personalization";
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
 
 const configuredMiddleware = clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) await auth.protect();
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.redirect(new URL("/admin/iniciar-sesion", request.url));
+    }
+  }
 
   return NextResponse.next({
     request: {
