@@ -7,6 +7,8 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      { source: "/favicon.ico", destination: "/icon.svg", permanent: true },
+      { source: "/favicon.png", destination: "/icon.svg", permanent: true },
       { source: "/tratamientos", destination: "/procedimientos", permanent: true },
       { source: "/rinomodelacion", destination: "/procedimientos/rinomodelacion", permanent: true },
       { source: "/botox", destination: "/procedimientos/toxina-botulinica", permanent: true },

@@ -26,8 +26,9 @@ export default function OpenGraphImage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", maxWidth: 930 }}>
-          <div style={{ fontSize: 78, lineHeight: .94, letterSpacing: -4, fontFamily: "serif" }}>
-            Precisión médica.<br />Estética contenida.
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 78, lineHeight: .94, letterSpacing: -4, fontFamily: "serif" }}>
+            <div>Precisión médica.</div>
+            <div>Estética contenida.</div>
           </div>
           <div style={{ marginTop: 34, fontSize: 25, color: "#b9afa2" }}>
             Diagnóstico primero. Procedimientos por indicación. Resultados sobrios.
