@@ -65,7 +65,9 @@ export class AttendanceDatabaseError extends Error {
 
 function getConfig(): DatabaseConfig | null {
   const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceRoleKey = (
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  )?.trim();
   return url && serviceRoleKey ? { url, serviceRoleKey } : null;
 }
 
