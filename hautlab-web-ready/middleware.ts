@@ -6,21 +6,28 @@ import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
 
-const configuredMiddleware = clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    const { userId } = await auth();
+const configuredMiddleware = clerkMiddleware(
+  async (auth, request) => {
+    if (isProtectedRoute(request)) {
+      const { userId } = await auth();
 
-    if (!userId) {
-      return NextResponse.redirect(new URL("/admin/iniciar-sesion", request.url));
+      if (!userId) {
+        return NextResponse.redirect(new URL("/admin/iniciar-sesion", request.url));
+      }
+    }
+
+    return NextResponse.next({
+      request: {
+        headers: geoHeaders(request.headers, request.nextUrl.pathname)
+      }
+    });
+  },
+  {
+    frontendApiProxy: {
+      enabled: true
     }
   }
-
-  return NextResponse.next({
-    request: {
-      headers: geoHeaders(request.headers, request.nextUrl.pathname)
-    }
-  });
-});
+);
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
   if (!isClerkConfigured()) {
