@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const EXPECTED_TOKEN_HASH = "24cc27f7e841b3c2043d16587df17581e4123e34209fded297591aea0c8f3500";
+const EXPECTED_TOKEN_HASH = "9be7a664ee7474485a57afd6a0d9f526f1744bdbc92645f54e120752680cff0d";
 const PROXY_URL = "https://www.hautlabmx.com/__clerk";
 const ALLOWED_DOMAINS = new Set(["hautlabmx.com", "www.hautlabmx.com"]);
 
