@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const EXPECTED_TOKEN_HASH = "9be7a664ee7474485a57afd6a0d9f526f1744bdbc92645f54e120752680cff0d";
-const PROXY_URL = "https://www.hautlabmx.com/__clerk";
-const ALLOWED_DOMAINS = new Set(["hautlabmx.com", "www.hautlabmx.com"]);
+const EXPECTED_TOKEN_HASH = "24cc27f7e841b3c2043d16587df17581e4123e34209fded297591aea0c8f3500";
+const PROXY_URL = "https://hautlabmx.com/__clerk";
+const PRIMARY_DOMAIN = "hautlabmx.com";
 
 function tokenIsValid(token: string | null) {
   if (!token) return false;
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   const domain = domains.find(
     (item: { name?: string; id?: string; is_satellite?: boolean }) =>
-      item?.id && item?.name && ALLOWED_DOMAINS.has(item.name.toLowerCase()) && !item.is_satellite
+      item?.id && item?.name?.toLowerCase() === PRIMARY_DOMAIN && !item.is_satellite
   );
 
   if (!domain?.id) {
@@ -70,9 +70,15 @@ export async function GET(request: NextRequest) {
 
   const updatePayload = await updateResponse.json().catch(() => null);
   if (!updateResponse.ok) {
-    const errorCode = Array.isArray(updatePayload?.errors) ? updatePayload.errors[0]?.code : undefined;
+    const firstError = Array.isArray(updatePayload?.errors) ? updatePayload.errors[0] : undefined;
     return NextResponse.json(
-      { ok: false, step: "update-domain", status: updateResponse.status, code: errorCode ?? null },
+      {
+        ok: false,
+        step: "update-domain",
+        status: updateResponse.status,
+        code: firstError?.code ?? null,
+        message: firstError?.message ?? null
+      },
       { status: 502 }
     );
   }
