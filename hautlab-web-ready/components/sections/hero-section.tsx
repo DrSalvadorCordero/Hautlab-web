@@ -78,6 +78,7 @@ export async function HeroSection() {
                 alt="Retrato del Dr. Salvador Cordero en HAUTLAB, Mérida"
                 fill
                 priority
+                fetchPriority="high"
                 sizes="(max-width: 1024px) 100vw, 48vw"
                 className="object-cover object-center"
               />

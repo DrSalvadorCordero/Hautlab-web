@@ -5,8 +5,8 @@ import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { analyticsConfig } from "@/lib/analytics-config";
+import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
 
-type ConsentValue = "accepted" | "rejected";
 type GtagFunction = (...args: unknown[]) => void;
 type MetaPixelFunction = (...args: unknown[]) => void;
 type QueuedMetaPixel = MetaPixelFunction & {
@@ -26,18 +26,27 @@ declare global {
   }
 }
 
-const STORAGE_KEY = "hautlab_cookie_consent_v1";
 const OPEN_EVENT = "hautlab:open-consent";
 const GOOGLE_SCRIPT_ID = "hautlab-google-tag";
 const META_SCRIPT_ID = "hautlab-meta-pixel";
 
 function getStoredConsent(): ConsentValue | null {
   try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === "accepted" || stored === "rejected" ? stored : null;
+    return parseConsentValue(window.localStorage.getItem(CONSENT_COOKIE_NAME));
   } catch {
     return null;
   }
+}
+
+function persistConsent(value: ConsentValue) {
+  try {
+    window.localStorage.setItem(CONSENT_COOKIE_NAME, value);
+  } catch {
+    // The cookie still preserves the preference.
+  }
+
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${CONSENT_COOKIE_NAME}=${value}; Max-Age=31536000; Path=/; SameSite=Lax${secure}`;
 }
 
 function expireCookies(prefixes: string[]) {
@@ -159,19 +168,19 @@ function disableTracking() {
   window.fbq?.("consent", "revoke");
 }
 
-export function ConsentManagerEn() {
-  const [consent, setConsent] = useState<ConsentValue | null>(null);
+export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentValue | null }) {
+  const [consent, setConsent] = useState<ConsentValue | null>(initialConsent);
   const [ready, setReady] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialConsent === null);
   const tracked = useRef(false);
 
   useEffect(() => {
     disableTracking();
-    const stored = getStoredConsent();
+    const stored = getStoredConsent() ?? initialConsent;
     setConsent(stored);
     setOpen(stored === null);
     setReady(true);
-  }, []);
+  }, [initialConsent]);
 
   useEffect(() => {
     const openPreferences = () => setOpen(true);
@@ -225,11 +234,7 @@ export function ConsentManagerEn() {
   }, [consent, ready]);
 
   function saveConsent(value: ConsentValue) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, value);
-    } catch {
-      // The preference still applies for the current session.
-    }
+    persistConsent(value);
 
     if (value === "rejected") {
       disableTracking();
@@ -240,7 +245,7 @@ export function ConsentManagerEn() {
     setOpen(false);
   }
 
-  if (!ready || (!open && consent !== null)) return null;
+  if (!open && consent !== null) return null;
 
   return (
     <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl" role="dialog" aria-labelledby="cookie-title-en" aria-live="polite">

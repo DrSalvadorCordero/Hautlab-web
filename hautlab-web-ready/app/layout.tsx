@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Inter, Playfair_Display } from "next/font/google";
-import Script from "next/script";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
-import { AuthProvider } from "@/components/auth/auth-provider";
 import { ConsentManager } from "@/components/privacy/consent-manager";
 import { ConsentManagerEn } from "@/components/privacy/consent-manager-en";
 import { SiteShell } from "@/components/site/site-shell";
+import { CONSENT_COOKIE_NAME, parseConsentValue } from "@/lib/consent";
 import { siteConfig } from "@/lib/siteConfig";
 import "./globals.css";
 
@@ -36,8 +35,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const requestHeaders = await headers();
+  const [requestHeaders, cookieStore] = await Promise.all([headers(), cookies()]);
   const isEnglish = requestHeaders.get("x-hautlab-locale") === "en";
+  const pathname = requestHeaders.get("x-hautlab-pathname") ?? "";
+  const isInternalArea = pathname.startsWith("/admin");
+  const initialConsent = parseConsentValue(cookieStore.get(CONSENT_COOKIE_NAME)?.value);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -107,18 +109,30 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={isEnglish ? "en" : "es-MX"} className={`${inter.variable} ${playfair.variable}`}>
       <body>
-        <AuthProvider>
-          <a
-            href="#contenido-principal"
-            className="fixed left-4 top-4 z-[120] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm font-medium text-background shadow-calm transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-champagne"
-          >
-            {isEnglish ? "Skip to content" : "Saltar al contenido"}
-          </a>
-          <AttributionCapture />
-          <SiteShell>{children}</SiteShell>
-          {isEnglish ? <ConsentManagerEn /> : <ConsentManager />}
-          <Script id="hautlab-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        </AuthProvider>
+        {isInternalArea ? (
+          children
+        ) : (
+          <>
+            <a
+              href="#contenido-principal"
+              className="fixed left-4 top-4 z-[120] -translate-y-24 rounded-full bg-bone px-5 py-3 text-sm font-medium text-background shadow-calm transition focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-champagne"
+            >
+              {isEnglish ? "Skip to content" : "Saltar al contenido"}
+            </a>
+            <AttributionCapture />
+            <SiteShell isEnglish={isEnglish}>{children}</SiteShell>
+            {isEnglish ? (
+              <ConsentManagerEn initialConsent={initialConsent} />
+            ) : (
+              <ConsentManager initialConsent={initialConsent} />
+            )}
+            <script
+              id="hautlab-jsonld"
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+          </>
+        )}
       </body>
     </html>
   );

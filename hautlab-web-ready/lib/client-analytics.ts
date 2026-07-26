@@ -1,7 +1,8 @@
+import { CONSENT_COOKIE_NAME } from "@/lib/consent";
+
 type GtagFunction = (...args: unknown[]) => void;
 type AnalyticsWindow = Window & { gtag?: GtagFunction };
 
-const CONSENT_STORAGE_KEY = "hautlab_cookie_consent_v1";
 const GENERAL_TRACKING_PATHS = new Set(["/", "/pagos", "/contacto", "/gracias", "/cabina", "/cabina/karen-cruz"]);
 
 export type HautlabAnalyticsEventName =
@@ -20,7 +21,7 @@ export function trackHautlabEvent(name: HautlabAnalyticsEventName, parameters: R
   if (!GENERAL_TRACKING_PATHS.has(window.location.pathname)) return;
 
   try {
-    if (window.localStorage.getItem(CONSENT_STORAGE_KEY) !== "accepted") return;
+    if (window.localStorage.getItem(CONSENT_COOKIE_NAME) !== "accepted") return;
   } catch {
     return;
   }
