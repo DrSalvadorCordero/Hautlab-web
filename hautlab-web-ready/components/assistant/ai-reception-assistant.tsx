@@ -138,7 +138,7 @@ export function AIReceptionAssistant() {
         <button
           type="button"
           onClick={openAssistant}
-          className="fixed bottom-5 right-4 z-[90] inline-flex min-h-12 items-center gap-3 rounded-full border border-bone/15 bg-[#11100e]/95 px-4 py-3 text-sm font-medium text-bone shadow-calm backdrop-blur-xl transition hover:border-champagne/45 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/50 sm:bottom-6 sm:right-6"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 z-[90] inline-flex min-h-12 items-center gap-3 rounded-full border border-bone/15 bg-[#11100e]/95 px-4 py-3 text-sm font-medium text-bone shadow-calm backdrop-blur-xl transition hover:border-champagne/45 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/50 sm:bottom-6 sm:right-6"
           aria-label="Abrir asistente virtual de HAUTLAB"
         >
           <span className="grid h-8 w-8 place-items-center rounded-full bg-champagne text-background">

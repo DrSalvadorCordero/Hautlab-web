@@ -352,7 +352,7 @@ export default function CabinaPage() {
         </div>
       </section>
 
-      <div className="fixed bottom-3 left-3 right-20 z-40 lg:hidden"><a href={buildWhatsAppLink(cabinaContent.booking.generalMessage)} target="_blank" rel="noreferrer" data-event="cabina_mobile_conversion" className="flex min-h-14 items-center justify-between rounded-full border border-champagne/30 bg-champagne px-5 text-sm font-medium text-background shadow-calm"><span>{cabinaContent.booking.primaryLabel}</span><ArrowRight className="h-4 w-4" /></a></div>
+      <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-20 z-40 lg:hidden"><a href={buildWhatsAppLink(cabinaContent.booking.generalMessage)} target="_blank" rel="noreferrer" data-event="cabina_mobile_conversion" className="flex min-h-14 items-center justify-between rounded-full border border-champagne/30 bg-champagne px-5 text-sm font-medium text-background shadow-calm"><span>{cabinaContent.booking.primaryLabel}</span><ArrowRight className="h-4 w-4" /></a></div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
