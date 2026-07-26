@@ -83,7 +83,15 @@ export function TreatmentPageLayout({ content }: { content: TreatmentPageContent
             </div>
           </div>
           <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-line bg-soft shadow-calm">
-            <Image src={content.image} alt={content.imageAlt} fill priority sizes="(max-width: 1024px) 100vw, 46vw" className="object-cover" />
+            <Image
+              src={content.image}
+              alt={content.imageAlt}
+              fill
+              priority
+              fetchPriority="high"
+              sizes="(max-width: 1024px) 100vw, 46vw"
+              className="object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
           </div>
         </div>
@@ -290,7 +298,7 @@ export function TreatmentPageLayout({ content }: { content: TreatmentPageContent
         </div>
       </section>
 
-      <div className="fixed inset-x-3 bottom-3 z-40 lg:hidden">
+      <div className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-20 z-40 lg:hidden">
         <a
           href={whatsappHref}
           target="_blank"

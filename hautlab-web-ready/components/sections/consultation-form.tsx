@@ -82,7 +82,7 @@ export function ConsultationForm() {
     <form
       id="contacto-hautlab"
       onSubmit={form.handleSubmit(onSubmit)}
-      className="grid gap-4 rounded-[2rem] border border-line bg-white/[0.035] p-5 shadow-calm sm:p-7"
+      className="grid gap-4 rounded-[2rem] border border-background/10 bg-background p-5 text-bone shadow-calm sm:p-7"
       noValidate
     >
       <div className="grid gap-4 sm:grid-cols-2">

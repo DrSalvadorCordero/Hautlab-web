@@ -145,13 +145,11 @@ const faqs = [
   }
 ];
 
-function audienceCopy(audience: string | null, city: string | null) {
+function audienceCopy(audience: string | null) {
   if (audience === "international") {
     return {
       eyebrow: "HAUTLAB · Private medical care in Mérida, Mexico",
-      context: city
-        ? `You are viewing the international version from ${city}. Appointment planning can be coordinated before travel.`
-        : "Appointment planning for international visitors can be coordinated before travel."
+      context: "Appointment planning for international visitors can be coordinated before travel."
     };
   }
 
@@ -178,8 +176,7 @@ function audienceCopy(audience: string | null, city: string | null) {
 export default async function EnglishHomePage() {
   const requestHeaders = await headers();
   const audience = requestHeaders.get("x-hautlab-audience");
-  const city = requestHeaders.get("x-hautlab-city");
-  const contextualCopy = audienceCopy(audience, city);
+  const contextualCopy = audienceCopy(audience);
   const bookingMessage =
     "Hello, I would like to schedule a private evaluation at HAUTLAB in Mérida. I am contacting you through the English website.";
   const travelMessage =

@@ -11,7 +11,7 @@ export function CtaSection() {
       <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-10 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
         <Reveal>
           <div>
-            <p className="mb-4 text-xs uppercase tracking-[0.24em] text-taupe">Agenda</p>
+            <p className="mb-4 text-xs uppercase tracking-[0.24em] text-[#6f5944]">Agenda</p>
             <h2 className="font-serif text-[clamp(2.8rem,5vw,5rem)] leading-[.95] tracking-[-.055em]">
               Empieza con valoración médica.
             </h2>

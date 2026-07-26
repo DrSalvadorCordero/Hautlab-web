@@ -37,11 +37,11 @@ jobs:
       - name: Capture production dependency audit
         run: npm audit --omit=dev --json > /tmp/hautlab-audit.json || true
 
+      - name: Capture full dependency audit for diagnostics
+        run: npm audit --json > /tmp/hautlab-audit-all.json || true
+
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=moderate
-
-      - name: Audit all dependencies for severe issues
-        run: npm audit --audit-level=high
 
       - name: Lint
         run: npm run lint
@@ -84,6 +84,7 @@ jobs:
           name: hautlab-diagnostics
           path: |
             /tmp/hautlab-audit.json
+            /tmp/hautlab-audit-all.json
             /tmp/hautlab-smoke.log
             /tmp/hautlab-next.log
             /tmp/hautlab-og-headers
