@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 export const metadata: Metadata = {
   title: "Panel interno | HAUTLAB",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <AuthProvider>{children}</AuthProvider>;
 }

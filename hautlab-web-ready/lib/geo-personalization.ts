@@ -64,6 +64,7 @@ export function geoHeaders(requestHeaders: HeaderReader, pathname: string) {
   headers.set("x-hautlab-country", context.country);
   headers.set("x-hautlab-region", context.region);
   headers.set("x-hautlab-city", context.city);
+  headers.set("x-hautlab-pathname", pathname);
 
   return headers;
 }

@@ -34,14 +34,15 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
   };
 }
 
-export function AIReceptionAssistant() {
-  const [open, setOpen] = useState(false);
+export function AIReceptionAssistant({ initialOpen = false }: { initialOpen?: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const trackedInitialOpen = useRef(false);
 
   const hasUserMessages = messages.some((message) => message.role === "user");
 
@@ -77,6 +78,12 @@ export function AIReceptionAssistant() {
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!initialOpen || trackedInitialOpen.current) return;
+    trackedInitialOpen.current = true;
+    trackHautlabEvent("ai_assistant_open");
+  }, [initialOpen]);
 
   function openAssistant() {
     setOpen(true);
