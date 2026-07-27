@@ -15,8 +15,19 @@ const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
+  applicationName: "HAUTLAB",
   title: siteConfig.title,
   description: siteConfig.description,
+  creator: siteConfig.doctorName,
+  publisher: "HAUTLAB",
+  alternates: {
+    canonical: siteConfig.url,
+    languages: {
+      "es-MX": siteConfig.url,
+      en: `${siteConfig.url}/en`,
+      "x-default": siteConfig.url
+    }
+  },
   verification: googleSiteVerification ? { google: googleSiteVerification } : undefined,
   openGraph: {
     title: siteConfig.title,
@@ -58,8 +69,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         name: "HAUTLAB",
         alternateName: "HAUTLAB + Dr. Salvador Cordero",
         url: isEnglish ? `${siteConfig.url}/en` : siteConfig.url,
+        image: `${siteConfig.url}/opengraph-image`,
         telephone: siteConfig.whatsappDisplay,
         priceRange: "$$$",
+        medicalSpecialty: "https://schema.org/Dermatology",
         slogan: isEnglish ? "Medical precision. Restrained aesthetics." : siteConfig.tagline,
         description: isEnglish
           ? "Private clinical dermatology, medical aesthetics and individualized skin treatment planning in Mérida, Mexico."
