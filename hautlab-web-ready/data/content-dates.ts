@@ -14,7 +14,7 @@ export const coreContentDates = {
 export const familyContentDates: Record<string, Date> = {
   "medicina-estetica-facial": date("2026-07-11"),
   "calidad-de-piel-y-soporte": date("2026-07-11"),
-  "dermatologia-clinica": date("2026-07-23"),
+  "dermatologia-clinica": date("2026-07-27"),
   "dermatologia-procedimental": date("2026-07-11")
 };
 
@@ -22,12 +22,12 @@ const priorityProcedureDates = new Set([
   "rinomodelacion",
   "toxina-botulinica",
   "acne",
+  "rosacea",
   "melasma",
   "alopecia",
   "cicatrices-acne"
 ]);
 
 export function procedureContentDate(slug: string) {
-  return priorityProcedureDates.has(slug) ? date("2026-07-23") : date("2026-07-11");
+  return priorityProcedureDates.has(slug) ? date("2026-07-27") : date("2026-07-11");
 }
-
