@@ -7,6 +7,12 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "hautlabmx.com" }],
+        destination: "https://www.hautlabmx.com/:path*",
+        permanent: true
+      },
       { source: "/favicon.ico", destination: "/icon.svg", permanent: true },
       { source: "/favicon.png", destination: "/icon.svg", permanent: true },
       { source: "/tratamientos", destination: "/procedimientos", permanent: true },
