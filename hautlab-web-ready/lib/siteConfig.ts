@@ -6,9 +6,9 @@ export const siteConfig = {
   practiceArea: "Dermatología Clínica y Estética",
   professionalLicense: "Cédula Profesional 11804418",
   platformName: "HAUTLAB",
-  title: "HAUTLAB + Dr. Salvador Cordero | Piel y diseño facial en Mérida",
+  title: "Dermatología clínica y estética en Mérida | HAUTLAB",
   description:
-    "Precisión médica. Estética contenida. Valoración de piel, diseño facial y procedimientos por indicación en Mérida, con resultados sobrios.",
+    "Valoración de piel, cabello y uñas, diseño facial y medicina estética en Mérida con el Dr. Salvador Cordero. Diagnóstico primero y seguimiento clínico.",
   url: "https://www.hautlabmx.com",
   whatsappNumber: "529992809758",
   whatsappDisplay: "+52 999 280 9758",
