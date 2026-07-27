@@ -5,6 +5,14 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
+const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
+
+const publicResponse = (request: NextRequest) =>
+  NextResponse.next({
+    request: {
+      headers: geoHeaders(request.headers, request.nextUrl.pathname)
+    }
+  });
 
 const configuredMiddleware = clerkMiddleware(
   async (auth, request) => {
@@ -16,11 +24,7 @@ const configuredMiddleware = clerkMiddleware(
       }
     }
 
-    return NextResponse.next({
-      request: {
-        headers: geoHeaders(request.headers, request.nextUrl.pathname)
-      }
-    });
+    return publicResponse(request);
   },
   {
     frontendApiProxy: {
@@ -30,12 +34,14 @@ const configuredMiddleware = clerkMiddleware(
 );
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  // Public pages must never depend on Clerk. A preview Clerk key promoted to
+  // production must not be able to take down the patient-facing website.
+  if (!isClerkRoute(request)) {
+    return publicResponse(request);
+  }
+
   if (!isClerkConfigured()) {
-    return NextResponse.next({
-      request: {
-        headers: geoHeaders(request.headers, request.nextUrl.pathname)
-      }
-    });
+    return publicResponse(request);
   }
 
   return configuredMiddleware(request, event);
