@@ -50,6 +50,7 @@ export function FooterEn() {
               WhatsApp {siteConfig.whatsappDisplay}
             </a>
             <Link className={linkClass} href="/cabina">Dermatocosmetic Studio</Link>
+            <Link className={linkClass} href="/en#research">Published research</Link>
             <a className={linkClass} href={siteConfig.instagram} target="_blank" rel="noreferrer">
               <Instagram className="mr-2 inline h-4 w-4" /> {siteConfig.instagramHandle}
             </a>

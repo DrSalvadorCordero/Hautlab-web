@@ -1,8 +1,9 @@
 const date = (value: string) => new Date(`${value}T12:00:00.000Z`);
 
 export const coreContentDates = {
-  home: date("2026-07-23"),
-  english: date("2026-07-21"),
+  home: date("2026-07-29"),
+  english: date("2026-07-29"),
+  publications: date("2026-07-29"),
   procedures: date("2026-07-23"),
   cabina: date("2026-07-22"),
   karen: date("2026-07-22"),

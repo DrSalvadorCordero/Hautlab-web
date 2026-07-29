@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PublicationsSectionEn } from "@/components/sections/publications-section-en";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -358,6 +359,8 @@ export default async function EnglishHomePage() {
           </div>
         </div>
       </section>
+
+      <PublicationsSectionEn />
 
       <section id="travel" className="scroll-mt-28 border-b border-line bg-aurora py-20 lg:py-28">
         <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-12 lg:grid-cols-[1fr_1fr] lg:items-start">
