@@ -50,7 +50,7 @@ async function main() {
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
   const lastModifiedDates = [...sitemap.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].map((match) => match[1]);
-  record(locs.length === 30, `sitemap contiene 30 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.length === 31, `sitemap contiene 31 URLs canónicas (encontradas: ${locs.length})`);
   record(lastModifiedDates.length === locs.length, "cada URL del sitemap declara una fecha editorial");
   record(
     new Set(lastModifiedDates).size > 1,
@@ -58,6 +58,7 @@ async function main() {
   );
   record(locs.includes(`${productionOrigin}/en`), "sitemap incluye la versión internacional en inglés");
   record(locs.includes(`${productionOrigin}/contacto`), "sitemap incluye la página de contacto");
+  record(locs.includes(`${productionOrigin}/publicaciones`), "sitemap incluye la página de publicaciones");
   record(locs.includes(`${productionOrigin}/cabina`), "sitemap incluye la Cabina Dermatocosmética");
   record(locs.includes(`${productionOrigin}/cabina/karen-cruz`), "sitemap incluye el perfil de Karen Cruz");
 

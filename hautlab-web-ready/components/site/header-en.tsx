@@ -6,6 +6,7 @@ import { buildWhatsAppLink } from "@/lib/whatsapp";
 const navigation = [
   { label: "Areas of care", href: "/en#care" },
   { label: "Clinical approach", href: "/en#approach" },
+  { label: "Published research", href: "/en#research" },
   { label: "For visiting patients", href: "/en#travel" },
   { label: "FAQ", href: "/en#faq" }
 ];
