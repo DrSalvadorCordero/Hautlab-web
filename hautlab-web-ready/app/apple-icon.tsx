@@ -3,29 +3,13 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-const hautlabMark =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANAAAAENCAYAAAB+c+sxAAACjUlEQVR42u3cMQ6DMAxA0bjy/a8cpi4MVQUJIdZ7F6hq9GuWOlprvT0vGmfdCLYTHzMQD9efm4DgBgGBgEBAICAQECAgEBAICAQECAgEBAICAQECAgGAAAGBgEBAICBAQCAgEBAUk4W+y+zTUG7ZYQOBgMArHC9Q7bX08QuvNhAICAQEAgIBAQICAYGAQECAgEBAICAQEAgIEBAICAQEAgIEBAICAYGAAAGBgEBAICAQECAgEBAICAQECAgEBAICAQECAgGBgEBAICBAQCAgEBAICBAQDJRG8AphBDYQCAgQEAgIBAQCAgQEAgIBgYBAQICAQEAgIBAQICAQEAgIBAQICAQEAgIBgYAAAYGAQEAgIOAXx+X/141gmDLH9G0gEBAICAQEAgIEBAICAYGAAAGBgEBAICAQECAgEBAICAQECAgEBAICAQECAgHBWpUOK4bHiQ0EAgIBAQICAYGAQECAgEBAICAQEAgIEBAICAQEAgIEBBNU+kdq9zi3UebfwzYQCAgEBAICAQECAgGBgEBAgIBAQCAgEBAICBAQCAgEBAICBAQCAgGBgICvSmetwuO8zWkwGwg/QgICAYGAAAGBgEBAICBAQCAgEBAICAQECAgEBAICAQECAgGBgEBAICBAQCAgEBAICBAQzJRGMMyKu9JO8dpAbBYtAgIBgYBAQCAgQEAgIBAQCAgQEAgIBAQCAgQEAgIBgYBAQICAQEAgIBAQICAQEAgIBAQCAgQEAgIBgYAAAYGAQEAgIEBAICAQEAgIBAQICAQEAgIBAQKCOXLR53ajxwYCAQECAgHBXtIIOAkjsIFAQCAgEBAgIBAQCAgEBAICBAQCAgGBgAABgYBAQCAgQEAgIBAQ7O0Ag1cOLrGqh1wAAAAASUVORK5CYII=";
-
 export default function AppleIcon() {
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#e8ded5",
-        }}
-      >
-        <img
-          src={hautlabMark}
-          width="73"
-          height="95"
-          alt=""
-          style={{ objectFit: "contain" }}
-        />
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#e8ded5" }}>
+        <svg width="83" height="108" viewBox="0 0 208 270" aria-hidden="true">
+          <path fill="#000" d="M0 0h29v237h54v-73h29v106H0V0Zm50 24h29v55h83V0h46v270h-46V106H50V24Zm64-24h48v27h-19v52h-29V0Zm0 164h29v106h-29V164Z" />
+        </svg>
       </div>
     ),
     size,
