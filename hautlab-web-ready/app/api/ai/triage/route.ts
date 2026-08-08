@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "OpenAI is not configured." }, { status: 503 });
   }
 
-  const model = process.env.HAUTLAB_ROUTER_MODEL?.trim() || "gpt-5.6-luna";
+  const model = process.env.HAUTLAB_ROUTER_MODEL?.trim() || "gpt-5-mini";
   const { message, city, conversationId } = parsedInput.data;
 
   try {
