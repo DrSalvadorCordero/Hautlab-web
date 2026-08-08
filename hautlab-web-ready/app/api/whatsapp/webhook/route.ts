@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
+import { processWhatsAppWebhook } from "@/lib/whatsapp-orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,7 +92,6 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  // Health response for operational checks. It never exposes secret values.
   if (!mode && !token && !challenge) {
     return NextResponse.json(
       {
@@ -101,6 +101,7 @@ export async function GET(request: NextRequest) {
           metaAppId: Boolean(META_APP_ID),
           verifyToken: Boolean(VERIFY_TOKEN),
           appSecret: Boolean(APP_SECRET),
+          orchestrator: true,
         },
       },
       {
@@ -157,10 +158,12 @@ export async function POST(request: NextRequest) {
   }
 
   const summary = summarizeWebhook(payload);
-
-  // Deliberately log only aggregate event metadata, never message text,
-  // patient names, phone numbers, images or clinical content.
   console.info("[whatsapp-webhook] verified event", summary);
+
+  const origin = request.nextUrl.origin;
+  after(async () => {
+    await processWhatsAppWebhook(payload, origin);
+  });
 
   return NextResponse.json(
     { received: true },
