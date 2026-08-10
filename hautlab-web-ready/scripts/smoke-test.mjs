@@ -218,6 +218,49 @@ async function main() {
     "el asistente canaliza señales de alarma a urgencias"
   );
 
+  const tearTroughAssistantResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "Quiero información de ojeras" }]
+    })
+  });
+  const tearTroughAssistantPayload = await tearTroughAssistantResponse.json();
+  const tearTroughReply = tearTroughAssistantPayload.reply || "";
+  record(tearTroughAssistantResponse.status === 200, "el asistente responde la consulta inicial de ojeras");
+  record(
+    tearTroughReply.includes("$7,500") &&
+      tearTroughReply.includes("$5,500") &&
+      tearTroughReply.includes("6 meses sin intereses"),
+    "la respuesta de ojeras explica las tres condiciones de pago vigentes"
+  );
+  record(
+    /hundimiento/i.test(tearTroughReply) && /color oscuro/i.test(tearTroughReply) && /bolsas/i.test(tearTroughReply),
+    "la respuesta de ojeras distingue hundimiento, color y bolsas"
+  );
+  record(
+    !tearTroughReply.includes("$1,300") && !/papada/i.test(tearTroughReply),
+    "la respuesta de ojeras no desvía a consulta dermatológica ni mezcla papada"
+  );
+
+  const legacyPriceAssistantResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "A mí me dijeron que costaba $4,900" }]
+    })
+  });
+  const legacyPriceAssistantPayload = await legacyPriceAssistantResponse.json();
+  const legacyPriceReply = legacyPriceAssistantPayload.reply || "";
+  record(legacyPriceAssistantResponse.status === 200, "el asistente responde cuando mencionan $4,900");
+  record(/verific/i.test(legacyPriceReply), "el asistente envía la referencia de $4,900 a verificación");
+  record(
+    legacyPriceReply.includes("$7,500") &&
+      legacyPriceReply.includes("$5,500") &&
+      legacyPriceReply.includes("6 meses sin intereses"),
+    "la respuesta de verificación conserva las condiciones vigentes"
+  );
+
   const adminContentResponse = await request("/api/admin/cabina-content");
   record(adminContentResponse.status === 401, "la API de contenido administrativo rechaza acceso anónimo");
 
