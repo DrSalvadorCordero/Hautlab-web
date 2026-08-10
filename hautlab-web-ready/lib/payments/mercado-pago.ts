@@ -119,7 +119,10 @@ export async function createMercadoPagoPreference(input: {
     throw new MercadoPagoIntegrationError("Mercado Pago did not return a preference id", "missing_preference_id");
   }
 
-  const checkoutUrl = mode === "test" ? result.sandbox_init_point : result.init_point;
+  // Checkout Pro test purchases run through the regular Mercado Pago checkout.
+  // Test credentials and a test buyer keep the transaction non-productive;
+  // sandbox_init_point is a legacy URL that currently fails for Mexico.
+  const checkoutUrl = result.init_point;
   if (!checkoutUrl) {
     throw new MercadoPagoIntegrationError("Mercado Pago did not return a checkout URL", "missing_checkout_url");
   }
