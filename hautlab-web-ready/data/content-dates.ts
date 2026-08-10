@@ -29,6 +29,9 @@ const priorityProcedureDates = new Set([
   "cicatrices-acne"
 ]);
 
+const searchConsoleProcedureDates = new Set(["verrugas", "melasma", "skin-booster"]);
+
 export function procedureContentDate(slug: string) {
+  if (searchConsoleProcedureDates.has(slug)) return date("2026-08-10");
   return priorityProcedureDates.has(slug) ? date("2026-07-27") : date("2026-07-11");
 }
