@@ -150,6 +150,17 @@ function constantTimeEqual(left: string, right: string) {
   return difference === 0;
 }
 
+function signatureEnvelopeIsFresh(header: string | null, requestId: string | null) {
+  const parsed = parseSignature(header);
+  if (!parsed || !requestId || requestId.length > 160 || !/^[a-f0-9]{64}$/i.test(parsed.signature)) {
+    return false;
+  }
+  const numericTimestamp = Number(parsed.timestamp);
+  if (!Number.isFinite(numericTimestamp)) return false;
+  const timestampMs = numericTimestamp > 10_000_000_000 ? numericTimestamp : numericTimestamp * 1000;
+  return Math.abs(Date.now() - timestampMs) <= 5 * 60_000;
+}
+
 async function hmacHex(secret: string, value: string) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -170,12 +181,7 @@ async function validateSignature(input: {
   secret: string;
 }) {
   const parsed = parseSignature(input.header);
-  if (!parsed || !input.requestId || !/^[a-f0-9]{64}$/i.test(parsed.signature)) return false;
-
-  const numericTimestamp = Number(parsed.timestamp);
-  if (!Number.isFinite(numericTimestamp)) return false;
-  const timestampMs = numericTimestamp > 10_000_000_000 ? numericTimestamp : numericTimestamp * 1000;
-  if (Math.abs(Date.now() - timestampMs) > 5 * 60_000) return false;
+  if (!parsed || !signatureEnvelopeIsFresh(input.header, input.requestId)) return false;
 
   const manifest = `id:${input.resourceId.toLowerCase()};request-id:${input.requestId};ts:${parsed.timestamp};`;
   const expected = await hmacHex(input.secret, manifest);
@@ -225,6 +231,16 @@ async function getEvent(deduplicationKey: string) {
   });
   const rows = await databaseRequest<WebhookEvent[]>(`payment_webhook_events?${query}`);
   return rows[0] ?? null;
+}
+
+async function enforceTrafficLimit() {
+  const query = new URLSearchParams({
+    select: "id",
+    received_at: `gte.${new Date(Date.now() - 60_000).toISOString()}`,
+    limit: "121"
+  });
+  const rows = await databaseRequest<Array<{ id: string }>>(`payment_webhook_events?${query}`);
+  if (rows.length >= 120) throw new WebhookError("webhook_rate_limit", 429);
 }
 
 async function finishEvent(eventId: string, status: "processed" | "ignored" | "failed", errorCode?: string) {
@@ -359,12 +375,15 @@ Deno.serve(async (request) => {
       if (!signatureValid) return json({ error: "invalid_signature" }, 401);
     } else if (liveMode) {
       return json({ error: "webhook_secret_not_configured" }, 503);
+    } else if (!signatureEnvelopeIsFresh(request.headers.get("x-signature"), requestId)) {
+      return json({ error: "invalid_signature" }, 401);
     }
 
     const providerEventId = body.id === undefined ? null : String(body.id);
     const deduplicationKey = await sha256Hex(
       [topic, providerEventId ?? "", resourceId, String(liveMode)].join("|")
     );
+    await enforceTrafficLimit();
     let event = await createEvent({
       deduplicationKey,
       providerEventId,
