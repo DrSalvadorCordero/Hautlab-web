@@ -17,10 +17,11 @@ import {
   type PaymentOrderRow,
   type PaymentOrderStatus
 } from "@/lib/payments/payment-db";
-import { siteConfig } from "@/lib/siteConfig";
 
 export const MEDICAL_ASSESSMENT_PRICE = 1300;
 export const MEDICAL_ASSESSMENT_LABEL = "Valoración médica HAUTLAB";
+export const MERCADO_PAGO_WEBHOOK_URL =
+  "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/mercado-pago-webhook";
 
 const supportedPaymentStatuses = new Set<PaymentOrderStatus>([
   "pending",
@@ -108,9 +109,9 @@ export async function createMercadoPagoPreference(input: {
         failure: `${resultUrl}&result=failure`
       },
       auto_return: "approved",
-      // Notifications must target the public production hostname even while a
-      // protected preview initiates a test purchase.
-      notification_url: `${siteConfig.url}/api/payments/mercado-pago/webhook`,
+      // The public Edge Function remains reachable when Vercel previews are
+      // protected or a production deployment is waiting for promotion.
+      notification_url: MERCADO_PAGO_WEBHOOK_URL,
       statement_descriptor: "HAUTLAB"
     },
     requestOptions: {
