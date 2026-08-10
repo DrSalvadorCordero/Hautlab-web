@@ -71,7 +71,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         url: isEnglish ? `${siteConfig.url}/en` : siteConfig.url,
         image: `${siteConfig.url}/opengraph-image`,
         telephone: siteConfig.whatsappDisplay,
-        priceRange: "$$$",
         medicalSpecialty: "https://schema.org/Dermatology",
         slogan: isEnglish ? "Medical precision. Restrained aesthetics." : siteConfig.tagline,
         description: isEnglish
