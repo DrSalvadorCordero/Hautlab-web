@@ -20,6 +20,9 @@ const tearTroughDiscoveryReply =
 const priceVerificationReply =
   "Claro. Esa referencia de $4,900 debe verificarla directamente el equipo antes de confirmarla; no quiero darte por vigente un dato que podría depender de una condición particular. La tarifa vigente registrada para un procedimiento indicado con una jeringa de ácido hialurónico es de $7,500 MXN, con precio preferencial de $5,500 MXN en pago de contado o 6 meses sin intereses sobre la tarifa regular. ¿En qué procedimiento viste o te compartieron los $4,900?";
 
+const neutralPriceVerificationReply =
+  "Claro. Esa referencia de $4,900 debe verificarla directamente el equipo antes de confirmarla; no quiero darte por vigente un dato que podría depender de una condición particular. ¿A qué procedimiento o servicio se refiere ese precio?";
+
 function normalizeAssistantText(value: string) {
   return value
     .normalize("NFD")
@@ -29,17 +32,28 @@ function normalizeAssistantText(value: string) {
     .trim();
 }
 
-export function buildPriorityAssistantReply(latestUserMessage: string, userMessageCount: number) {
+export function buildPriorityAssistantReply(
+  latestUserMessage: string,
+  userMessageCount: number,
+  previousUserContext = ""
+) {
   const normalized = normalizeAssistantText(latestUserMessage);
+  const normalizedPreviousContext = normalizeAssistantText(previousUserContext);
   const containsClinicalConcern =
-    /\b(dolor\w*|inflamad\w*|hinchad\w*|vision\w*|morad\w*|palid\w*|ardor\w*|molest\w*|necrosis|complicacion\w*|infect\w*|sangr\w*|fiebre|despues de|luego de|postprocedimiento|me aplic\w*|me inyect\w*)\b/.test(
+    /\b(dolor\w*|inflamad\w*|hinchad\w*|vision\w*|vista|veo|ver|cieg[ao]\w*|morad\w*|palid\w*|ardor\w*|molest\w*|necrosis|complicacion\w*|infect\w*|sangr\w*|fiebre|quedando|tras|despues de|luego de|postprocedimiento|corregir\w*|me aplic\w*|me inyect\w*)\b/.test(
       normalized
     );
   const mentionsFourNineHundred =
     /(?:^|[^\d])(?:\$?\s*4\s*[,.]?\s*900|4[,.]9\s*(?:mil|k))(?:[^\d]|$)/.test(normalized);
 
+  const oneSyringeProcedurePattern =
+    /\b(acido hialuronico|jeringa|rinomodelacion|labios?|ojeras?|menton|mandibula|pomulos?|surcos? nasogenianos?|armonizacion)\b/;
+  const hasOneSyringeContext =
+    oneSyringeProcedurePattern.test(normalized) ||
+    oneSyringeProcedurePattern.test(normalizedPreviousContext);
+
   if (mentionsFourNineHundred && !containsClinicalConcern) {
-    return priceVerificationReply;
+    return hasOneSyringeContext ? priceVerificationReply : neutralPriceVerificationReply;
   }
 
   const mentionsTearTroughs = /\bojeras?\b/.test(normalized);
@@ -59,14 +73,16 @@ export function buildPriorityAssistantReply(latestUserMessage: string, userMessa
     return tearTroughDiscoveryReply;
   }
 
-  const mentionsOneSyringeProcedure =
-    /\b(acido hialuronico|jeringa|rinomodelacion|labios?|ojeras?|menton|mandibula|pomulos?|surcos? nasogenianos?|armonizacion)\b/.test(
-      normalized
-    );
-  const asksAboutPrice =
-    /\b(precio|cuanto|cuesta|costo|valor|pagar|meses|msi|contado|promocion|inversion)\b/.test(normalized);
+  const normalizedQuestion = normalized
+    .replace(/[¿?¡!.,;:$()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const isExplicitRoutinePricingQuestion = [
+    /^(?:cuanto (?:cuesta|sale)|(?:cual es )?el precio de|precio de|costo de|valor de) (?:una |la )?jeringa de acido hialuronico$/,
+    /^(?:cuanto (?:cuesta|sale)|(?:cual es )?el precio de|precio de|costo de|valor de) (?:el |la |las |los )?(?:rinomodelacion|relleno de labios?|labios?|relleno de ojeras?|ojeras?|menton|mandibula|pomulos?|armonizacion)$/
+  ].some((pattern) => pattern.test(normalizedQuestion));
 
-  if (mentionsOneSyringeProcedure && asksAboutPrice && !containsClinicalConcern) {
+  if (isExplicitRoutinePricingQuestion && !containsClinicalConcern) {
     return oneSyringePricingReply;
   }
 

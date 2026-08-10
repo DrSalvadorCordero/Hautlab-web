@@ -218,6 +218,28 @@ async function main() {
     "el asistente canaliza señales de alarma a urgencias"
   );
 
+  const ambiguousEmergencyResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [
+        {
+          role: "user",
+          content: "Me estoy quedando ciega tras el relleno de ácido hialurónico, ¿cuánto cuesta corregirlo?"
+        }
+      ]
+    })
+  });
+  const ambiguousEmergencyPayload = await ambiguousEmergencyResponse.json();
+  const ambiguousEmergencyReply = ambiguousEmergencyPayload.reply || "";
+  record(ambiguousEmergencyResponse.status === 200, "el asistente intercepta una urgencia aunque mencione precio");
+  record(
+    /urgencias/i.test(ambiguousEmergencyReply) &&
+      !ambiguousEmergencyReply.includes("$7,500") &&
+      !ambiguousEmergencyReply.includes("$5,500"),
+    "una señal de alarma siempre tiene prioridad sobre la respuesta comercial"
+  );
+
   const tearTroughAssistantResponse = await request("/api/assistant", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -255,10 +277,32 @@ async function main() {
   record(legacyPriceAssistantResponse.status === 200, "el asistente responde cuando mencionan $4,900");
   record(/verific/i.test(legacyPriceReply), "el asistente envía la referencia de $4,900 a verificación");
   record(
-    legacyPriceReply.includes("$7,500") &&
-      legacyPriceReply.includes("$5,500") &&
-      legacyPriceReply.includes("6 meses sin intereses"),
-    "la respuesta de verificación conserva las condiciones vigentes"
+    !/ácido hialurónico/i.test(legacyPriceReply) &&
+      !legacyPriceReply.includes("$7,500") &&
+      !legacyPriceReply.includes("$5,500"),
+    "la referencia aislada de $4,900 permanece neutral hasta identificar el servicio"
+  );
+
+  const fillerLegacyPriceResponse = await request("/api/assistant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [
+        { role: "user", content: "Quiero información de ojeras" },
+        { role: "assistant", content: "¿Qué notas más: hundimiento, color oscuro o bolsas?" },
+        { role: "user", content: "A mí me dijeron que costaba $4,900" }
+      ]
+    })
+  });
+  const fillerLegacyPricePayload = await fillerLegacyPriceResponse.json();
+  const fillerLegacyPriceReply = fillerLegacyPricePayload.reply || "";
+  record(fillerLegacyPriceResponse.status === 200, "el asistente conserva el contexto de relleno al verificar $4,900");
+  record(
+    /verific/i.test(fillerLegacyPriceReply) &&
+      fillerLegacyPriceReply.includes("$7,500") &&
+      fillerLegacyPriceReply.includes("$5,500") &&
+      fillerLegacyPriceReply.includes("6 meses sin intereses"),
+    "la verificación contextual de relleno conserva las condiciones vigentes"
   );
 
   const adminContentResponse = await request("/api/admin/cabina-content");
