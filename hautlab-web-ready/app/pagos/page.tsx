@@ -4,6 +4,7 @@ import { MercadoPagoCheckout } from "@/components/payments/mercado-pago-checkout
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { paymentOptions } from "@/data/site";
+import { getActivePaymentMode } from "@/lib/payments/mercado-pago";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -28,8 +29,20 @@ export const metadata: Metadata = {
   }
 };
 
-export default function PagosPage() {
+async function mercadoPagoCheckoutIsVisible() {
+  if (process.env.VERCEL_ENV !== "production") return true;
+
+  try {
+    return (await getActivePaymentMode()) === "production";
+  } catch {
+    return false;
+  }
+}
+
+export default async function PagosPage() {
   const stripe = paymentOptions[0];
+  const showMercadoPagoCheckout = await mercadoPagoCheckoutIsVisible();
+  const paymentSupportUrl = buildWhatsAppLink("Hola, quiero solicitar un link de pago personalizado para HAUTLAB.");
 
   return (
     <main>
@@ -41,14 +54,24 @@ export default function PagosPage() {
               Pagos seguros y reservaciones.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-muted">
-              Paga tu valoración médica de $1,300 MXN con Mercado Pago. Para procedimientos, paquetes o montos distintos, solicita primero un enlace personalizado.
+              {showMercadoPagoCheckout
+                ? "Paga tu valoración médica de $1,300 MXN con Mercado Pago. Para procedimientos, paquetes o montos distintos, solicita primero un enlace personalizado."
+                : "Paga de forma segura con el enlace indicado por el equipo. Para una valoración, procedimiento o monto específico, solicita primero tu enlace personalizado."}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <a href="#mercado-pago" data-event="payment_mercado_pago_hero">
-                  Pagar valoración <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-              </Button>
+              {showMercadoPagoCheckout ? (
+                <Button asChild size="lg">
+                  <a href="#mercado-pago" data-event="payment_mercado_pago_hero">
+                    Pagar valoración <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </Button>
+              ) : (
+                <Button asChild size="lg">
+                  <a href={paymentSupportUrl} target="_blank" rel="noreferrer" data-event="whatsapp_payment_link">
+                    Solicitar enlace <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </Button>
+              )}
               {stripe ? (
                 <Button asChild size="lg" variant="outline">
                   <a href={stripe.href} target="_blank" rel="noreferrer" data-event="payment_stripe_hero">
@@ -72,7 +95,23 @@ export default function PagosPage() {
 
       <section className="border-b border-line bg-background py-20 lg:py-28">
         <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-8 lg:grid-cols-[1.05fr_.8fr] lg:items-start">
-          <MercadoPagoCheckout />
+          {showMercadoPagoCheckout ? (
+            <MercadoPagoCheckout />
+          ) : (
+            <Card className="p-7 sm:p-8">
+              <MessageCircle className="mb-7 h-7 w-7 text-champagne" aria-hidden="true" />
+              <p className="text-xs uppercase tracking-[0.18em] text-champagne">Pago asistido</p>
+              <h2 className="mt-4 text-3xl font-medium tracking-[-0.04em] text-bone">Solicita tu enlace seguro.</h2>
+              <p className="mt-5 text-sm leading-7 text-muted">
+                El equipo confirma el concepto y el monto antes de compartirte el enlace correcto para pagar.
+              </p>
+              <Button asChild className="mt-7" size="lg">
+                <a href={paymentSupportUrl} target="_blank" rel="noreferrer" data-event="whatsapp_payment_link">
+                  Solicitar por WhatsApp <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </Button>
+            </Card>
+          )}
 
           <div className="space-y-4">
             <Card className="p-7">
@@ -115,7 +154,7 @@ export default function PagosPage() {
               </a>
             ) : null}
 
-            <a href={buildWhatsAppLink("Hola, quiero solicitar un link de pago personalizado para HAUTLAB.")} target="_blank" rel="noreferrer" data-event="whatsapp_payment_link" className="rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-champagne">
+            <a href={paymentSupportUrl} target="_blank" rel="noreferrer" data-event="whatsapp_payment_link" className="rounded-[2rem] focus:outline-none focus:ring-2 focus:ring-champagne">
               <Card className="h-full p-6 transition hover:-translate-y-1 hover:border-champagne/40">
                 <MessageCircle className="mb-8 h-6 w-6 text-champagne" aria-hidden="true" />
                 <p className="text-xs uppercase tracking-[0.18em] text-champagne">WhatsApp</p>

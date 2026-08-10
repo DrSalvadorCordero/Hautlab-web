@@ -17,6 +17,7 @@ import {
   type PaymentOrderRow,
   type PaymentOrderStatus
 } from "@/lib/payments/payment-db";
+import { siteConfig } from "@/lib/siteConfig";
 
 export const MEDICAL_ASSESSMENT_PRICE = 1300;
 export const MEDICAL_ASSESSMENT_LABEL = "Valoración médica HAUTLAB";
@@ -107,7 +108,9 @@ export async function createMercadoPagoPreference(input: {
         failure: `${resultUrl}&result=failure`
       },
       auto_return: "approved",
-      notification_url: `${input.origin}/api/payments/mercado-pago/webhook`,
+      // Notifications must target the public production hostname even while a
+      // protected preview initiates a test purchase.
+      notification_url: `${siteConfig.url}/api/payments/mercado-pago/webhook`,
       statement_descriptor: "HAUTLAB"
     },
     requestOptions: {
