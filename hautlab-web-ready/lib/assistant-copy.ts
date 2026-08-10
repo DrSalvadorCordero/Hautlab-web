@@ -1,9 +1,9 @@
 export const assistantWelcome =
-  "Hola. Soy el asistente virtual de HAUTLAB. Puedo ayudarte a identificar la ruta adecuada —consulta médica, procedimiento estético o Cabina Dermatocosmética—, explicarte precios publicados y orientarte para agendar. No realizo diagnósticos por chat y no necesitas compartir fotografías ni datos sensibles.";
+  "Hola, soy el asistente virtual de HAUTLAB. Puedo orientarte sobre tratamientos, precios y citas en Mérida. Cuéntame qué te gustaría mejorar o qué procedimiento tienes en mente.";
 
 export const assistantQuickQuestions = [
-  "¿Qué tipo de valoración necesito?",
-  "¿Cuánto cuesta la consulta y qué incluye?",
-  "¿Qué tratamientos ofrece la Cabina Dermatocosmética?",
+  "Quiero información sobre ojeras",
+  "¿Cuánto cuesta una jeringa de ácido hialurónico?",
+  "Busco un resultado natural",
   "Quiero agendar por WhatsApp"
 ] as const;

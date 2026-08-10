@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { buildAssistantInstructions } from "@/lib/assistant-knowledge";
+import {
+  buildAssistantInstructions,
+  buildPriorityAssistantReply
+} from "@/lib/assistant-knowledge";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -179,6 +182,14 @@ export async function POST(request: NextRequest) {
       reply:
         "Por lo que describes, no es adecuado continuar por este chat. Acude de inmediato a un servicio de urgencias o llama al número local de emergencias. Este asistente no puede evaluar ni tratar una urgencia."
     });
+  }
+
+  const priorityReply = buildPriorityAssistantReply(
+    latestUserMessage,
+    messages.filter((message) => message.role === "user").length
+  );
+  if (priorityReply) {
+    return json({ reply: priorityReply });
   }
 
   const apiKey = process.env.OPENAI_API_KEY?.trim();
