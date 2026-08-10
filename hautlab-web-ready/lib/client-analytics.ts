@@ -3,7 +3,7 @@ import { CONSENT_COOKIE_NAME } from "@/lib/consent";
 type GtagFunction = (...args: unknown[]) => void;
 type AnalyticsWindow = Window & { gtag?: GtagFunction };
 
-const GENERAL_TRACKING_PATHS = new Set(["/", "/pagos", "/contacto", "/gracias", "/cabina", "/cabina/karen-cruz"]);
+const GENERAL_TRACKING_PATHS = new Set(["/", "/pagos", "/pagos/resultado", "/contacto", "/gracias", "/cabina", "/cabina/karen-cruz"]);
 
 export type HautlabAnalyticsEventName =
   | "ai_assistant_open"
@@ -14,7 +14,10 @@ export type HautlabAnalyticsEventName =
   | "cabina_google_visit"
   | "cabina_campaign_visit"
   | "cabina_mobile_visit"
-  | "cabina_form_submit";
+  | "cabina_form_submit"
+  | "payment_begin_checkout"
+  | "payment_checkout_redirect"
+  | "payment_confirmed";
 
 export function trackHautlabEvent(name: HautlabAnalyticsEventName, parameters: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
