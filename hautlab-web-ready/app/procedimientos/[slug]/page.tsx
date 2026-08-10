@@ -146,8 +146,7 @@ export default async function ProcedurePage({ params }: PageProps) {
               "@type": "Offer",
               price: seo.schema.offerPrice,
               priceCurrency: "MXN",
-              url,
-              availability: "https://schema.org/InStock"
+              url
             }
           : undefined
       },
