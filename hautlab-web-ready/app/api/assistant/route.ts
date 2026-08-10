@@ -103,6 +103,9 @@ function needsEmergencyEscalation(text: string) {
     /dificultad (grave )?para respirar/,
     /p[eé]rdida s[uú]bita de (la )?visi[oó]n/,
     /dej[eé] de ver/,
+    /me estoy quedando (ciega|ciego)/,
+    /no (puedo|puede) ver/,
+    /visi[oó]n (borrosa|doble|alterada)/,
     /sangrado (abundante|incontrolable|que no para)/,
     /dolor (muy )?intenso (y )?(progresivo|repentino)/,
     /debilidad de un lado/,
@@ -184,9 +187,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const userMessages = messages.filter((message) => message.role === "user");
   const priorityReply = buildPriorityAssistantReply(
     latestUserMessage,
-    messages.filter((message) => message.role === "user").length
+    userMessages.length,
+    userMessages
+      .slice(0, -1)
+      .map((message) => message.content)
+      .join(" ")
   );
   if (priorityReply) {
     return json({ reply: priorityReply });
