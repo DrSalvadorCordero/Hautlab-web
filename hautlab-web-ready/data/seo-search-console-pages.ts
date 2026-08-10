@@ -43,8 +43,8 @@ export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
     description:
       "Consulta médica para melasma en Mérida. Evaluación de patrón de pigmentación, fototipo, desencadenantes, rutina y tratamientos previos antes de elegir un plan.",
     pageSummary:
-      "Consulta médica para melasma en Mérida con evaluación del patrón de pigmentación, fototipo, exposición solar, desencadenantes y tratamientos previos antes de indicar manejo."
-    ,schema: {
+      "Consulta médica para melasma en Mérida con evaluación del patrón de pigmentación, fototipo, exposición solar, desencadenantes y tratamientos previos antes de indicar manejo.",
+    schema: {
       type: "MedicalCondition",
       name: "Melasma",
       alternateName: ["Melasma facial", "Paño facial"]
