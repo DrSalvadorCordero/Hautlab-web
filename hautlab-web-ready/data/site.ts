@@ -118,6 +118,5 @@ export const trustBadges = [
 ];
 
 export const paymentOptions = [
-  { label: "Stripe", href: "https://buy.stripe.com/fZuaEYcd8fU5dGT7LW9sk0m", icon: CircleDollarSign },
-  { label: "Mercado Pago", href: "https://mpago.la/2WjpWKf", icon: CircleDollarSign }
+  { label: "Stripe", href: "https://buy.stripe.com/fZuaEYcd8fU5dGT7LW9sk0m", icon: CircleDollarSign }
 ];
