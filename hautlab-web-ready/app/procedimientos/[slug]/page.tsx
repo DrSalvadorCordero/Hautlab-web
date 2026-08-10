@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { TreatmentPageLayout, type TreatmentPageContent } from "@/components/treatments/treatment-page-layout";
 import { procedureContentDate } from "@/data/content-dates";
 import { prioritySeoPages, type PrioritySeoPage } from "@/data/seo-priority-pages";
+import { searchConsoleSeoPages } from "@/data/seo-search-console-pages";
 import { treatmentCatalog } from "@/data/treatment-catalog";
 import { siteConfig } from "@/lib/siteConfig";
 
@@ -20,6 +21,10 @@ function mergePriorityContent(treatment: TreatmentPageContent, seo?: PrioritySeo
   };
 }
 
+function seoFor(slug: string) {
+  return prioritySeoPages[slug] ?? searchConsoleSeoPages[slug];
+}
+
 export function generateStaticParams() {
   return Object.keys(treatmentCatalog).map((slug) => ({ slug }));
 }
@@ -29,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const treatment = treatmentCatalog[slug];
   if (!treatment) return {};
 
-  const seo = prioritySeoPages[slug];
+  const seo = seoFor(slug);
   const effectiveTreatment = mergePriorityContent(treatment, seo);
   const title = seo?.title ?? `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`;
   const description = seo?.description ?? effectiveTreatment.summary;
@@ -67,7 +72,7 @@ export default async function ProcedurePage({ params }: PageProps) {
   const treatment = treatmentCatalog[slug];
   if (!treatment) notFound();
 
-  const seo = prioritySeoPages[slug];
+  const seo = seoFor(slug);
   const effectiveTreatment = mergePriorityContent(treatment, seo);
   const url = `${siteConfig.url}/procedimientos/${slug}`;
   const modifiedAt = procedureContentDate(slug).toISOString();
