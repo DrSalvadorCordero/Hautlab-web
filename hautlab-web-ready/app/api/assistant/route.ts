@@ -222,9 +222,9 @@ export async function POST(request: NextRequest) {
         instructions: buildAssistantInstructions(),
         input: messages,
         reasoning: { effort: "low" },
-        max_output_tokens: 420
+        max_output_tokens: 1800
       }),
-      signal: AbortSignal.timeout(22_000)
+      signal: AbortSignal.timeout(35_000)
     });
 
     if (!openAIResponse.ok) {
