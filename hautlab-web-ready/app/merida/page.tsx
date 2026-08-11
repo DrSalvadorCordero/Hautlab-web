@@ -82,18 +82,8 @@ export default function MeridaPage() {
         "@type": "BreadcrumbList",
         "@id": `${pageUrl}#breadcrumb`,
         itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: "Inicio",
-            item: siteConfig.url
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Mérida",
-            item: pageUrl
-          }
+          { "@type": "ListItem", position: 1, name: "Inicio", item: siteConfig.url },
+          { "@type": "ListItem", position: 2, name: "Mérida", item: pageUrl }
         ]
       },
       {
@@ -102,10 +92,7 @@ export default function MeridaPage() {
         mainEntity: faq.map((item) => ({
           "@type": "Question",
           name: item.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: item.answer
-          }
+          acceptedAnswer: { "@type": "Answer", text: item.answer }
         }))
       }
     ]
@@ -170,19 +157,12 @@ export default function MeridaPage() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {clinicalLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full border border-line px-4 py-2 text-sm text-muted transition hover:border-champagne/40 hover:text-bone"
-                  >
+                  <Link key={item.href} href={item.href} className="rounded-full border border-line px-4 py-2 text-sm text-muted transition hover:border-champagne/40 hover:text-bone">
                     {item.label}
                   </Link>
                 ))}
               </div>
-              <Link
-                href="/tratamientos/dermatologia-clinica"
-                className="mt-7 inline-flex items-center gap-2 text-sm text-bone transition hover:text-champagne"
-              >
+              <Link href="/merida/dermatologia" className="mt-7 inline-flex items-center gap-2 text-sm text-bone transition hover:text-champagne">
                 Explorar dermatología clínica <ArrowRight className="h-4 w-4" />
               </Link>
             </Card>
@@ -195,19 +175,12 @@ export default function MeridaPage() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {aestheticLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-full border border-line px-4 py-2 text-sm text-muted transition hover:border-champagne/40 hover:text-bone"
-                  >
+                  <Link key={item.href} href={item.href} className="rounded-full border border-line px-4 py-2 text-sm text-muted transition hover:border-champagne/40 hover:text-bone">
                     {item.label}
                   </Link>
                 ))}
               </div>
-              <Link
-                href="/tratamientos/medicina-estetica-facial"
-                className="mt-7 inline-flex items-center gap-2 text-sm text-bone transition hover:text-champagne"
-              >
+              <Link href="/merida/medicina-estetica" className="mt-7 inline-flex items-center gap-2 text-sm text-bone transition hover:text-champagne">
                 Explorar medicina estética <ArrowRight className="h-4 w-4" />
               </Link>
             </Card>
@@ -273,11 +246,7 @@ export default function MeridaPage() {
         </div>
       </section>
 
-      <script
-        id="merida-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script id="merida-jsonld" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </main>
   );
 }
