@@ -45,6 +45,7 @@ export function Footer() {
             <a className={`${linkClass} text-bone`} href={buildWhatsAppLink()} target="_blank" rel="noreferrer">
               WhatsApp {siteConfig.whatsappDisplay}
             </a>
+            <Link className={`${linkClass} text-bone`} href="/merida">HAUTLAB Mérida</Link>
             <Link className={linkClass} href="/cabina" data-event="cabina_footer_link">Cabina Dermatocosmética</Link>
             <Link className={linkClass} href="/publicaciones">Publicaciones</Link>
             <a className={linkClass} href={siteConfig.instagram} target="_blank" rel="noreferrer">
@@ -64,9 +65,14 @@ export function Footer() {
               HAUTLAB y su Cabina Dermatocosmética operan dentro de la misma dirección física en Mérida. El mapa se abre únicamente cuando decides consultarlo.
             </p>
           </div>
-          <a className="mt-8 inline-flex w-fit items-center gap-2 text-sm text-bone transition hover:text-champagne" href={mapsUrl} target="_blank" rel="noreferrer">
-            Abrir en Google Maps <ExternalLink className="h-4 w-4" />
-          </a>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
+            <Link className="inline-flex w-fit items-center gap-2 text-sm text-bone transition hover:text-champagne" href="/merida">
+              Conocer HAUTLAB Mérida <ExternalLink className="h-4 w-4" />
+            </Link>
+            <a className="inline-flex w-fit items-center gap-2 text-sm text-bone transition hover:text-champagne" href={mapsUrl} target="_blank" rel="noreferrer">
+              Abrir en Google Maps <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </div>
 
