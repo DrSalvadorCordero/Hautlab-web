@@ -22,7 +22,7 @@ const nextConfig = {
       { source: "/dermatologia-clinica", destination: "/merida/dermatologia", permanent: true },
       { source: "/tratamientos/cicatrices", destination: "/procedimientos/cicatrices-acne", permanent: true },
       { source: "/tratamientos/peelings", destination: "/procedimientos/peelings-medicos", permanent: true },
-      { source: "/tratamientos/menton-mandibula", destination: "/tratamientos/medicina-estetica-facial", permanent: true },
+      { source: "/tratamientos/menton-mandibula", destination: "/merida/medicina-estetica", permanent: true },
       { source: "/aviso-privacidad", destination: "/aviso-de-privacidad", permanent: true }
     ];
   },
