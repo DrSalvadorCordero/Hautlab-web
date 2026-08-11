@@ -11,6 +11,9 @@ const APP_SECRET =
 const META_APP_ID = process.env.META_APP_ID ?? "";
 const LEGACY_META_VERIFY_URL = "https://nuevo-zzys.vercel.app/api/meta-verify";
 const LEGACY_WEBHOOK_URL = "https://nuevo-zzys.vercel.app/api/webhook";
+const COMMAND_RELAY_URL =
+  "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/wa-command-relay";
+const RELAY_SECRET_KEY = "relay_hmac_secret";
 
 function secureStringEqual(left: string, right: string): boolean {
   const leftBuffer = Buffer.from(left);
@@ -47,6 +50,140 @@ async function verifyMetaSignature(rawBody: string, signatureHeader: string | nu
   } catch {
     return false;
   }
+}
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = (
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  )?.trim();
+  return url && key ? { url, key } : null;
+}
+
+function normalizePhone(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const digits = value.replace(/\D/g, "");
+  return /^[1-9][0-9]{9,14}$/.test(digits) ? digits : null;
+}
+
+function phoneVariants(value: unknown): string[] {
+  const digits = normalizePhone(value);
+  if (!digits) return [];
+  const variants = new Set<string>([digits]);
+  if (/^521[0-9]{10}$/.test(digits)) variants.add(`52${digits.slice(3)}`);
+  if (/^52[0-9]{10}$/.test(digits)) variants.add(`521${digits.slice(2)}`);
+  return [...variants];
+}
+
+async function getRelaySecret(): Promise<string | null> {
+  const config = getSupabaseConfig();
+  if (!config) return null;
+  const response = await fetch(
+    `${config.url}/rest/v1/wa_internal_config?key=eq.${RELAY_SECRET_KEY}&select=secret_value&limit=1`,
+    {
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    },
+  );
+  if (!response.ok) return null;
+  const rows = (await response.json()) as Array<{ secret_value?: string }>;
+  return rows[0]?.secret_value?.trim() || null;
+}
+
+async function isOperatorPhone(phone: string) {
+  const config = getSupabaseConfig();
+  const variants = phoneVariants(phone);
+  if (!config || !variants.length) return false;
+  const encoded = variants.map((item) => `\"${item}\"`).join(",");
+  const response = await fetch(
+    `${config.url}/rest/v1/wa_operators?phone_e164=in.(${encodeURIComponent(encoded)})&active=eq.true&select=operator_key&limit=1`,
+    {
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    },
+  );
+  if (!response.ok) return false;
+  const rows = (await response.json()) as Array<{ operator_key?: string }>;
+  return rows.length > 0;
+}
+
+async function callCommandRelay(action: string, payload: Record<string, unknown>) {
+  const secret = await getRelaySecret();
+  if (!secret) throw new Error("relay_secret_unavailable");
+  const rawBody = JSON.stringify({ action, ...payload });
+  const signature = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
+  const response = await fetch(COMMAND_RELAY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-hautlab-relay-signature": `sha256=${signature}`,
+    },
+    body: rawBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(30000),
+  });
+  const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!response.ok) throw new Error(`command_relay_failed:${response.status}`);
+  return data;
+}
+
+type ParsedInbound = {
+  from: string;
+  id: string;
+  type: string;
+  text: string;
+  profileName: string;
+};
+
+function extractInbound(payload: unknown): ParsedInbound | null {
+  if (!payload || typeof payload !== "object") return null;
+  const body = payload as {
+    entry?: Array<{
+      changes?: Array<{
+        value?: {
+          contacts?: Array<{ profile?: { name?: string } }>;
+          messages?: Array<Record<string, unknown>>;
+        };
+      }>;
+    }>;
+  };
+  const value = body.entry?.[0]?.changes?.[0]?.value;
+  const message = value?.messages?.[0];
+  if (!message) return null;
+
+  const from = normalizePhone(message.from) ?? "";
+  const id = typeof message.id === "string" ? message.id : "";
+  const type = typeof message.type === "string" ? message.type : "unknown";
+  const textObject = message.text as { body?: unknown } | undefined;
+  const buttonObject = message.button as { text?: unknown } | undefined;
+  const interactive = message.interactive as {
+    button_reply?: { title?: unknown };
+    list_reply?: { title?: unknown };
+  } | undefined;
+
+  let text =
+    (typeof textObject?.body === "string" ? textObject.body.trim() : "") ||
+    (typeof buttonObject?.text === "string" ? buttonObject.text.trim() : "") ||
+    (typeof interactive?.button_reply?.title === "string"
+      ? interactive.button_reply.title.trim()
+      : "") ||
+    (typeof interactive?.list_reply?.title === "string"
+      ? interactive.list_reply.title.trim()
+      : "");
+
+  if (!text) text = `[${type} recibido]`;
+  const profileName = value?.contacts?.[0]?.profile?.name?.trim() || "";
+  return from && id ? { from, id, type, text, profileName } : null;
 }
 
 function summarizeWebhook(payload: unknown) {
@@ -106,7 +243,7 @@ export async function GET(request: NextRequest) {
           metaAppId: Boolean(META_APP_ID),
           verifyToken: Boolean(VERIFY_TOKEN),
           signatureVerification: APP_SECRET ? "local" : "secure-bridge",
-          orchestrator: "legacy-command-center",
+          orchestrator: "legacy-command-center-with-secure-relay",
         },
       },
       { status: 200, headers: { "Cache-Control": "no-store" } },
@@ -154,10 +291,25 @@ export async function POST(request: NextRequest) {
   }
 
   const summary = summarizeWebhook(payload);
+  const incoming = extractInbound(payload);
   console.info("[whatsapp-webhook] verified event", summary);
 
   after(async () => {
     try {
+      if (incoming && (await isOperatorPhone(incoming.from))) {
+        await callCommandRelay("operator_ingest", {
+          phone: incoming.from,
+          messageId: incoming.id,
+          text: incoming.text,
+          messageType: incoming.type,
+          profileName: incoming.profileName,
+        });
+        console.info("[whatsapp-webhook] operator command routed", {
+          type: incoming.type,
+        });
+        return;
+      }
+
       const response = await fetch(LEGACY_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -169,6 +321,16 @@ export async function POST(request: NextRequest) {
         console.error("[whatsapp-webhook] command center bridge failed", {
           status: response.status,
         });
+      }
+
+      if (incoming?.from) {
+        try {
+          await callCommandRelay("repair_phone", { phone: incoming.from });
+        } catch (error) {
+          console.error("[whatsapp-webhook] notification relay repair failed", {
+            message: error instanceof Error ? error.message : "unknown_error",
+          });
+        }
       }
     } catch (error) {
       console.error("[whatsapp-webhook] command center bridge failed", {
