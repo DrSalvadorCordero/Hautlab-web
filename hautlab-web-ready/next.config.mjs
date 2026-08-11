@@ -19,7 +19,7 @@ const nextConfig = {
       { source: "/rinomodelacion", destination: "/procedimientos/rinomodelacion", permanent: true },
       { source: "/botox", destination: "/procedimientos/toxina-botulinica", permanent: true },
       { source: "/tratamientos/botox", destination: "/procedimientos/toxina-botulinica", permanent: true },
-      { source: "/dermatologia-clinica", destination: "/tratamientos/dermatologia-clinica", permanent: true },
+      { source: "/dermatologia-clinica", destination: "/merida/dermatologia", permanent: true },
       { source: "/tratamientos/cicatrices", destination: "/procedimientos/cicatrices-acne", permanent: true },
       { source: "/tratamientos/peelings", destination: "/procedimientos/peelings-medicos", permanent: true },
       { source: "/tratamientos/menton-mandibula", destination: "/tratamientos/medicina-estetica-facial", permanent: true },

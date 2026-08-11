@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: siteConfig.url, lastModified: coreContentDates.home, changeFrequency: "weekly", priority: 1 },
     { url: `${siteConfig.url}/en`, lastModified: coreContentDates.english, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/merida`, lastModified: coreContentDates.merida, changeFrequency: "monthly", priority: 0.95 },
+    { url: `${siteConfig.url}/merida/dermatologia`, lastModified: coreContentDates.meridaDermatology, changeFrequency: "monthly", priority: 0.95 },
     { url: `${siteConfig.url}/procedimientos`, lastModified: coreContentDates.procedures, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina`, lastModified: coreContentDates.cabina, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina/karen-cruz`, lastModified: coreContentDates.karen, changeFrequency: "monthly", priority: 0.7 },
@@ -25,12 +26,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteConfig.url}/aviso-de-privacidad`, lastModified: coreContentDates.privacy, changeFrequency: "yearly", priority: 0.3 }
   ];
 
-  const familyRoutes: MetadataRoute.Sitemap = treatmentFamilies.map((family) => ({
-    url: `${siteConfig.url}/tratamientos/${family.slug}`,
-    lastModified: familyContentDates[family.slug],
-    changeFrequency: "monthly",
-    priority: 0.75
-  }));
+  const familyRoutes: MetadataRoute.Sitemap = treatmentFamilies
+    .filter((family) => family.slug !== "dermatologia-clinica")
+    .map((family) => ({
+      url: `${siteConfig.url}/tratamientos/${family.slug}`,
+      lastModified: familyContentDates[family.slug],
+      changeFrequency: "monthly",
+      priority: 0.75
+    }));
 
   const procedureRoutes: MetadataRoute.Sitemap = Object.keys(allTreatments).map((slug) => ({
     url: `${siteConfig.url}/procedimientos/${slug}`,

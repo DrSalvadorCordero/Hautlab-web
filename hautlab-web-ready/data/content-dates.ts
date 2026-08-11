@@ -4,6 +4,7 @@ export const coreContentDates = {
   home: date("2026-07-29"),
   english: date("2026-07-29"),
   merida: date("2026-08-11"),
+  meridaDermatology: date("2026-08-11"),
   publications: date("2026-07-29"),
   procedures: date("2026-07-23"),
   cabina: date("2026-07-22"),
