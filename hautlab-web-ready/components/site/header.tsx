@@ -6,8 +6,9 @@ import { buildWhatsAppLink } from "@/lib/whatsapp";
 const areas = [
   {
     title: "Diseño facial",
-    href: "/tratamientos/medicina-estetica-facial",
+    href: "/merida/medicina-estetica",
     items: [
+      { label: "Rellenos faciales", href: "/merida/rellenos-faciales" },
       { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
       { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" },
       { label: "Labios", href: "/procedimientos/labios" },
@@ -31,14 +32,14 @@ const areas = [
   },
   {
     title: "Condiciones de piel",
-    href: "/tratamientos/dermatologia-clinica",
+    href: "/merida/dermatologia",
     items: [
       { label: "Acné", href: "/procedimientos/acne" },
       { label: "Rosácea", href: "/procedimientos/rosacea" },
       { label: "Melasma", href: "/procedimientos/melasma" },
       { label: "Alopecia", href: "/procedimientos/alopecia" },
-      { label: "Dermatitis", href: "/tratamientos/dermatologia-clinica" },
-      { label: "Vitíligo", href: "/tratamientos/dermatologia-clinica" }
+      { label: "Dermatitis", href: "/merida/dermatologia" },
+      { label: "Vitíligo", href: "/merida/dermatologia" }
     ]
   },
   {
