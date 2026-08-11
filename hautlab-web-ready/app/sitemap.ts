@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteConfig.url}/merida`, lastModified: coreContentDates.merida, changeFrequency: "monthly", priority: 0.95 },
     { url: `${siteConfig.url}/merida/dermatologia`, lastModified: coreContentDates.meridaDermatology, changeFrequency: "monthly", priority: 0.95 },
     { url: `${siteConfig.url}/merida/medicina-estetica`, lastModified: coreContentDates.meridaMedicalAesthetics, changeFrequency: "monthly", priority: 0.95 },
+    { url: `${siteConfig.url}/merida/rellenos-faciales`, lastModified: coreContentDates.meridaFacialFillers, changeFrequency: "monthly", priority: 0.9 },
     { url: `${siteConfig.url}/procedimientos`, lastModified: coreContentDates.procedures, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina`, lastModified: coreContentDates.cabina, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina/karen-cruz`, lastModified: coreContentDates.karen, changeFrequency: "monthly", priority: 0.7 },
