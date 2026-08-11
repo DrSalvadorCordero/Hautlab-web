@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const coreRoutes: MetadataRoute.Sitemap = [
     { url: siteConfig.url, lastModified: coreContentDates.home, changeFrequency: "weekly", priority: 1 },
     { url: `${siteConfig.url}/en`, lastModified: coreContentDates.english, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${siteConfig.url}/merida`, lastModified: coreContentDates.merida, changeFrequency: "monthly", priority: 0.95 },
     { url: `${siteConfig.url}/procedimientos`, lastModified: coreContentDates.procedures, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina`, lastModified: coreContentDates.cabina, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/cabina/karen-cruz`, lastModified: coreContentDates.karen, changeFrequency: "monthly", priority: 0.7 },
