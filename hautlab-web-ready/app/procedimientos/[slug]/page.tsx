@@ -9,16 +9,41 @@ import { siteConfig } from "@/lib/siteConfig";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-function mergePriorityContent(treatment: TreatmentPageContent, seo?: PrioritySeoPage): TreatmentPageContent {
-  if (!seo) return treatment;
+const canonicalInternalRoutes: Record<string, string> = {
+  "/tratamientos/medicina-estetica-facial": "/merida/medicina-estetica",
+  "/tratamientos/dermatologia-clinica": "/merida/dermatologia"
+};
 
+function canonicalHref(href: string) {
+  return canonicalInternalRoutes[href] ?? href;
+}
+
+function canonicalizeInternalLinks(treatment: TreatmentPageContent): TreatmentPageContent {
   return {
     ...treatment,
-    summary: seo.pageSummary,
-    faq: [...treatment.faq, ...seo.additionalFaq],
-    clinicalDetails: seo.clinicalDetails ?? treatment.clinicalDetails,
-    medicalReview: seo.medicalReview ?? treatment.medicalReview
+    category: {
+      ...treatment.category,
+      href: canonicalHref(treatment.category.href)
+    },
+    related: treatment.related.map((item) => ({
+      ...item,
+      href: canonicalHref(item.href)
+    }))
   };
+}
+
+function mergePriorityContent(treatment: TreatmentPageContent, seo?: PrioritySeoPage): TreatmentPageContent {
+  const merged = seo
+    ? {
+        ...treatment,
+        summary: seo.pageSummary,
+        faq: [...treatment.faq, ...seo.additionalFaq],
+        clinicalDetails: seo.clinicalDetails ?? treatment.clinicalDetails,
+        medicalReview: seo.medicalReview ?? treatment.medicalReview
+      }
+    : treatment;
+
+  return canonicalizeInternalLinks(merged);
 }
 
 function seoFor(slug: string) {
