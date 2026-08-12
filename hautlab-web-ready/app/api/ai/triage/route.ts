@@ -1,6 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  getWhatsAppPromptSettings,
+  WHATSAPP_SAFETY_INSTRUCTIONS,
+} from "@/lib/whatsapp-prompt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,29 +45,6 @@ const modelDecisionSchema = z.object({
 });
 
 type ModelDecision = z.infer<typeof modelDecisionSchema>;
-
-const SYSTEM_INSTRUCTIONS = `
-You are the routing layer for HAUTLAB, a medical dermatology and aesthetic-medicine practice in Mexico.
-Your job is NOT to practice medicine. Classify the incoming WhatsApp message and decide whether an administrative/commercial reply is safe or whether a human must take over.
-
-Allowed autonomous scope:
-- General non-clinical service information already present in the message context.
-- Booking logistics, availability questions, payment-method questions, location questions, and neutral follow-up logistics.
-- Asking one concise clarification when needed.
-
-Mandatory escalation to doctor:
-- Symptoms, diagnosis, treatment selection, prescription or medication advice.
-- Complications, adverse effects, post-procedure warning signs, pain, discoloration, visual symptoms, infection concern, allergy concern, vascular concern, urgent medical questions.
-- Any request to decide whether a person is medically a candidate.
-
-Mandatory escalation to Karen:
-- Explicit request for a human when no clinical issue is present.
-- Administrative complaint, payment/receipt issue, schedule conflict, non-clinical service recovery.
-
-Never invent prices, schedules, availability, locations, credentials, outcomes, or clinical facts.
-Never mix Mérida and CDMX. If city-specific information is required and city is unknown, clarify instead of guessing.
-Keep autonomous replies concise, calm, clinical, and non-promotional. No emojis.
-`;
 
 function secureEqual(left: string, right: string) {
   const a = Buffer.from(left);
@@ -186,6 +167,9 @@ export async function POST(request: NextRequest) {
   const { message, city, conversationId } = parsedInput.data;
 
   try {
+    const promptSettings = await getWhatsAppPromptSettings();
+    const systemInstructions = `${WHATSAPP_SAFETY_INSTRUCTIONS.trim()}\n\n${promptSettings.prompt.trim()}`;
+
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -249,7 +233,7 @@ export async function POST(request: NextRequest) {
             },
           },
         },
-        instructions: SYSTEM_INSTRUCTIONS,
+        instructions: systemInstructions,
         input: `City context: ${city}.\nIncoming WhatsApp message:\n${message}`,
         store: false,
         safety_identifier: privacySafeIdentifier(conversationId),
