@@ -12,7 +12,7 @@ const META_APP_ID = process.env.META_APP_ID ?? "";
 const LEGACY_META_VERIFY_URL = "https://nuevo-zzys.vercel.app/api/meta-verify";
 const LEGACY_WEBHOOK_URL = "https://nuevo-zzys.vercel.app/api/webhook";
 const COMMAND_RELAY_URL =
-  "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/wa-command-relay";
+  "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/wa-command-router";
 const RELAY_SECRET_KEY = "relay_hmac_secret";
 
 function secureStringEqual(left: string, right: string): boolean {
@@ -143,6 +143,7 @@ type ParsedInbound = {
   type: string;
   text: string;
   profileName: string;
+  replyToMessageId: string;
 };
 
 function extractInbound(payload: unknown): ParsedInbound | null {
@@ -166,6 +167,7 @@ function extractInbound(payload: unknown): ParsedInbound | null {
   const type = typeof message.type === "string" ? message.type : "unknown";
   const textObject = message.text as { body?: unknown } | undefined;
   const buttonObject = message.button as { text?: unknown } | undefined;
+  const contextObject = message.context as { id?: unknown } | undefined;
   const interactive = message.interactive as {
     button_reply?: { title?: unknown };
     list_reply?: { title?: unknown };
@@ -183,7 +185,11 @@ function extractInbound(payload: unknown): ParsedInbound | null {
 
   if (!text) text = `[${type} recibido]`;
   const profileName = value?.contacts?.[0]?.profile?.name?.trim() || "";
-  return from && id ? { from, id, type, text, profileName } : null;
+  const replyToMessageId =
+    typeof contextObject?.id === "string" ? contextObject.id.trim() : "";
+  return from && id
+    ? { from, id, type, text, profileName, replyToMessageId }
+    : null;
 }
 
 function summarizeWebhook(payload: unknown) {
@@ -243,7 +249,7 @@ export async function GET(request: NextRequest) {
           metaAppId: Boolean(META_APP_ID),
           verifyToken: Boolean(VERIFY_TOKEN),
           signatureVerification: APP_SECRET ? "local" : "secure-bridge",
-          orchestrator: "legacy-command-center-with-secure-relay",
+          orchestrator: "legacy-command-center-with-secure-notification-router",
         },
       },
       { status: 200, headers: { "Cache-Control": "no-store" } },
@@ -303,9 +309,11 @@ export async function POST(request: NextRequest) {
           text: incoming.text,
           messageType: incoming.type,
           profileName: incoming.profileName,
+          replyToMessageId: incoming.replyToMessageId,
         });
         console.info("[whatsapp-webhook] operator command routed", {
           type: incoming.type,
+          replyContext: Boolean(incoming.replyToMessageId),
         });
         return;
       }
