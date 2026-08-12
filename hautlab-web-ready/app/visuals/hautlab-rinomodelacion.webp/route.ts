@@ -1,6 +1,7 @@
 import { rinomodelacionVisual } from "@/data/procedure-visual-rinomodelacion";
 
 export const dynamic = "force-static";
+export const runtime = "nodejs";
 
 export function GET() {
   const base64 = rinomodelacionVisual.split(",")[1] ?? "";
