@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { Clock3, LayoutDashboard, Settings, Sparkles, Users } from "lucide-react";
+import { Bot, Clock3, LayoutDashboard, Settings, Sparkles, Users } from "lucide-react";
 
 const baseNavigation = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, managerOnly: false },
   { href: "/admin/asistencia", label: "Asistencia", icon: Clock3, managerOnly: false },
+  { href: "/admin/whatsapp", label: "WhatsApp IA", icon: Bot, managerOnly: true },
   { href: "/admin/cabina", label: "Cabina", icon: Sparkles, managerOnly: true },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users, managerOnly: true },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings, managerOnly: true }
