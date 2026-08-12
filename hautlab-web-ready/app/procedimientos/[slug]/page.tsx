@@ -14,6 +14,25 @@ const canonicalInternalRoutes: Record<string, string> = {
   "/tratamientos/dermatologia-clinica": "/merida/dermatologia"
 };
 
+const procedureVisuals: Record<string, { image: string; imageAlt: string }> = {
+  rinomodelacion: {
+    image: "/visuals/hautlab-rinomodelacion.webp",
+    imageAlt: "Marcaje anatómico previo a rinomodelación en HAUTLAB"
+  },
+  "armonizacion-facial": {
+    image: "/visuals/hautlab-armonizacion.webp",
+    imageAlt: "Valoración de proporciones y contorno facial frente al espejo"
+  },
+  menton: {
+    image: "/visuals/hautlab-menton.webp",
+    imageAlt: "Marcaje clínico de mentón y tercio inferior facial"
+  },
+  mandibula: {
+    image: "/visuals/hautlab-mandibula-hombre.webp",
+    imageAlt: "Marcaje clínico de contorno mandibular masculino"
+  }
+};
+
 function canonicalHref(href: string) {
   return canonicalInternalRoutes[href] ?? href;
 }
@@ -32,6 +51,27 @@ function canonicalizeInternalLinks(treatment: TreatmentPageContent): TreatmentPa
   };
 }
 
+function commercialSeoOverride(slug: string, seo?: PrioritySeoPage): PrioritySeoPage | undefined {
+  if (!seo || slug !== "rinomodelacion") return seo;
+
+  return {
+    ...seo,
+    schema: {
+      ...seo.schema,
+      offerPrice: "5400"
+    },
+    additionalFaq: seo.additionalFaq.map((item) =>
+      item.question === "¿Cuánto cuesta una rinomodelación en Mérida?"
+        ? {
+            ...item,
+            answer:
+              "En HAUTLAB la rinomodelación tiene una inversión de $5,400 MXN en modalidad preferencial de pago o $6,300 MXN hasta 6 meses sin intereses. Incluye valoración, procedimiento, revisión y retoque cuando existe indicación clínica."
+          }
+        : item
+    )
+  };
+}
+
 function mergePriorityContent(treatment: TreatmentPageContent, seo?: PrioritySeoPage): TreatmentPageContent {
   const merged = seo
     ? {
@@ -46,8 +86,26 @@ function mergePriorityContent(treatment: TreatmentPageContent, seo?: PrioritySeo
   return canonicalizeInternalLinks(merged);
 }
 
+function applyProcedureOverrides(slug: string, treatment: TreatmentPageContent): TreatmentPageContent {
+  const visual = procedureVisuals[slug];
+
+  return {
+    ...treatment,
+    ...(visual ?? {}),
+    ...(slug === "rinomodelacion"
+      ? {
+          investment: {
+            label: "$5,400 MXN · modalidad preferencial",
+            note:
+              "También disponible en $6,300 MXN hasta 6 meses sin intereses. Incluye valoración, procedimiento, revisión y retoque cuando esté indicado. La viabilidad se confirma durante la valoración."
+          }
+        }
+      : {})
+  };
+}
+
 function seoFor(slug: string) {
-  return prioritySeoPages[slug] ?? searchConsoleSeoPages[slug];
+  return commercialSeoOverride(slug, prioritySeoPages[slug] ?? searchConsoleSeoPages[slug]);
 }
 
 export function generateStaticParams() {
@@ -60,7 +118,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!treatment) return {};
 
   const seo = seoFor(slug);
-  const effectiveTreatment = mergePriorityContent(treatment, seo);
+  const effectiveTreatment = applyProcedureOverrides(slug, mergePriorityContent(treatment, seo));
   const title = seo?.title ?? `${treatment.title} en Mérida | HAUTLAB + Dr. Salvador Cordero`;
   const description = seo?.description ?? effectiveTreatment.summary;
   const url = `${siteConfig.url}/procedimientos/${slug}`;
@@ -98,7 +156,7 @@ export default async function ProcedurePage({ params }: PageProps) {
   if (!treatment) notFound();
 
   const seo = seoFor(slug);
-  const effectiveTreatment = mergePriorityContent(treatment, seo);
+  const effectiveTreatment = applyProcedureOverrides(slug, mergePriorityContent(treatment, seo));
   const url = `${siteConfig.url}/procedimientos/${slug}`;
   const modifiedAt = procedureContentDate(slug).toISOString();
   const content = {
