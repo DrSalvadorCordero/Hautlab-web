@@ -17,19 +17,19 @@ const canonicalInternalRoutes: Record<string, string> = {
 const procedureVisuals: Record<string, { image: string; imageAlt: string }> = {
   rinomodelacion: {
     image: "/visuals/hautlab-rinomodelacion.webp",
-    imageAlt: "Marcaje anatómico previo a rinomodelación en HAUTLAB"
+    imageAlt: "Imagen editorial de marcaje anatómico nasal previo a una valoración de rinomodelación"
   },
   "armonizacion-facial": {
     image: "/visuals/hautlab-armonizacion.webp",
-    imageAlt: "Valoración de proporciones y contorno facial frente al espejo"
+    imageAlt: "Imagen editorial de valoración de proporciones y contorno facial frente al espejo"
   },
   menton: {
     image: "/visuals/hautlab-menton.webp",
-    imageAlt: "Marcaje clínico de mentón y tercio inferior facial"
+    imageAlt: "Imagen editorial de marcaje clínico de mentón y tercio inferior facial"
   },
   mandibula: {
     image: "/visuals/hautlab-mandibula-hombre.webp",
-    imageAlt: "Marcaje clínico de contorno mandibular masculino"
+    imageAlt: "Imagen editorial de marcaje del contorno mandibular masculino"
   }
 };
 
