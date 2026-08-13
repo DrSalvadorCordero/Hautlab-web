@@ -178,6 +178,19 @@ async function main() {
     record(html.includes("Alternativas"), `/procedimientos/${slug} presenta alternativas`);
   }
 
+  for (const imagePath of [
+    "/visuals/hautlab-rinomodelacion.webp",
+    "/visuals/hautlab-armonizacion.webp",
+    "/visuals/hautlab-menton.webp",
+    "/visuals/hautlab-mandibula-hombre.webp"
+  ]) {
+    const response = await request(imagePath);
+    const image = await response.arrayBuffer();
+    record(response.status === 200, `${imagePath} responde 200`);
+    record(response.headers.get("content-type")?.startsWith("image/webp"), `${imagePath} sirve un WebP válido`);
+    record(image.byteLength > 20_000, `${imagePath} conserva resolución editorial`);
+  }
+
   const expectedHeaders = {
     "x-content-type-options": "nosniff",
     "x-frame-options": "SAMEORIGIN",
