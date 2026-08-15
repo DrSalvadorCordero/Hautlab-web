@@ -46,6 +46,13 @@ const modelDecisionSchema = z.object({
 
 type ModelDecision = z.infer<typeof modelDecisionSchema>;
 
+type HistoryRow = {
+  direction: string;
+  body: string | null;
+  status: string | null;
+  created_at: string;
+};
+
 function secureEqual(left: string, right: string) {
   const a = Buffer.from(left);
   const b = Buffer.from(right);
@@ -56,6 +63,80 @@ function secureEqual(left: string, right: string) {
 function privacySafeIdentifier(conversationId?: string) {
   if (!conversationId) return undefined;
   return createHash("sha256").update(conversationId).digest("hex").slice(0, 32);
+}
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = (
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  )?.trim();
+  return url && key ? { url, key } : null;
+}
+
+async function loadConversationHistory(conversationId?: string): Promise<HistoryRow[]> {
+  if (!conversationId) return [];
+  const config = getSupabaseConfig();
+  if (!config) return [];
+
+  const params = new URLSearchParams({
+    conversation_id: `eq.${conversationId}`,
+    select: "direction,body,status,created_at",
+    status: "neq.draft",
+    order: "created_at.desc",
+    limit: "12",
+  });
+
+  try {
+    const response = await fetch(`${config.url}/rest/v1/wa_messages?${params.toString()}`, {
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return [];
+    const rows = (await response.json()) as HistoryRow[];
+    return rows
+      .filter((row) => typeof row.body === "string" && row.body.trim().length > 0)
+      .reverse();
+  } catch {
+    return [];
+  }
+}
+
+function buildConversationInput(input: {
+  city: string;
+  message: string;
+  history: HistoryRow[];
+}) {
+  const turns = input.history.map((row) => ({
+    role: row.direction === "inbound" ? "PACIENTE" : "HAUTLAB",
+    body: row.body?.trim() ?? "",
+  }));
+
+  const last = turns.at(-1);
+  if (!last || last.role !== "PACIENTE" || last.body !== input.message.trim()) {
+    turns.push({ role: "PACIENTE", body: input.message.trim() });
+  }
+
+  if (turns.length === 0) {
+    return `Contexto de ciudad: ${input.city}.\nMensaje entrante de WhatsApp:\n${input.message}`;
+  }
+
+  const transcript = turns
+    .map((turn) => `${turn.role}: ${turn.body}`)
+    .join("\n");
+
+  return [
+    `Contexto de ciudad: ${input.city}.`,
+    "Historial reciente de esta misma conversación, de más antiguo a más reciente:",
+    transcript,
+    "",
+    "Responde al ÚLTIMO mensaje del PACIENTE usando el historial. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
+  ].join("\n");
 }
 
 function extractOutputText(payload: unknown): string | null {
@@ -167,8 +248,12 @@ export async function POST(request: NextRequest) {
   const { message, city, conversationId } = parsedInput.data;
 
   try {
-    const promptSettings = await getWhatsAppPromptSettings();
+    const [promptSettings, history] = await Promise.all([
+      getWhatsAppPromptSettings(),
+      loadConversationHistory(conversationId),
+    ]);
     const systemInstructions = `${WHATSAPP_SAFETY_INSTRUCTIONS.trim()}\n\n${promptSettings.prompt.trim()}`;
+    const conversationInput = buildConversationInput({ city, message, history });
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -234,7 +319,7 @@ export async function POST(request: NextRequest) {
           },
         },
         instructions: systemInstructions,
-        input: `City context: ${city}.\nIncoming WhatsApp message:\n${message}`,
+        input: conversationInput,
         store: false,
         safety_identifier: privacySafeIdentifier(conversationId),
       }),
