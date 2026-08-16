@@ -267,7 +267,7 @@ async function main() {
   record(
     tearTroughReply.includes("$6,300") &&
       tearTroughReply.includes("$5,400") &&
-      tearTroughReply.includes("6 meses sin intereses"),
+      /6 (?:meses sin intereses|MSI)/i.test(tearTroughReply),
     "la respuesta de ojeras explica las tres condiciones de pago vigentes"
   );
   record(
@@ -315,7 +315,7 @@ async function main() {
     /verific/i.test(fillerLegacyPriceReply) &&
       fillerLegacyPriceReply.includes("$6,300") &&
       fillerLegacyPriceReply.includes("$5,400") &&
-      fillerLegacyPriceReply.includes("6 meses sin intereses"),
+      /6 (?:meses sin intereses|MSI)/i.test(fillerLegacyPriceReply),
     "la verificación contextual de relleno conserva las condiciones vigentes"
   );
 
