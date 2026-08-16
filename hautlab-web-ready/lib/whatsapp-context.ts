@@ -135,6 +135,7 @@ function buildServiceContext(rows: ServiceRow[], city: string) {
 
   return [
     "CATÁLOGO COMERCIAL ACTIVO — FUENTE DE VERDAD PARA PRECIOS",
+    "Si cualquier cifra del prompt editable contradice este catálogo, prevalece SIEMPRE este catálogo dinámico.",
     "Si aquí un servicio aparece sin precio autorizado, no inventes una cifra: pide confirmación humana.",
     ...activeRows.map((row) => {
       const parts = [
