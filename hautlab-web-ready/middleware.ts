@@ -20,7 +20,10 @@ const configuredMiddleware = clerkMiddleware(
       const { userId } = await auth();
 
       if (!userId) {
-        return NextResponse.redirect(new URL("/admin/iniciar-sesion", request.url));
+        const signInUrl = new URL("/admin/iniciar-sesion", request.url);
+        const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+        signInUrl.searchParams.set("redirect_url", returnTo);
+        return NextResponse.redirect(signInUrl);
       }
     }
 
