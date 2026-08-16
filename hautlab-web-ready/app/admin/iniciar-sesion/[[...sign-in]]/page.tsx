@@ -25,7 +25,7 @@ export default function AdminSignInPage() {
           <SignIn
             path="/admin/iniciar-sesion"
             routing="path"
-            forceRedirectUrl="/admin"
+            fallbackRedirectUrl="/admin/whatsapp"
             appearance={{ elements: { rootBox: "w-full", cardBox: "shadow-calm" } }}
           />
         ) : (
