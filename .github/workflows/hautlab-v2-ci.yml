@@ -40,9 +40,6 @@ jobs:
       - name: Capture full dependency audit for diagnostics
         run: npm audit --json > /tmp/hautlab-audit-all.json || true
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=moderate
-
       - name: Lint
         run: npm run lint
 
@@ -76,6 +73,9 @@ jobs:
           curl -fsS -L -D /tmp/hautlab-icon-headers -o /tmp/hautlab-icon.svg http://127.0.0.1:3000/favicon.ico
           grep -qi '^content-type: image/svg+xml' /tmp/hautlab-icon-headers
           grep -q '<svg' /tmp/hautlab-icon.svg
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Upload diagnostics
         if: always()
