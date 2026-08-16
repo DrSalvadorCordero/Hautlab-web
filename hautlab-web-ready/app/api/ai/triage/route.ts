@@ -5,6 +5,7 @@ import {
   getWhatsAppPromptSettings,
   WHATSAPP_SAFETY_INSTRUCTIONS,
 } from "@/lib/whatsapp-prompt";
+import { loadWhatsAppAssistantContext } from "@/lib/whatsapp-context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -111,6 +112,7 @@ function buildConversationInput(input: {
   city: string;
   message: string;
   history: HistoryRow[];
+  memoryContext: string;
 }) {
   const turns = input.history.map((row) => ({
     role: row.direction === "inbound" ? "PACIENTE" : "HAUTLAB",
@@ -122,21 +124,23 @@ function buildConversationInput(input: {
     turns.push({ role: "PACIENTE", body: input.message.trim() });
   }
 
-  if (turns.length === 0) {
-    return `Contexto de ciudad: ${input.city}.\nMensaje entrante de WhatsApp:\n${input.message}`;
+  const sections = [`Contexto de ciudad: ${input.city}.`];
+  if (input.memoryContext) sections.push(input.memoryContext);
+
+  if (turns.length > 0) {
+    sections.push(
+      "Historial reciente de esta misma conversación, de más antiguo a más reciente:",
+      turns.map((turn) => `${turn.role}: ${turn.body}`).join("\n"),
+    );
+  } else {
+    sections.push(`Mensaje entrante de WhatsApp:\n${input.message}`);
   }
 
-  const transcript = turns
-    .map((turn) => `${turn.role}: ${turn.body}`)
-    .join("\n");
+  sections.push(
+    "Responde al ÚLTIMO mensaje del PACIENTE usando el historial y la memoria como contexto. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
+  );
 
-  return [
-    `Contexto de ciudad: ${input.city}.`,
-    "Historial reciente de esta misma conversación, de más antiguo a más reciente:",
-    transcript,
-    "",
-    "Responde al ÚLTIMO mensaje del PACIENTE usando el historial. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
-  ].join("\n");
+  return sections.join("\n\n");
 }
 
 function extractOutputText(payload: unknown): string | null {
@@ -199,7 +203,8 @@ function applyHardGuardrails(decision: ModelDecision): ModelDecision {
       ...decision,
       action: "clarify",
       operator: "none",
-      reply: "Para orientarte correctamente, necesito un poco más de contexto antes de continuar.",
+      reply:
+        "Para orientarte correctamente, necesito un poco más de contexto antes de continuar.",
       reasonCode: "uncertain",
     };
   }
@@ -248,12 +253,26 @@ export async function POST(request: NextRequest) {
   const { message, city, conversationId } = parsedInput.data;
 
   try {
-    const [promptSettings, history] = await Promise.all([
+    const [promptSettings, history, assistantContext] = await Promise.all([
       getWhatsAppPromptSettings(),
       loadConversationHistory(conversationId),
+      loadWhatsAppAssistantContext({ conversationId, city }),
     ]);
-    const systemInstructions = `${WHATSAPP_SAFETY_INSTRUCTIONS.trim()}\n\n${promptSettings.prompt.trim()}`;
-    const conversationInput = buildConversationInput({ city, message, history });
+
+    const systemInstructions = [
+      WHATSAPP_SAFETY_INSTRUCTIONS.trim(),
+      promptSettings.prompt.trim(),
+      assistantContext.trustedSystemContext,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const conversationInput = buildConversationInput({
+      city,
+      message,
+      history,
+      memoryContext: assistantContext.memoryContext,
+    });
 
     const openaiResponse = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
@@ -351,7 +370,10 @@ export async function POST(request: NextRequest) {
 
     const parsedDecision = modelDecisionSchema.safeParse(candidate);
     if (!parsedDecision.success) {
-      return NextResponse.json({ error: "AI routing returned an invalid decision." }, { status: 502 });
+      return NextResponse.json(
+        { error: "AI routing returned an invalid decision." },
+        { status: 502 },
+      );
     }
 
     const decision = applyHardGuardrails(parsedDecision.data);
