@@ -50,7 +50,8 @@ async function main() {
   const sitemap = await sitemapResponse.text();
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
   const lastModifiedDates = [...sitemap.matchAll(/<lastmod>(.*?)<\/lastmod>/g)].map((match) => match[1]);
-  record(locs.length === 31, `sitemap contiene 31 URLs canónicas (encontradas: ${locs.length})`);
+  record(locs.length >= 33, `sitemap conserva al menos 33 URLs canónicas (encontradas: ${locs.length})`);
+  record(new Set(locs).size === locs.length, "el sitemap no contiene URLs canónicas duplicadas");
   record(lastModifiedDates.length === locs.length, "cada URL del sitemap declara una fecha editorial");
   record(
     new Set(lastModifiedDates).size > 1,
@@ -156,11 +157,11 @@ async function main() {
     "/data-deletion evita indexación"
   );
 
-  const clinicalHubResponse = await request("/tratamientos/dermatologia-clinica");
+  const clinicalHubResponse = await request("/merida/dermatologia");
   const clinicalHubHtml = await clinicalHubResponse.text();
-  record(clinicalHubResponse.status === 200, "el hub de dermatología clínica responde 200");
-  record(clinicalHubHtml.includes("Consulta médica en Mérida"), "el hub explica el proceso local de consulta");
-  record(clinicalHubHtml.includes("Última revisión médica"), "el hub declara revisión médica");
+  record(clinicalHubResponse.status === 200, "el hub de dermatología clínica en Mérida responde 200");
+  record(clinicalHubHtml.includes("Consulta médica · HAUTLAB Mérida"), "el hub explica el proceso local de consulta");
+  record(clinicalHubHtml.includes("MedicalWebPage") && clinicalHubHtml.includes("Diagnóstico diferencial"), "el hub conserva estructura y criterio clínico");
 
   for (const slug of [
     "rinomodelacion",
@@ -248,8 +249,8 @@ async function main() {
   record(ambiguousEmergencyResponse.status === 200, "el asistente intercepta una urgencia aunque mencione precio");
   record(
     /urgencias/i.test(ambiguousEmergencyReply) &&
-      !ambiguousEmergencyReply.includes("$7,500") &&
-      !ambiguousEmergencyReply.includes("$5,500"),
+      !ambiguousEmergencyReply.includes("$6,300") &&
+      !ambiguousEmergencyReply.includes("$5,400"),
     "una señal de alarma siempre tiene prioridad sobre la respuesta comercial"
   );
 
@@ -264,8 +265,8 @@ async function main() {
   const tearTroughReply = tearTroughAssistantPayload.reply || "";
   record(tearTroughAssistantResponse.status === 200, "el asistente responde la consulta inicial de ojeras");
   record(
-    tearTroughReply.includes("$7,500") &&
-      tearTroughReply.includes("$5,500") &&
+    tearTroughReply.includes("$6,300") &&
+      tearTroughReply.includes("$5,400") &&
       tearTroughReply.includes("6 meses sin intereses"),
     "la respuesta de ojeras explica las tres condiciones de pago vigentes"
   );
@@ -291,8 +292,8 @@ async function main() {
   record(/verific/i.test(legacyPriceReply), "el asistente envía la referencia de $4,900 a verificación");
   record(
     !/ácido hialurónico/i.test(legacyPriceReply) &&
-      !legacyPriceReply.includes("$7,500") &&
-      !legacyPriceReply.includes("$5,500"),
+      !legacyPriceReply.includes("$6,300") &&
+      !legacyPriceReply.includes("$5,400"),
     "la referencia aislada de $4,900 permanece neutral hasta identificar el servicio"
   );
 
@@ -312,8 +313,8 @@ async function main() {
   record(fillerLegacyPriceResponse.status === 200, "el asistente conserva el contexto de relleno al verificar $4,900");
   record(
     /verific/i.test(fillerLegacyPriceReply) &&
-      fillerLegacyPriceReply.includes("$7,500") &&
-      fillerLegacyPriceReply.includes("$5,500") &&
+      fillerLegacyPriceReply.includes("$6,300") &&
+      fillerLegacyPriceReply.includes("$5,400") &&
       fillerLegacyPriceReply.includes("6 meses sin intereses"),
     "la verificación contextual de relleno conserva las condiciones vigentes"
   );
@@ -347,7 +348,7 @@ async function main() {
   await checkRedirect("/rinomodelacion", "/procedimientos/rinomodelacion", [308]);
   await checkRedirect("/botox", "/procedimientos/toxina-botulinica", [308]);
   await checkRedirect("/tratamientos", "/procedimientos", [308]);
-  await checkRedirect("/dermatologia-clinica", "/tratamientos/dermatologia-clinica", [308]);
+  await checkRedirect("/dermatologia-clinica", "/merida/dermatologia", [308]);
   await checkRedirect("/tratamientos/rinomodelacion", "/procedimientos/rinomodelacion", [307, 308]);
   await checkRedirect("/aviso-privacidad", "/aviso-de-privacidad", [308]);
 
