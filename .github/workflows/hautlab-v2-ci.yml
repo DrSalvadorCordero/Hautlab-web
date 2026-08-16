@@ -32,7 +32,7 @@ jobs:
           cache-dependency-path: hautlab-web-ready/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --ignore-scripts
 
       - name: Capture production dependency audit
         run: npm audit --omit=dev --json > /tmp/hautlab-audit.json || true
@@ -83,6 +83,7 @@ jobs:
         with:
           name: hautlab-diagnostics
           path: |
+            hautlab-web-ready/package-lock.json
             /tmp/hautlab-audit.json
             /tmp/hautlab-audit-all.json
             /tmp/hautlab-smoke.log
