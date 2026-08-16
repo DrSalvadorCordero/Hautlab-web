@@ -35,9 +35,11 @@ jobs:
         run: npm ci
 
       - name: Capture production dependency audit
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm audit --omit=dev --json > /tmp/hautlab-audit.json || true
 
       - name: Capture full dependency audit for diagnostics
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm audit --json > /tmp/hautlab-audit-all.json || true
 
       - name: Lint
@@ -47,9 +49,11 @@ jobs:
         run: npm run type-check
 
       - name: Build Next.js
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm run build
 
       - name: Smoke test production routes
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: |
           set -o pipefail
           npm run start -- -H 127.0.0.1 -p 3000 > /tmp/hautlab-next.log 2>&1 &
@@ -78,7 +82,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=moderate
 
       - name: Upload diagnostics
-        if: always()
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/v2')
         uses: actions/upload-artifact@v4
         with:
           name: hautlab-diagnostics
