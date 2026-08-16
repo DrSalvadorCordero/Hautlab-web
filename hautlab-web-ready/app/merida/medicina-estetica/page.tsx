@@ -26,6 +26,11 @@ export const metadata: Metadata = {
 
 const procedureLinks = [
   {
+    title: "Rellenos faciales",
+    href: "/merida/rellenos-faciales",
+    text: "Página matriz sobre ácido hialurónico, selección de zonas, producto, cantidad, riesgos y cuándo conviene no añadir volumen."
+  },
+  {
     title: "Rinomodelación",
     href: "/procedimientos/rinomodelacion",
     text: "Valoración de estructura nasal, proporción del perfil, límites anatómicos y riesgo antes de considerar ácido hialurónico."
