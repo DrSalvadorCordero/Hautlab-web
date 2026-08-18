@@ -31,7 +31,12 @@ jobs:
           cache: npm
           cache-dependency-path: hautlab-web-ready/package-lock.json
 
+      - name: Production dependency gate
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm audit --package-lock-only --omit=dev --audit-level=moderate
+
       - name: Install dependencies
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm ci
 
       - name: Capture production dependency audit
@@ -43,9 +48,11 @@ jobs:
         run: npm audit --json > /tmp/hautlab-audit-all.json || true
 
       - name: Lint
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm run lint
 
       - name: Type check
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm run type-check
 
       - name: Build Next.js
@@ -79,6 +86,7 @@ jobs:
           grep -q '<svg' /tmp/hautlab-icon.svg
 
       - name: Audit production dependencies
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
         run: npm audit --omit=dev --audit-level=moderate
 
       - name: Upload diagnostics
