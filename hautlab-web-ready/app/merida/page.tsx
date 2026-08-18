@@ -34,6 +34,7 @@ const clinicalLinks = [
 const aestheticLinks = [
   { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
   { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" },
+  { label: "Rellenos faciales", href: "/merida/rellenos-faciales" },
   { label: "Labios", href: "/procedimientos/labios" },
   { label: "Mentón", href: "/procedimientos/menton" },
   { label: "Mandíbula", href: "/procedimientos/mandibula" },
@@ -74,6 +75,7 @@ export default function MeridaPage() {
         description:
           "Información sobre la atención médica, medicina estética y proceso de valoración de HAUTLAB en Mérida, Yucatán.",
         inLanguage: "es-MX",
+        isPartOf: { "@id": `${siteConfig.url}#website` },
         about: { "@id": `${siteConfig.url}#clinic` },
         mainEntity: { "@id": `${siteConfig.url}#clinic` },
         breadcrumb: { "@id": `${pageUrl}#breadcrumb` }
