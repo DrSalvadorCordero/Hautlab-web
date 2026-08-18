@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { after, NextRequest, NextResponse } from "next/server";
+import { processWhatsAppWebhook } from "@/lib/whatsapp-orchestrator";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,6 @@ const APP_SECRET =
   process.env.META_APP_SECRET ?? process.env.WHATSAPP_APP_SECRET ?? "";
 const META_APP_ID = process.env.META_APP_ID ?? "";
 const LEGACY_META_VERIFY_URL = "https://nuevo-zzys.vercel.app/api/meta-verify";
-const LEGACY_WEBHOOK_URL = "https://nuevo-zzys.vercel.app/api/webhook";
 const COMMAND_RELAY_URL =
   "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/wa-command-router";
 const RELAY_SECRET_KEY = "relay_hmac_secret";
@@ -249,7 +249,7 @@ export async function GET(request: NextRequest) {
           metaAppId: Boolean(META_APP_ID),
           verifyToken: Boolean(VERIFY_TOKEN),
           signatureVerification: APP_SECRET ? "local" : "secure-bridge",
-          orchestrator: "legacy-command-center-with-secure-notification-router",
+          orchestrator: "hautlab-command-center-internal",
         },
       },
       { status: 200, headers: { "Cache-Control": "no-store" } },
@@ -298,6 +298,7 @@ export async function POST(request: NextRequest) {
 
   const summary = summarizeWebhook(payload);
   const incoming = extractInbound(payload);
+  const origin = request.nextUrl.origin;
   console.info("[whatsapp-webhook] verified event", summary);
 
   after(async () => {
@@ -318,18 +319,7 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      const response = await fetch(LEGACY_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: rawBody,
-        cache: "no-store",
-        signal: AbortSignal.timeout(50000),
-      });
-      if (!response.ok) {
-        console.error("[whatsapp-webhook] command center bridge failed", {
-          status: response.status,
-        });
-      }
+      await processWhatsAppWebhook(payload, origin);
 
       if (incoming?.from) {
         try {
@@ -341,7 +331,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (error) {
-      console.error("[whatsapp-webhook] command center bridge failed", {
+      console.error("[whatsapp-webhook] internal command center failed", {
         message: error instanceof Error ? error.message : "unknown_error",
       });
     }
