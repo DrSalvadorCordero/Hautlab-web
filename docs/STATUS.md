@@ -1,3 +1,5 @@
 # Status
 
-Initial governance package prepared on branch `docs/seo-aeo-governance`. Pending review and merge.
+HAUTLAB production source of truth: `main`.
+
+WhatsApp Command Center cutover merged on 2026-08-18. This operational marker retriggers the production deployment/promotion gate without changing application behavior.
