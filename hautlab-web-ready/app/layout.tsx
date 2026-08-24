@@ -103,8 +103,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 { "@type": "OfferCatalog", name: "Condiciones de piel" },
                 { "@type": "OfferCatalog", name: "Procedimientos focales" }
               ]
-        },
-        sameAs: [siteConfig.instagram]
+        }
       },
       {
         "@type": "Person",
@@ -113,7 +112,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         jobTitle: siteConfig.professionalTitle,
         knowsAbout: siteConfig.practiceArea,
         identifier: siteConfig.professionalLicense,
-        worksFor: { "@id": `${siteConfig.url}#clinic` }
+        worksFor: { "@id": `${siteConfig.url}#clinic` },
+        sameAs: [siteConfig.instagram]
       }
     ]
   };

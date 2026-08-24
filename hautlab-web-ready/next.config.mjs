@@ -20,6 +20,8 @@ const nextConfig = {
       { source: "/botox", destination: "/procedimientos/toxina-botulinica", permanent: true },
       { source: "/tratamientos/botox", destination: "/procedimientos/toxina-botulinica", permanent: true },
       { source: "/dermatologia-clinica", destination: "/merida/dermatologia", permanent: true },
+      { source: "/tratamientos/dermatologia-clinica", destination: "/merida/dermatologia", permanent: true },
+      { source: "/tratamientos/medicina-estetica-facial", destination: "/merida/medicina-estetica", permanent: true },
       { source: "/tratamientos/cicatrices", destination: "/procedimientos/cicatrices-acne", permanent: true },
       { source: "/tratamientos/peelings", destination: "/procedimientos/peelings-medicos", permanent: true },
       { source: "/tratamientos/menton-mandibula", destination: "/merida/medicina-estetica", permanent: true },
