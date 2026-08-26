@@ -143,6 +143,31 @@ function buildConversationInput(input: {
   return sections.join("\n\n");
 }
 
+const DISALLOWED_OPENINGS = [
+  /^(?:hola)(?:\s*,?\s*(?:buen(?:os)?\s+d[ií]as?|buenas\s+tardes|buenas\s+noches))?[\s.!,:;–—-]*/i,
+  /^(?:buen(?:os)?\s+d[ií]as?|buenas\s+tardes|buenas\s+noches)[\s.!,:;–—-]*/i,
+  /^(?:gracias\s+por\s+(?:comunicarte|escribir(?:nos)?))[\s.!,:;–—-]*/i,
+  /^(?:qu[eé]\s+gusto(?:\s+(?:leerte|saber\s+de\s+ti))?)[\s.!,:;–—-]*/i,
+];
+
+function enforceZeroGreeting(reply: string) {
+  let sanitized = reply.trim();
+  let changed = true;
+
+  while (changed && sanitized) {
+    changed = false;
+    for (const pattern of DISALLOWED_OPENINGS) {
+      const next = sanitized.replace(pattern, "").trimStart();
+      if (next !== sanitized) {
+        sanitized = next;
+        changed = true;
+      }
+    }
+  }
+
+  return sanitized || "¿En qué podemos ayudarte?";
+}
+
 function extractOutputText(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") return null;
   const response = payload as {
@@ -377,10 +402,12 @@ export async function POST(request: NextRequest) {
     }
 
     const decision = applyHardGuardrails(parsedDecision.data);
+    const reply = enforceZeroGreeting(decision.reply);
 
     return NextResponse.json(
       {
         ...decision,
+        reply,
         model,
         automated: decision.action !== "escalate",
       },
