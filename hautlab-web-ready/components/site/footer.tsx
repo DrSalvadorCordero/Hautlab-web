@@ -4,7 +4,7 @@ import { CookieSettingsButton } from "@/components/privacy/cookie-settings-butto
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-const mapsUrl = "https://maps.app.goo.gl/8CoPkGjpuYDi8QqE6?g_st=ic";
+const mapsUrl = siteConfig.googleMaps;
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -20,7 +20,7 @@ export function Footer() {
               {siteConfig.tagline} Valoración de piel, diseño facial y protocolos dermatocosméticos con criterio, seguimiento y resultados sobrios.
             </p>
             <div className="mt-5 space-y-1 text-xs leading-5 text-quiet">
-              <p className="text-bone">Dr. Salvador Cordero</p>
+              <Link href={siteConfig.doctorProfilePath} className="text-bone transition hover:text-champagne">Dr. Salvador Cordero</Link>
               <p>Médico Cirujano · Dermatología Clínica y Estética</p>
               <p>Cédula Profesional 11804418</p>
               <p className="pt-2">Cabina Dermatocosmética coordinada por Karen Cruz.</p>
@@ -46,6 +46,7 @@ export function Footer() {
               WhatsApp {siteConfig.whatsappDisplay}
             </a>
             <Link className={`${linkClass} text-bone`} href="/merida">HAUTLAB Mérida</Link>
+            <Link className={linkClass} href={siteConfig.doctorProfilePath}>Perfil médico</Link>
             <Link className={linkClass} href="/cabina" data-event="cabina_footer_link">Cabina Dermatocosmética</Link>
             <Link className={linkClass} href="/publicaciones">Publicaciones</Link>
             <a className={linkClass} href={siteConfig.instagram} target="_blank" rel="noreferrer">
