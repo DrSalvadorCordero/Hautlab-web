@@ -10,10 +10,19 @@ export const siteConfig = {
   description:
     "Valoración de piel, cabello y uñas, diseño facial y medicina estética en Mérida con el Dr. Salvador Cordero. Diagnóstico primero y seguimiento clínico.",
   url: "https://www.hautlabmx.com",
+  doctorProfilePath: "/dr-salvador-cordero",
+  doctorProfileUrl: "https://www.hautlabmx.com/dr-salvador-cordero",
   whatsappNumber: "529992809758",
   whatsappDisplay: "+52 999 280 9758",
   instagram: "https://www.instagram.com/dr.salvadorcordero",
   instagramHandle: "@dr.salvadorcordero",
+  googleMaps: "https://maps.app.goo.gl/8CoPkGjpuYDi8QqE6?g_st=ic",
+  doctoralia: "https://www.doctoralia.com.mx/perfil/salvador-cordero-romero-2",
+  linkedin: "https://mx.linkedin.com/in/salvador-cordero-787337a3",
+  pubmedArticles: [
+    "https://pubmed.ncbi.nlm.nih.gov/28777905/",
+    "https://pubmed.ncbi.nlm.nih.gov/28779584/"
+  ],
   privacyEmail: "dr.salvadorcordero@gmail.com",
   privacyUpdated: "11 de julio de 2026",
   address: "Calle 43 número 299A x 32A, San Ramón Norte, C.P. 97117, Mérida, Yucatán",
