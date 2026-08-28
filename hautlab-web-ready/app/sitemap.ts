@@ -14,6 +14,7 @@ const allTreatments = { ...treatmentsV2, ...extraTreatmentsV2 };
 export default function sitemap(): MetadataRoute.Sitemap {
   const coreRoutes: MetadataRoute.Sitemap = [
     { url: siteConfig.url, lastModified: coreContentDates.home, changeFrequency: "weekly", priority: 1 },
+    { url: siteConfig.doctorProfileUrl, lastModified: "2026-08-28", changeFrequency: "monthly", priority: 0.9 },
     { url: `${siteConfig.url}/en`, lastModified: coreContentDates.english, changeFrequency: "weekly", priority: 0.9 },
     { url: `${siteConfig.url}/merida`, lastModified: coreContentDates.merida, changeFrequency: "monthly", priority: 0.95 },
     { url: `${siteConfig.url}/merida/dermatologia`, lastModified: coreContentDates.meridaDermatology, changeFrequency: "monthly", priority: 0.95 },

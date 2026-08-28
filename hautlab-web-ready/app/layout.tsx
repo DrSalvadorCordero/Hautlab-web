@@ -86,6 +86,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           addressCountry: "MX"
         },
         areaServed: { "@type": "City", name: "Mérida, Yucatán" },
+        hasMap: siteConfig.googleMaps,
+        contactPoint: {
+          "@type": "ContactPoint",
+          telephone: siteConfig.whatsappDisplay,
+          contactType: "appointments",
+          availableLanguage: ["Spanish"]
+        },
         founder: { "@id": `${siteConfig.url}#doctor` },
         hasOfferCatalog: {
           "@type": "OfferCatalog",
@@ -110,10 +117,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         "@type": "Person",
         "@id": `${siteConfig.url}#doctor`,
         name: siteConfig.legalDoctorName,
+        url: siteConfig.doctorProfileUrl,
         jobTitle: siteConfig.professionalTitle,
-        knowsAbout: siteConfig.practiceArea,
+        knowsAbout: [
+          "Dermatología clínica",
+          "Medicina estética",
+          "Acné",
+          "Rosácea",
+          "Melasma",
+          "Alopecia y caída de cabello",
+          "Lesiones de piel",
+          "Diseño facial"
+        ],
         identifier: siteConfig.professionalLicense,
-        worksFor: { "@id": `${siteConfig.url}#clinic` }
+        worksFor: { "@id": `${siteConfig.url}#clinic` },
+        sameAs: [siteConfig.instagram, siteConfig.linkedin],
+        subjectOf: [
+          { "@type": "WebPage", url: `${siteConfig.url}/publicaciones` },
+          ...siteConfig.pubmedArticles.map((url) => ({ "@type": "ScholarlyArticle", url }))
+        ]
       }
     ]
   };
