@@ -15,6 +15,7 @@ The HAUTLAB Staff schema is live and is tracked by Supabase migration history. A
 9. `20260831223133_hlstaff_cash_close_v9`
 10. `20260831223427_hlstaff_mp_attribution_v10`
 11. `20260831223530_hlstaff_open_shift_rpc_v11`
+12. `hlstaff_performance_indexes_v12` — indexes and RLS query-plan optimization
 
 ## Production objects
 
@@ -61,9 +62,11 @@ Karen:
 - Staff data uses Supabase Auth + RLS.
 - Compensation rates are server-controlled; staff cannot edit their role/rate.
 - Location consent is recorded separately.
-- Location event RPCs require authentication.
+- Location event RPCs require authentication and validate the caller against their own staff profile/shift.
+- Manager RPCs validate manager role in the database.
 - Financial aggregate views are service-role only for the Clerk-protected admin dashboard.
 - Geofence monitoring is designed to stop at check-out.
+- RLS policies use init-plan-friendly auth checks and staff foreign keys used by operational queries are indexed.
 
 ## Attribution
 
