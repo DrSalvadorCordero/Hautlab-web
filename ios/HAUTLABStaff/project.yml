@@ -1,0 +1,34 @@
+name: HAUTLABStaff
+options:
+  bundleIdPrefix: mx.hautlab
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    from: 2.51.0
+targets:
+  HAUTLABStaff:
+    type: application
+    platform: iOS
+    sources:
+      - HAUTLABStaff
+    info:
+      path: HAUTLABStaff/Supporting/Info.plist
+      properties:
+        CFBundleDisplayName: HAUTLAB Staff
+        UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: "HAUTLAB usa tu ubicación para validar el check-in y check-out en la clínica."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Durante un turno activo, HAUTLAB usa una geocerca para registrar entradas y salidas de la clínica. El seguimiento se detiene al finalizar el turno."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.hautlab.staff
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - package: Supabase
+        product: Supabase
