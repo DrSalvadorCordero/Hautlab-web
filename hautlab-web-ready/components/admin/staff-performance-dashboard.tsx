@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Banknote, Clock3, MapPin, RefreshCw, Target, WalletCards } from "lucide-react";
-import type { RevenueLedgerRow, StaffSnapshot } from "@/lib/staff-performance-db";
+import type { RevenueLedgerRow, StaffSnapshot } from "@/lib/staff-performance-types";
 
 type Payload = {
   month: string;
@@ -14,11 +14,14 @@ type Payload = {
 const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
 
 function currentMonth() {
-  return new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Merida",
     year: "numeric",
     month: "2-digit"
-  }).format(new Date());
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "2026";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  return `${year}-${month}`;
 }
 
 export function StaffPerformanceDashboard() {
