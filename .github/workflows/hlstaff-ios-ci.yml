@@ -1,0 +1,46 @@
+name: HAUTLAB Staff iOS CI
+
+on:
+  push:
+    branches:
+      - feature/hlstaff-ios
+    paths:
+      - "ios/HAUTLABStaff/**"
+      - ".github/workflows/hlstaff-ios-ci.yml"
+  pull_request:
+    paths:
+      - "ios/HAUTLABStaff/**"
+      - ".github/workflows/hlstaff-ios-ci.yml"
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: ios/HAUTLABStaff
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        working-directory: ios/HAUTLABStaff
+        run: xcodebuild -resolvePackageDependencies -project HAUTLABStaff.xcodeproj -scheme HAUTLABStaff
+
+      - name: Build for iOS Simulator
+        working-directory: ios/HAUTLABStaff
+        run: >-
+          xcodebuild build
+          -project HAUTLABStaff.xcodeproj
+          -scheme HAUTLABStaff
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          ONLY_ACTIVE_ARCH=NO
