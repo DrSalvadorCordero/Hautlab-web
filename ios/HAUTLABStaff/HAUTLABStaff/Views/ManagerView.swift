@@ -22,7 +22,7 @@ struct ManagerView: View {
                     LabeledContent("Comisión", value: snapshot.commission.formatted(.currency(code: "MXN")))
                     LabeledContent("Bono", value: snapshot.bonus.formatted(.currency(code: "MXN")))
                     LabeledContent("Total estimado", value: snapshot.totalPay.formatted(.currency(code: "MXN")))
-                    LabeledContent("Score", value: "\(snapshot.score, specifier: \"%.1f\")")
+                    LabeledContent("Score", value: "\(snapshot.score, specifier: "%.1f")")
                 }
             }
             Section("Privacidad") {
