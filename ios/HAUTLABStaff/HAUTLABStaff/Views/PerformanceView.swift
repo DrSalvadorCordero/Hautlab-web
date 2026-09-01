@@ -7,7 +7,7 @@ struct PerformanceView: View {
         ScrollView {
             if let snapshot = store.monthlySnapshot {
                 VStack(spacing: 16) {
-                    metric("Score", "\(snapshot.score, specifier: "%.1f") / 100")
+                    metric("Score", "\(oneDecimal(snapshot.score)) / 100")
                     HStack(spacing: 12) {
                         metric("Base", money(snapshot.baseSalary))
                         metric("Comisión", money(snapshot.commission))
@@ -17,7 +17,7 @@ struct PerformanceView: View {
                         metric("Total", money(snapshot.totalPay))
                     }
                     metric("Ingresos atribuibles", money(snapshot.revenue.total))
-                    metric("Asistencia", "\(snapshot.attendance.attendancePct, specifier: "%.1f")%")
+                    metric("Asistencia", "\(oneDecimal(snapshot.attendance.attendancePct))%")
                     metric("Fuera de geocerca", "\(Int(snapshot.attendance.outsideMinutes)) min")
                     metric("Leads atendidos", "\(snapshot.leads.responded) / \(snapshot.leads.assigned)")
                     metric("Citas confirmadas", "\(snapshot.leads.appointmentConfirmed)")
@@ -37,5 +37,11 @@ struct PerformanceView: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding().background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22))
     }
 
-    private func money(_ value: Double) -> String { value.formatted(.currency(code: "MXN")) }
+    private func money(_ value: Double) -> String {
+        value.formatted(.currency(code: "MXN"))
+    }
+
+    private func oneDecimal(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(1)))
+    }
 }
