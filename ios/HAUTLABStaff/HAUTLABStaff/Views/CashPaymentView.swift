@@ -59,7 +59,7 @@ struct CashPaymentView: View {
     private func closeCash() async {
         guard let value = Double(countedCash.replacingOccurrences(of: ",", with: ".")) else { return }
         if let closure = await store.closeCash(countedCash: value) {
-            closureConfirmation = "Esperado \(closure.expectedCash.formatted(.currency(code: "MXN"))) · diferencia \(closure.difference.formatted(.currency(code: "MXN")))"
+            closureConfirmation = "Esperado \(money(closure.expectedCash)) · diferencia \(money(closure.difference))"
             countedCash = ""
         }
     }
@@ -67,8 +67,12 @@ struct CashPaymentView: View {
     private func submit() async {
         guard let value = Double(amount.replacingOccurrences(of: ",", with: ".")) else { return }
         if let payment = await store.registerCash(patientName: patientName, amount: value, concept: concept, revenueOwner: revenueOwner, commissionType: commissionType) {
-            confirmation = "Registrado · $\(payment.amount, specifier: "%.2f") · comisión $\(payment.commissionAmount, specifier: "%.2f")"
+            confirmation = "Registrado · \(money(payment.amount)) · comisión \(money(payment.commissionAmount))"
             patientName = ""; amount = ""; concept = ""
         }
+    }
+
+    private func money(_ value: Double) -> String {
+        value.formatted(.currency(code: "MXN"))
     }
 }
