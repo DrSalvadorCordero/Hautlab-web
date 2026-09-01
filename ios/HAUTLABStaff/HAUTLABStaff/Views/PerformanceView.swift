@@ -7,7 +7,7 @@ struct PerformanceView: View {
         ScrollView {
             if let snapshot = store.monthlySnapshot {
                 VStack(spacing: 16) {
-                    metric("Score", "\(snapshot.score, specifier: \"%.1f\") / 100")
+                    metric("Score", "\(snapshot.score, specifier: "%.1f") / 100")
                     HStack(spacing: 12) {
                         metric("Base", money(snapshot.baseSalary))
                         metric("Comisión", money(snapshot.commission))
@@ -17,7 +17,7 @@ struct PerformanceView: View {
                         metric("Total", money(snapshot.totalPay))
                     }
                     metric("Ingresos atribuibles", money(snapshot.revenue.total))
-                    metric("Asistencia", "\(snapshot.attendance.attendancePct, specifier: \"%.1f\")%")
+                    metric("Asistencia", "\(snapshot.attendance.attendancePct, specifier: "%.1f")%")
                     metric("Fuera de geocerca", "\(Int(snapshot.attendance.outsideMinutes)) min")
                     metric("Leads atendidos", "\(snapshot.leads.responded) / \(snapshot.leads.assigned)")
                     metric("Citas confirmadas", "\(snapshot.leads.appointmentConfirmed)")
