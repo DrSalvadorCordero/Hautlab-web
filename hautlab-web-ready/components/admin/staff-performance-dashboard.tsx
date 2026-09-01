@@ -33,11 +33,13 @@ export function StaffPerformanceDashboard() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setData(null);
     try {
       const response = await fetch(`/api/admin/staff-performance?month=${encodeURIComponent(month)}`, { cache: "no-store" });
       if (!response.ok) throw new Error("No fue posible cargar el desempeño del personal.");
       setData((await response.json()) as Payload);
     } catch (value) {
+      setData(null);
       setError(value instanceof Error ? value.message : "No fue posible cargar los datos.");
     } finally {
       setLoading(false);
