@@ -22,6 +22,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private(set) var isInsideGeofence: Bool?
 
     private let manager = CLLocationManager()
+    private var authorizationContinuation: CheckedContinuation<Void, Error>?
     private var locationContinuation: CheckedContinuation<CLLocation, Error>?
     private var activeRegion: CLCircularRegion?
 
@@ -40,16 +41,13 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     }
 
     func requestAlwaysForActiveShift() {
+        guard manager.authorizationStatus == .authorizedWhenInUse else { return }
         manager.requestAlwaysAuthorization()
     }
 
     func currentLocation() async throws -> CLLocation {
-        if manager.authorizationStatus == .denied || manager.authorizationStatus == .restricted {
-            throw LocationError.denied
-        }
-        if manager.authorizationStatus == .notDetermined {
-            manager.requestWhenInUseAuthorization()
-        }
+        try await ensureWhenInUseAuthorization()
+
         return try await withCheckedThrowingContinuation { continuation in
             locationContinuation = continuation
             manager.requestLocation()
@@ -79,8 +77,41 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         isInsideGeofence = nil
     }
 
+    private func ensureWhenInUseAuthorization() async throws {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            return
+        case .denied, .restricted:
+            throw LocationError.denied
+        case .notDetermined:
+            try await withCheckedThrowingContinuation { continuation in
+                authorizationContinuation = continuation
+                manager.requestWhenInUseAuthorization()
+            }
+        @unknown default:
+            throw LocationError.denied
+        }
+    }
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        Task { @MainActor in self.authorizationStatus = manager.authorizationStatus }
+        Task { @MainActor in
+            self.authorizationStatus = manager.authorizationStatus
+
+            guard let continuation = self.authorizationContinuation else { return }
+            switch manager.authorizationStatus {
+            case .authorizedAlways, .authorizedWhenInUse:
+                self.authorizationContinuation = nil
+                continuation.resume()
+            case .denied, .restricted:
+                self.authorizationContinuation = nil
+                continuation.resume(throwing: LocationError.denied)
+            case .notDetermined:
+                break
+            @unknown default:
+                self.authorizationContinuation = nil
+                continuation.resume(throwing: LocationError.denied)
+            }
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
