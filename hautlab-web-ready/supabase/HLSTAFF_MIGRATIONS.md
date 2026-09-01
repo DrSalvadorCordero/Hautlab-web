@@ -2,7 +2,7 @@
 
 Production project: `mwnmopsybpvjnfnepadv`
 
-The HAUTLAB Staff schema is live and is tracked by Supabase migration history. Applied in order on 2026-08-31:
+The HAUTLAB Staff schema is live and its replayable SQL is committed under `supabase/migrations`. Applied in order on 2026-08-31:
 
 1. `20260831222045_hlstaff_core_v1`
 2. `20260831222124_hlstaff_security_compensation_v2`
@@ -15,7 +15,9 @@ The HAUTLAB Staff schema is live and is tracked by Supabase migration history. A
 9. `20260831223133_hlstaff_cash_close_v9`
 10. `20260831223427_hlstaff_mp_attribution_v10`
 11. `20260831223530_hlstaff_open_shift_rpc_v11`
-12. `hlstaff_performance_indexes_v12` — indexes and RLS query-plan optimization
+12. `20260831223944_hlstaff_performance_indexes_v12`
+
+The committed v2 migration intentionally omits the one-time production invite-code seed rows. Authentication invite secrets must be provisioned out-of-band and must not be committed to Git.
 
 ## Production objects
 
@@ -67,6 +69,7 @@ Karen:
 - Financial aggregate views are service-role only for the Clerk-protected admin dashboard.
 - Geofence monitoring is designed to stop at check-out.
 - RLS policies use init-plan-friendly auth checks and staff foreign keys used by operational queries are indexed.
+- One-time invite credentials are not stored in source control.
 
 ## Attribution
 
