@@ -36,11 +36,14 @@ jobs:
 
       - name: Build for iOS Simulator
         working-directory: ios/HAUTLABStaff
-        run: >-
-          xcodebuild build
-          -project HAUTLABStaff.xcodeproj
-          -scheme HAUTLABStaff
-          -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO
-          ONLY_ACTIVE_ARCH=NO
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project HAUTLABStaff.xcodeproj \
+            -scheme HAUTLABStaff \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/HAUTLABStaffDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO
