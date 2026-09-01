@@ -18,11 +18,11 @@ struct ManagerView: View {
             }
             if let snapshot = store.monthlySnapshot {
                 Section("Karen · mes actual") {
-                    LabeledContent("Ingresos", value: snapshot.revenue.total.formatted(.currency(code: "MXN")))
-                    LabeledContent("Comisión", value: snapshot.commission.formatted(.currency(code: "MXN")))
-                    LabeledContent("Bono", value: snapshot.bonus.formatted(.currency(code: "MXN")))
-                    LabeledContent("Total estimado", value: snapshot.totalPay.formatted(.currency(code: "MXN")))
-                    LabeledContent("Score", value: "\(snapshot.score, specifier: "%.1f")")
+                    metricRow("Ingresos", snapshot.revenue.total.formatted(.currency(code: "MXN")))
+                    metricRow("Comisión", snapshot.commission.formatted(.currency(code: "MXN")))
+                    metricRow("Bono", snapshot.bonus.formatted(.currency(code: "MXN")))
+                    metricRow("Total estimado", snapshot.totalPay.formatted(.currency(code: "MXN")))
+                    metricRow("Score", snapshot.score.formatted(.number.precision(.fractionLength(1))))
                 }
             }
             Section("Privacidad") {
@@ -31,5 +31,13 @@ struct ManagerView: View {
             }
         }
         .navigationTitle("Administrar")
+    }
+
+    private func metricRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value).foregroundStyle(.secondary)
+        }
     }
 }
