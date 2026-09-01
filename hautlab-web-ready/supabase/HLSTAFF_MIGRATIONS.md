@@ -16,6 +16,7 @@ The HAUTLAB Staff schema is live and its replayable SQL is committed under `supa
 10. `20260831223427_hlstaff_mp_attribution_v10`
 11. `20260831223530_hlstaff_open_shift_rpc_v11`
 12. `20260831223944_hlstaff_performance_indexes_v12`
+13. `20260901074200_hlstaff_unclaimed_compensation_guard_v13`
 
 The committed v2 migration intentionally omits the one-time production invite-code seed rows. Authentication invite secrets must be provisioned out-of-band and must not be committed to Git.
 
