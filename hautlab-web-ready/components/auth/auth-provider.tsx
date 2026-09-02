@@ -1,7 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { isClerkConfigured } from "@/lib/auth-config";
 
-const clerkProxyUrl = "https://www.hautlabmx.com/__clerk/";
+const clerkProxyUrl = "/__clerk";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (!isClerkConfigured()) return <>{children}</>;
