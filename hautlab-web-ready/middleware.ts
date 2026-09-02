@@ -6,6 +6,7 @@ import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
 const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
+const clerkProxyUrl = "https://www.hautlabmx.com/__clerk";
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
@@ -30,6 +31,7 @@ const configuredMiddleware = clerkMiddleware(
     return publicResponse(request);
   },
   {
+    proxyUrl: clerkProxyUrl,
     frontendApiProxy: {
       enabled: true
     }
