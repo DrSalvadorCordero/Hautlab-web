@@ -5,7 +5,7 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
-const isClerkRoute = createRouteMatcher(["/admin/:path*"]);
+const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
@@ -14,20 +14,27 @@ const publicResponse = (request: NextRequest) =>
     }
   });
 
-const configuredMiddleware = clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    const { userId } = await auth();
+const configuredMiddleware = clerkMiddleware(
+  async (auth, request) => {
+    if (isProtectedRoute(request)) {
+      const { userId } = await auth();
 
-    if (!userId) {
-      const signInUrl = new URL("/admin/iniciar-sesion", request.url);
-      const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-      signInUrl.searchParams.set("redirect_url", returnTo);
-      return NextResponse.redirect(signInUrl);
+      if (!userId) {
+        const signInUrl = new URL("/admin/iniciar-sesion", request.url);
+        const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+        signInUrl.searchParams.set("redirect_url", returnTo);
+        return NextResponse.redirect(signInUrl);
+      }
+    }
+
+    return publicResponse(request);
+  },
+  {
+    frontendApiProxy: {
+      enabled: true
     }
   }
-
-  return publicResponse(request);
-});
+);
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
   // Public pages must never depend on Clerk. A bad Clerk configuration must
@@ -44,5 +51,5 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 }
 
 export const config = {
-  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*"]
+  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*", "/__clerk/:path*"]
 };
