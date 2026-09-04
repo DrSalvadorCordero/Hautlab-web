@@ -5,8 +5,7 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
-const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
-const clerkProxyUrl = "https://www.hautlabmx.com/__clerk";
+const isClerkRoute = createRouteMatcher(["/admin/:path*"]);
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
@@ -15,32 +14,24 @@ const publicResponse = (request: NextRequest) =>
     }
   });
 
-const configuredMiddleware = clerkMiddleware(
-  async (auth, request) => {
-    if (isProtectedRoute(request)) {
-      const { userId } = await auth();
+const configuredMiddleware = clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
 
-      if (!userId) {
-        const signInUrl = new URL("/admin/iniciar-sesion", request.url);
-        const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-        signInUrl.searchParams.set("redirect_url", returnTo);
-        return NextResponse.redirect(signInUrl);
-      }
-    }
-
-    return publicResponse(request);
-  },
-  {
-    proxyUrl: clerkProxyUrl,
-    frontendApiProxy: {
-      enabled: true
+    if (!userId) {
+      const signInUrl = new URL("/admin/iniciar-sesion", request.url);
+      const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+      signInUrl.searchParams.set("redirect_url", returnTo);
+      return NextResponse.redirect(signInUrl);
     }
   }
-);
+
+  return publicResponse(request);
+});
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  // Public pages must never depend on Clerk. A preview Clerk key promoted to
-  // production must not be able to take down the patient-facing website.
+  // Public pages must never depend on Clerk. A bad Clerk configuration must
+  // not be able to take down the patient-facing website.
   if (!isClerkRoute(request)) {
     return publicResponse(request);
   }
@@ -53,5 +44,5 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 }
 
 export const config = {
-  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*", "/__clerk/:path*"]
+  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*"]
 };
