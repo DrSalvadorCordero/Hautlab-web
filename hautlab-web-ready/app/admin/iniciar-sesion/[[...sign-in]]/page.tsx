@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
 import { isClerkConfigured } from "@/lib/auth-config";
 
-const clerkProxyUrl = "https://www.hautlabmx.com/__clerk";
+const clerkProxyUrl = "https://hautlabmx.com/__clerk";
 
 type ClerkDomain = {
   id?: string;
