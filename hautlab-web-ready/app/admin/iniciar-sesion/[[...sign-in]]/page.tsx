@@ -11,9 +11,16 @@ type ClerkDomain = {
   proxy_url?: string | null;
 };
 
+type ClerkErrorPayload = {
+  errors?: Array<{ code?: string; message?: string; long_message?: string }>;
+};
+
 async function ensureClerkProxyConfigured() {
   const secretKey = process.env.CLERK_SECRET_KEY?.trim();
-  if (!secretKey) return;
+  if (!secretKey) {
+    console.error("Clerk proxy repair: missing secret key");
+    return;
+  }
 
   try {
     const listResponse = await fetch("https://api.clerk.com/v1/domains", {
@@ -25,7 +32,15 @@ async function ensureClerkProxyConfigured() {
       signal: AbortSignal.timeout(8_000)
     });
 
-    if (!listResponse.ok) return;
+    if (!listResponse.ok) {
+      const error = await listResponse.json().catch(() => null) as ClerkErrorPayload | null;
+      console.error("Clerk proxy repair: domain list failed", {
+        status: listResponse.status,
+        code: error?.errors?.[0]?.code ?? null
+      });
+      return;
+    }
+
     const payload = await listResponse.json() as { data?: ClerkDomain[] } | ClerkDomain[];
     const domains = Array.isArray(payload) ? payload : Array.isArray(payload.data) ? payload.data : [];
     const domain =
@@ -34,9 +49,17 @@ async function ensureClerkProxyConfigured() {
       domains.find((item) => item.is_satellite === false) ??
       domains[0];
 
-    if (!domain?.id || domain.proxy_url === clerkProxyUrl) return;
+    if (!domain?.id) {
+      console.error("Clerk proxy repair: no domain found", { count: domains.length });
+      return;
+    }
 
-    await fetch(`https://api.clerk.com/v1/domains/${encodeURIComponent(domain.id)}`, {
+    if (domain.proxy_url === clerkProxyUrl) {
+      console.info("Clerk proxy repair: already configured", { domain: domain.name ?? null });
+      return;
+    }
+
+    const patchResponse = await fetch(`https://api.clerk.com/v1/domains/${encodeURIComponent(domain.id)}`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${secretKey}`,
@@ -47,8 +70,22 @@ async function ensureClerkProxyConfigured() {
       cache: "no-store",
       signal: AbortSignal.timeout(10_000)
     });
-  } catch {
-    // Login UI still renders; this repair is best-effort and never exposes credentials.
+
+    if (!patchResponse.ok) {
+      const error = await patchResponse.json().catch(() => null) as ClerkErrorPayload | null;
+      console.error("Clerk proxy repair: patch failed", {
+        status: patchResponse.status,
+        code: error?.errors?.[0]?.code ?? null,
+        message: error?.errors?.[0]?.message ?? null
+      });
+      return;
+    }
+
+    console.info("Clerk proxy repair: patch succeeded", { domain: domain.name ?? null });
+  } catch (error) {
+    console.error("Clerk proxy repair: unexpected failure", {
+      message: error instanceof Error ? error.message : "unknown"
+    });
   }
 }
 
