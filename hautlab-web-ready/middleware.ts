@@ -49,7 +49,15 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
     return publicResponse(request);
   }
 
-  return configuredMiddleware(request, event);
+  // Clerk is configured for the root domain hautlabmx.com, while the public
+  // site is served on www.hautlabmx.com. Preserve the browser-visible URL,
+  // but forward the canonical host/protocol Clerk expects for its proxy.
+  const clerkHeaders = new Headers(request.headers);
+  clerkHeaders.set("x-forwarded-host", "hautlabmx.com");
+  clerkHeaders.set("x-forwarded-proto", "https");
+  const clerkRequest = new Request(request, { headers: clerkHeaders });
+
+  return configuredMiddleware(clerkRequest as NextRequest, event);
 }
 
 export const config = {
