@@ -8,7 +8,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <ClerkProvider
       signInUrl="/admin/iniciar-sesion"
       afterSignOutUrl="/"
-      proxyUrl="https://hautlabmx.com/__clerk"
+      proxyUrl="/__clerk"
       appearance={{
         variables: {
           colorPrimary: "#c5a46d",
