@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import type { NextFetchEvent, NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import type { NextFetchEvent } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
@@ -50,14 +50,15 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
   }
 
   // Clerk is configured for the root domain hautlabmx.com, while the public
-  // site is served on www.hautlabmx.com. Preserve the browser-visible URL,
-  // but forward the canonical host/protocol Clerk expects for its proxy.
+  // site is served on www.hautlabmx.com. Preserve NextRequest semantics
+  // (including nextUrl) while forwarding the canonical host/protocol Clerk
+  // expects for its proxy.
   const clerkHeaders = new Headers(request.headers);
   clerkHeaders.set("x-forwarded-host", "hautlabmx.com");
   clerkHeaders.set("x-forwarded-proto", "https");
-  const clerkRequest = new Request(request, { headers: clerkHeaders });
+  const clerkRequest = new NextRequest(request, { headers: clerkHeaders });
 
-  return configuredMiddleware(clerkRequest as NextRequest, event);
+  return configuredMiddleware(clerkRequest, event);
 }
 
 export const config = {
