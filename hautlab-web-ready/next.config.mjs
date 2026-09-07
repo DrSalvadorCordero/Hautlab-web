@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  env: {
+    // Clerk is configured in direct mode. These build-time values intentionally
+    // override any stale Vercel project variables left from the old proxy setup.
+    NEXT_PUBLIC_CLERK_PROXY_URL: "",
+    CLERK_PROXY_URL: ""
+  },
   images: {
     formats: ["image/avif", "image/webp"]
   },
