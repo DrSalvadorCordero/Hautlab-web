@@ -2,8 +2,94 @@ import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
 import { isClerkConfigured } from "@/lib/auth-config";
 
-export default function AdminSignInPage() {
+type ClerkDomain = {
+  id?: string;
+  name?: string;
+  is_satellite?: boolean;
+  proxy_url?: string | null;
+};
+
+type ClerkErrorPayload = {
+  errors?: Array<{ code?: string; message?: string }>;
+};
+
+async function ensureClerkDirectConfigured() {
+  const secretKey = process.env.CLERK_SECRET_KEY?.trim();
+  if (!secretKey) {
+    console.error("Clerk direct repair: missing secret key");
+    return;
+  }
+
+  try {
+    const listResponse = await fetch("https://api.clerk.com/v1/domains", {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        Accept: "application/json"
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000)
+    });
+
+    if (!listResponse.ok) {
+      const error = await listResponse.json().catch(() => null) as ClerkErrorPayload | null;
+      console.error("Clerk direct repair: domain list failed", {
+        status: listResponse.status,
+        code: error?.errors?.[0]?.code ?? null
+      });
+      return;
+    }
+
+    const payload = await listResponse.json() as { data?: ClerkDomain[] } | ClerkDomain[];
+    const domains = Array.isArray(payload) ? payload : Array.isArray(payload.data) ? payload.data : [];
+    const domain =
+      domains.find((item) => item.name === "hautlabmx.com") ??
+      domains.find((item) => item.name === "www.hautlabmx.com") ??
+      domains.find((item) => item.is_satellite === false) ??
+      domains[0];
+
+    if (!domain?.id) {
+      console.error("Clerk direct repair: no domain found", { count: domains.length });
+      return;
+    }
+
+    if (!domain.proxy_url) {
+      console.info("Clerk direct repair: already direct", { domain: domain.name ?? null });
+      return;
+    }
+
+    const patchResponse = await fetch(`https://api.clerk.com/v1/domains/${encodeURIComponent(domain.id)}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ proxy_url: null }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000)
+    });
+
+    if (!patchResponse.ok) {
+      const error = await patchResponse.json().catch(() => null) as ClerkErrorPayload | null;
+      console.error("Clerk direct repair: patch failed", {
+        status: patchResponse.status,
+        code: error?.errors?.[0]?.code ?? null,
+        message: error?.errors?.[0]?.message ?? null
+      });
+      return;
+    }
+
+    console.info("Clerk direct repair: patch succeeded", { domain: domain.name ?? null });
+  } catch (error) {
+    console.error("Clerk direct repair: unexpected failure", {
+      message: error instanceof Error ? error.message : "unknown"
+    });
+  }
+}
+
+export default async function AdminSignInPage() {
   const configured = isClerkConfigured();
+  if (configured) await ensureClerkDirectConfigured();
 
   return (
     <main className="grid min-h-screen place-items-center bg-[#0b0a09] px-6 py-12 text-bone">
