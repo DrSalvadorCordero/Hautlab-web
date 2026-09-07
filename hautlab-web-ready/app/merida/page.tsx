@@ -32,6 +32,7 @@ const clinicalLinks = [
 ];
 
 const aestheticLinks = [
+  { label: "Rellenos faciales", href: "/merida/rellenos-faciales" },
   { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
   { label: "Toxina botulínica", href: "/procedimientos/toxina-botulinica" },
   { label: "Labios", href: "/procedimientos/labios" },
