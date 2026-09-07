@@ -1,6 +1,8 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { isClerkConfigured } from "@/lib/auth-config";
 
+const clerkProxyUrl = "https://www.hautlabmx.com/__clerk";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (!isClerkConfigured()) return <>{children}</>;
 
@@ -8,6 +10,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <ClerkProvider
       signInUrl="/admin/iniciar-sesion"
       afterSignOutUrl="/"
+      proxyUrl={clerkProxyUrl}
       appearance={{
         variables: {
           colorPrimary: "#c5a46d",
