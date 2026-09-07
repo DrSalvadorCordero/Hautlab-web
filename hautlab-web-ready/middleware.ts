@@ -6,7 +6,6 @@ import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
 const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
-const clerkProxyUrl = "https://hautlabmx.com/__clerk";
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
@@ -31,7 +30,6 @@ const configuredMiddleware = clerkMiddleware(
     return publicResponse(request);
   },
   {
-    proxyUrl: clerkProxyUrl,
     frontendApiProxy: {
       enabled: true
     }
@@ -49,16 +47,9 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
     return publicResponse(request);
   }
 
-  // Clerk is configured for the root domain hautlabmx.com, while the public
-  // site is served on www.hautlabmx.com. Preserve NextRequest semantics
-  // (including nextUrl) while forwarding the canonical host/protocol Clerk
-  // expects for its proxy.
-  const clerkHeaders = new Headers(request.headers);
-  clerkHeaders.set("x-forwarded-host", "hautlabmx.com");
-  clerkHeaders.set("x-forwarded-proto", "https");
-  const clerkRequest = new NextRequest(request, { headers: clerkHeaders });
-
-  return configuredMiddleware(clerkRequest, event);
+  // Clerk's built-in Frontend API proxy must receive the original NextRequest
+  // so it can derive the browser-visible host and proxy URL correctly.
+  return configuredMiddleware(request, event);
 }
 
 export const config = {
