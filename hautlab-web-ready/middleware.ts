@@ -5,7 +5,7 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
-const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
+const isClerkRoute = createRouteMatcher(["/admin/:path*"]);
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
@@ -14,27 +14,20 @@ const publicResponse = (request: NextRequest) =>
     }
   });
 
-const configuredMiddleware = clerkMiddleware(
-  async (auth, request) => {
-    if (isProtectedRoute(request)) {
-      const { userId } = await auth();
+const configuredMiddleware = clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
 
-      if (!userId) {
-        const signInUrl = new URL("/admin/iniciar-sesion", request.url);
-        const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-        signInUrl.searchParams.set("redirect_url", returnTo);
-        return NextResponse.redirect(signInUrl);
-      }
-    }
-
-    return publicResponse(request);
-  },
-  {
-    frontendApiProxy: {
-      enabled: true
+    if (!userId) {
+      const signInUrl = new URL("/admin/iniciar-sesion", request.url);
+      const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+      signInUrl.searchParams.set("redirect_url", returnTo);
+      return NextResponse.redirect(signInUrl);
     }
   }
-);
+
+  return publicResponse(request);
+});
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
   // Public pages must never depend on Clerk. A bad Clerk configuration must
@@ -47,11 +40,9 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
     return publicResponse(request);
   }
 
-  // Clerk's built-in Frontend API proxy must receive the original NextRequest
-  // so it can derive the browser-visible host and proxy URL correctly.
   return configuredMiddleware(request, event);
 }
 
 export const config = {
-  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*", "/__clerk/:path*"]
+  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*"]
 };
