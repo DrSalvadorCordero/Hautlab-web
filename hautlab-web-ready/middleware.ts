@@ -19,9 +19,12 @@ const configuredMiddleware = clerkMiddleware(async (auth, request) => {
     const { userId } = await auth();
 
     if (!userId) {
-      const signInUrl = new URL("/admin/iniciar-sesion", request.url);
-      const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
-      signInUrl.searchParams.set("redirect_url", returnTo);
+      const returnTo = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, request.url);
+      returnTo.hostname = "www.hautlabmx.com";
+      returnTo.protocol = "https:";
+
+      const signInUrl = new URL("https://accounts.hautlabmx.com/sign-in");
+      signInUrl.searchParams.set("redirect_url", returnTo.toString());
       return NextResponse.redirect(signInUrl);
     }
   }
