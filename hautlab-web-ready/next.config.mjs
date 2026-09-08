@@ -3,8 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   env: {
-    // Clerk is configured in direct mode. These build-time values intentionally
-    // override any stale Vercel project variables left from the old proxy setup.
+    // Clerk proxying is configured explicitly in ClerkProvider/middleware.
+    // Keep stale project-level proxy variables from changing runtime behavior.
     NEXT_PUBLIC_CLERK_PROXY_URL: "",
     CLERK_PROXY_URL: ""
   },
@@ -14,9 +14,12 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: "/:path*",
+        // Clerk Dashboard binds proxy configuration to the apex domain
+        // (https://hautlabmx.com/__clerk). Keep that path on the apex host;
+        // every other request continues to canonicalize to www.
+        source: "/:path((?!__clerk(?:/|$)).*)",
         has: [{ type: "host", value: "hautlabmx.com" }],
-        destination: "https://www.hautlabmx.com/:path*",
+        destination: "https://www.hautlabmx.com/:path",
         permanent: true
       },
       { source: "/favicon.ico", destination: "/icon.svg", permanent: true },
