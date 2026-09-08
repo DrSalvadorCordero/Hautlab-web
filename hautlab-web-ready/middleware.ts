@@ -5,7 +5,11 @@ import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
 const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
-const isClerkRoute = createRouteMatcher(["/admin/:path*", "/__clerk/:path*"]);
+const isClerkRoute = createRouteMatcher([
+  "/admin/:path*",
+  "/api/admin/:path*",
+  "/__clerk/:path*",
+]);
 
 const publicResponse = (request: NextRequest) =>
   NextResponse.next({
