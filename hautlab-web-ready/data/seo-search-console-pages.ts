@@ -78,7 +78,7 @@ export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
   "armonizacion-facial": {
     title: "Armonización facial en Mérida | Diseño facial | HAUTLAB",
     description:
-      "Valoración de armonización facial en Mérida con análisis de proporciones, movimiento, soporte y prioridades antes de indicar toxina, rellenos u otros procedimientos.",
+      "Armonización facial en Mérida: análisis de proporciones, movimiento y soporte antes de indicar toxina, rellenos u otros procedimientos.",
     pageSummary:
       "Armonización facial en Mérida basada en una valoración global del rostro para definir prioridades, evitar tratamientos aislados y elegir solo los procedimientos que tengan una indicación coherente.",
     schema: {
