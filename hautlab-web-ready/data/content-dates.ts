@@ -33,9 +33,15 @@ const priorityProcedureDates = new Set([
   "cicatrices-acne"
 ]);
 
-const searchConsoleProcedureDates = new Set(["verrugas", "melasma", "skin-booster"]);
+const searchConsoleProcedureDates: Record<string, string> = {
+  verrugas: "2026-09-08",
+  "armonizacion-facial": "2026-09-08",
+  melasma: "2026-08-10",
+  "skin-booster": "2026-08-10"
+};
 
 export function procedureContentDate(slug: string) {
-  if (searchConsoleProcedureDates.has(slug)) return date("2026-08-10");
+  const searchConsoleDate = searchConsoleProcedureDates[slug];
+  if (searchConsoleDate) return date(searchConsoleDate);
   return priorityProcedureDates.has(slug) ? date("2026-07-27") : date("2026-07-11");
 }
