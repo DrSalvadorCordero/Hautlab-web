@@ -16,6 +16,8 @@ export const siteConfig = {
   whatsappDisplay: "+52 999 280 9758",
   instagram: "https://www.instagram.com/dr.salvadorcordero",
   instagramHandle: "@dr.salvadorcordero",
+  clinicInstagram: "https://www.instagram.com/hautlabmx",
+  clinicInstagramHandle: "@hautlabmx",
   googleMaps: "https://maps.app.goo.gl/8CoPkGjpuYDi8QqE6?g_st=ic",
   doctoralia: "https://www.doctoralia.com.mx/perfil/salvador-cordero-romero-2",
   linkedin: "https://mx.linkedin.com/in/salvador-cordero-787337a3",
