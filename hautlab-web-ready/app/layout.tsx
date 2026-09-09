@@ -111,7 +111,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 { "@type": "OfferCatalog", name: "Procedimientos focales" }
               ]
         },
-        sameAs: [siteConfig.instagram]
+        sameAs: [siteConfig.clinicInstagram]
       },
       {
         "@type": "Person",
@@ -131,7 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         ],
         identifier: siteConfig.professionalLicense,
         worksFor: { "@id": `${siteConfig.url}#clinic` },
-        sameAs: [siteConfig.instagram, siteConfig.linkedin],
+        sameAs: [siteConfig.instagram, siteConfig.linkedin, siteConfig.doctoralia],
         subjectOf: [
           { "@type": "WebPage", url: `${siteConfig.url}/publicaciones` },
           ...siteConfig.pubmedArticles.map((url) => ({ "@type": "ScholarlyArticle", url }))
