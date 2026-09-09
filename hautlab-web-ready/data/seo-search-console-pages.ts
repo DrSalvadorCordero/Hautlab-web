@@ -4,7 +4,7 @@ export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
   verrugas: {
     title: "Verrugas en Mérida | Diagnóstico y retiro | HAUTLAB",
     description:
-      "Valoración médica de verrugas en Mérida para confirmar el diagnóstico y definir si pueden retirarse en consulta, con técnica según tipo de lesión y localización.",
+      "Verrugas en Mérida: valoración médica para confirmar el diagnóstico y definir si pueden retirarse en consulta según tipo de lesión y localización.",
     pageSummary:
       "Valoración médica de verrugas en Mérida para confirmar que la lesión corresponda a una verruga y elegir tratamiento o retiro según tipo, localización, número y características de la piel.",
     schema: {
