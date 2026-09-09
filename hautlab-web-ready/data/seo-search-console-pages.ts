@@ -2,11 +2,11 @@ import type { PrioritySeoPage } from "@/data/seo-priority-pages";
 
 export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
   verrugas: {
-    title: "Verrugas en Mérida | Valoración y tratamiento | HAUTLAB",
+    title: "Verrugas en Mérida | Diagnóstico y retiro | HAUTLAB",
     description:
-      "Valoración médica de verrugas en Mérida antes de retirarlas. Se revisa tipo de lesión, localización, diagnóstico diferencial y la técnica más adecuada para cada caso.",
+      "Valoración médica de verrugas en Mérida para confirmar el diagnóstico y definir si pueden retirarse en consulta, con técnica según tipo de lesión y localización.",
     pageSummary:
-      "Valoración médica de verrugas en Mérida para confirmar el diagnóstico y elegir tratamiento según tipo de lesión, localización, número y características de la piel.",
+      "Valoración médica de verrugas en Mérida para confirmar que la lesión corresponda a una verruga y elegir tratamiento o retiro según tipo, localización, número y características de la piel.",
     schema: {
       type: "MedicalCondition",
       name: "Verrugas cutáneas",
@@ -29,7 +29,7 @@ export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
       professionalTitle: "Médico Cirujano",
       practiceArea: "Dermatología Clínica y Estética",
       license: "Cédula Profesional 11804418",
-      reviewedAt: "10 de agosto de 2026",
+      reviewedAt: "8 de septiembre de 2026",
       sources: [
         {
           label: "American Academy of Dermatology · Warts: diagnosis and treatment",
@@ -74,6 +74,30 @@ export const searchConsoleSeoPages: Record<string, PrioritySeoPage> = {
         }
       ]
     }
+  },
+  "armonizacion-facial": {
+    title: "Armonización facial en Mérida | Diseño facial | HAUTLAB",
+    description:
+      "Valoración de armonización facial en Mérida con análisis de proporciones, movimiento, soporte y prioridades antes de indicar toxina, rellenos u otros procedimientos.",
+    pageSummary:
+      "Armonización facial en Mérida basada en una valoración global del rostro para definir prioridades, evitar tratamientos aislados y elegir solo los procedimientos que tengan una indicación coherente.",
+    schema: {
+      type: "MedicalProcedure",
+      name: "Armonización facial",
+      alternateName: ["Diseño facial", "Plan de armonización facial"]
+    },
+    additionalFaq: [
+      {
+        question: "¿La armonización facial significa poner relleno en varias zonas?",
+        answer:
+          "No. Una valoración global puede concluir que conviene tratar una sola zona, trabajar movimiento, calidad de piel o no añadir volumen. El plan depende de anatomía, proporciones, antecedentes y objetivo."
+      },
+      {
+        question: "¿Cómo se decide qué zona tratar primero?",
+        answer:
+          "Se prioriza el cambio que tenga mayor impacto proporcional con la menor intervención razonable. Nariz, mentón, labios, mandíbula, ojeras y movimiento facial se valoran en relación entre sí, no como procedimientos independientes."
+      }
+    ]
   },
   "skin-booster": {
     title: "Skin booster en Mérida | Calidad e hidratación de piel | HAUTLAB",
