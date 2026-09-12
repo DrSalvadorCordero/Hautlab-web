@@ -1,0 +1,3 @@
+Production redeploy trigger for HAUTLAB.
+Purpose: realign Vercel production with main after an older branch deployment was promoted.
+No application, clinical, SEO, pricing, credential, or privacy content changed.
