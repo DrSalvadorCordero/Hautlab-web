@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { HarmonizationHero } from "@/components/treatments/harmonization-hero";
 import { TreatmentPageLayout, type TreatmentPageContent } from "@/components/treatments/treatment-page-layout";
 import { procedureContentDate } from "@/data/content-dates";
 import { prioritySeoPages, type PrioritySeoPage } from "@/data/seo-priority-pages";
@@ -241,9 +242,21 @@ export default async function ProcedurePage({ params }: PageProps) {
     ]
   };
 
+  const pageContent =
+    slug === "armonizacion-facial" ? (
+      <>
+        <HarmonizationHero />
+        <div className="[&>main>nav:first-child]:hidden [&>main>section:first-of-type]:hidden">
+          <TreatmentPageLayout content={content} />
+        </div>
+      </>
+    ) : (
+      <TreatmentPageLayout content={content} />
+    );
+
   return (
     <>
-      <TreatmentPageLayout content={content} />
+      {pageContent}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(medicalPageJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
