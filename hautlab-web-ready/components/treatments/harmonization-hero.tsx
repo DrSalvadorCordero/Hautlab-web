@@ -128,7 +128,7 @@ export function HarmonizationHero() {
 
           <div className="relative min-h-[56svh] overflow-hidden bg-[#120e0b] lg:min-h-0">
             <Image
-              src="/visuals/armonizacion-reveal-master.webp"
+              src="/visuals/hautlab-armonizacion.webp"
               alt="Retrato editorial utilizado para representar la valoración de proporciones faciales"
               fill
               priority
@@ -141,7 +141,7 @@ export function HarmonizationHero() {
             />
 
             <Image
-              src="/visuals/armonizacion-reveal-master.webp"
+              src="/visuals/hautlab-armonizacion.webp"
               alt=""
               aria-hidden="true"
               fill
@@ -195,7 +195,7 @@ export function HarmonizationHero() {
         <div className="mx-auto grid w-[min(1380px,calc(100%-24px))] gap-10 px-2 py-16 sm:px-5 sm:py-20 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-7 lg:py-24">
           <div className="relative min-h-[46svh] overflow-hidden rounded-[1.2rem] bg-[#17130f] lg:min-h-[56svh]">
             <Image
-              src="/visuals/armonizacion-reveal-master.webp"
+              src="/visuals/hautlab-armonizacion.webp"
               alt="Retrato editorial en iluminación contenida"
               fill
               sizes="(max-width: 1024px) 100vw, 42vw"
@@ -245,8 +245,8 @@ export function HarmonizationHero() {
                   className="absolute inset-0 transition duration-700 ease-out group-hover:scale-[1.018]"
                   aria-hidden="true"
                   style={{
-                    backgroundImage: "url('/visuals/armonizacion-chapters.webp')",
-                    backgroundSize: "300% 100%",
+                    backgroundImage: "url('/visuals/hautlab-armonizacion.webp')",
+                    backgroundSize: "cover",
                     backgroundPosition: item.position,
                     backgroundRepeat: "no-repeat"
                   }}
