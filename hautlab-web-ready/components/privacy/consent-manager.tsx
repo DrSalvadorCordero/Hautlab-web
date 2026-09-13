@@ -180,7 +180,8 @@ function isPaymentUrl(url: URL) {
 
 export function ConsentManager({ initialConsent }: { initialConsent: ConsentValue | null }) {
   const pathname = usePathname();
-  const currentPath = pathname ?? "/";\n  const isArmonizacion = currentPath === "/procedimientos/armonizacion-facial";
+  const currentPath = pathname ?? "/";
+  const isArmonizacion = currentPath === "/procedimientos/armonizacion-facial";
   const lastTrackedPath = useRef<string | null>(null);
   const trackedScrollPaths = useRef(new Set<string>());
   const trackedEngagementPaths = useRef(new Set<string>());
