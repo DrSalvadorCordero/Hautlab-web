@@ -12,23 +12,7 @@ const objectives = [
     kicker: "Rostro completo",
     title: "Leer antes de intervenir.",
     body: "Se revisan proporciones, transiciones y movimiento para decidir qué conviene tratar, qué conviene dejar intacto y en qué orden hacerlo.",
-    hotspot: { left: "48%", top: "32%" }
-  },
-  {
-    id: "profile",
-    label: "Perfil",
-    kicker: "Relación nariz · labios · mentón",
-    title: "El perfil se diseña como una relación, no como una zona aislada.",
-    body: "La valoración compara proyección y continuidad entre estructuras antes de considerar cualquier procedimiento.",
-    hotspot: { left: "67%", top: "47%" }
-  },
-  {
-    id: "definition",
-    label: "Definición",
-    kicker: "Tercio inferior",
-    title: "Definir no significa endurecer.",
-    body: "Mandíbula, mentón y transición cervicofacial se analizan juntos para conservar una lectura natural del rostro.",
-    hotspot: { left: "58%", top: "70%" }
+    global: true
   },
   {
     id: "support",
@@ -36,7 +20,23 @@ const objectives = [
     kicker: "Tercio medio",
     title: "A veces el cambio está en el soporte, no en el volumen visible.",
     body: "Se revisa cómo el tercio medio sostiene las transiciones faciales sin asumir que más producto produce un mejor resultado.",
-    hotspot: { left: "39%", top: "45%" }
+    hotspot: { left: "46%", top: "43%" }
+  },
+  {
+    id: "profile",
+    label: "Perfil",
+    kicker: "Relación nariz · labios · mentón",
+    title: "El perfil se diseña como una relación, no como una zona aislada.",
+    body: "La valoración compara proyección y continuidad entre estructuras antes de considerar cualquier procedimiento.",
+    hotspot: { left: "65%", top: "49%" }
+  },
+  {
+    id: "definition",
+    label: "Definición",
+    kicker: "Tercio inferior",
+    title: "Definir no significa endurecer.",
+    body: "Mandíbula, mentón y transición cervicofacial se analizan juntos para conservar una lectura natural del rostro.",
+    hotspot: { left: "57%", top: "76%" }
   }
 ] as const;
 
@@ -142,30 +142,41 @@ export function HarmonizationHero() {
               <path d="M38 78 C48 84 57 88 63 91" fill="none" stroke="rgba(225,198,157,.34)" strokeWidth="0.28" strokeDasharray="1 1.8" />
             </svg>
 
-            {objectives.map((item) => {
-              const selected = item.id === activeId;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveId(item.id)}
-                  data-event={`armonizacion_hotspot_${item.id}`}
-                  aria-label={`Explorar ${item.label}`}
-                  className={`absolute grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border backdrop-blur-md transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/70 ${
-                    selected
-                      ? "scale-110 border-champagne bg-champagne text-background shadow-[0_0_0_8px_rgba(210,181,137,.12)]"
-                      : "border-bone/35 bg-background/35 text-bone hover:scale-110 hover:border-champagne/70"
-                  }`}
-                  style={item.hotspot}
-                >
-                  <Crosshair className="h-4 w-4" />
-                </button>
-              );
-            })}
+            {activeId === "balance" && (
+              <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                <div className="absolute left-[50%] top-[50%] h-[68%] w-[48%] -translate-x-1/2 -translate-y-1/2 rounded-[45%] border border-champagne/28 shadow-[0_0_40px_rgba(210,181,137,.08)]" />
+                <div className="absolute left-[50%] top-[46%] h-px w-[58%] -translate-x-1/2 bg-gradient-to-r from-transparent via-champagne/45 to-transparent" />
+                <div className="absolute left-[50%] top-[62%] h-px w-[50%] -translate-x-1/2 bg-gradient-to-r from-transparent via-champagne/30 to-transparent" />
+                <div className="absolute left-[50%] top-[20%] h-[62%] w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-champagne/35 to-transparent" />
+              </div>
+            )}
+
+            {objectives
+              .filter((item) => "hotspot" in item)
+              .map((item) => {
+                const selected = item.id === activeId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveId(item.id)}
+                    data-event={`armonizacion_hotspot_${item.id}`}
+                    aria-label={`Explorar ${item.label}`}
+                    className={`absolute grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border backdrop-blur-md transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/70 ${
+                      selected
+                        ? "scale-110 border-champagne bg-champagne text-background shadow-[0_0_0_8px_rgba(210,181,137,.12)]"
+                        : "border-bone/35 bg-background/35 text-bone hover:scale-110 hover:border-champagne/70"
+                    }`}
+                    style={item.hotspot}
+                  >
+                    <Crosshair className="h-4 w-4" />
+                  </button>
+                );
+              })}
 
             <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
               <div className="rounded-full border border-bone/15 bg-background/55 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-bone backdrop-blur-xl">
-                Toca los puntos · explora la lógica
+                {activeId === "balance" ? "Lectura global del rostro" : "Explora zonas · entiende la lectura facial"}
               </div>
               <div className="hidden rounded-full border border-bone/15 bg-background/55 px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-muted backdrop-blur-xl sm:block">
                 HAUTLAB facial map
