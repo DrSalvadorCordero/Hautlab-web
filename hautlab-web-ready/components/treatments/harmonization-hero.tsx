@@ -11,15 +11,15 @@ export function HarmonizationHero() {
 
   return (
     <>
-      <section className="relative isolate min-h-[84svh] overflow-hidden border-b border-line bg-[#0d0b09] text-bone">
-        <div className="absolute inset-0 lg:left-[48%]">
+      <section className="relative isolate min-h-[72svh] overflow-hidden border-b border-line bg-[#0d0b09] text-bone">
+        <div className="absolute inset-0 lg:left-[52%]">
           <Image
             src="/visuals/hautlab-armonizacion.webp"
             alt="Valoración editorial de proporciones y contorno facial para armonización facial"
             fill
             priority
             fetchPriority="high"
-            sizes="(max-width: 1024px) 100vw, 54vw"
+            sizes="(max-width: 1024px) 100vw, 48vw"
             className="hautlab-portrait-film object-cover object-[53%_48%]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0d0b09] via-[#0d0b09]/10 to-[#0d0b09]/10 lg:bg-gradient-to-r lg:from-[#0d0b09] lg:via-[#0d0b09]/58 lg:to-transparent" />
@@ -28,7 +28,7 @@ export function HarmonizationHero() {
 
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_82%,rgba(200,179,154,.08),transparent_30%)]" />
 
-        <div className="relative mx-auto flex min-h-[84svh] w-[min(1380px,calc(100%-24px))] flex-col justify-between px-2 pb-7 pt-6 sm:px-5 sm:pb-9 sm:pt-8 lg:px-7 lg:pb-10 lg:pt-9">
+        <div className="relative mx-auto flex min-h-[72svh] w-[min(1380px,calc(100%-24px))] flex-col justify-between px-2 pb-7 pt-6 sm:px-5 sm:pb-9 sm:pt-8 lg:px-7 lg:pb-10 lg:pt-9">
           <div className="flex items-start justify-between gap-5">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-[0.26em] text-champagne">
@@ -44,21 +44,21 @@ export function HarmonizationHero() {
             </p>
           </div>
 
-          <div className="relative z-10 mt-auto max-w-[72rem] pb-[7vh] pt-[34vh] sm:pt-[30vh] lg:pb-[5vh] lg:pt-20">
-            <h1 className="max-w-[10ch] font-serif text-[clamp(3.4rem,7.4vw,7.2rem)] leading-[0.79] tracking-[-0.075em] text-bone">
+          <div className="relative z-10 mt-auto max-w-[72rem] pb-[4vh] pt-[28vh] sm:pt-[24vh] lg:pb-[3vh] lg:pt-16">
+            <h1 className="max-w-[10ch] font-serif text-[clamp(2.85rem,5.8vw,5.7rem)] leading-[0.79] tracking-[-0.075em] text-bone">
               ARMONIZACIÓN
               <span className="block text-champagne">FACIAL</span>
             </h1>
 
-            <p className="mt-7 max-w-[16ch] font-serif text-[clamp(1.8rem,3.2vw,3.1rem)] leading-[0.94] tracking-[-0.045em] text-bone/95">
+            <p className="mt-5 max-w-[17ch] font-serif text-[clamp(1.55rem,2.45vw,2.35rem)] leading-[0.94] tracking-[-0.045em] text-bone/95">
               Proporción sin perder identidad.
             </p>
 
-            <p className="mt-6 max-w-[38rem] text-sm leading-7 text-bone/65 sm:text-base sm:leading-8">
+            <p className="mt-5 max-w-[34rem] text-sm leading-7 text-bone/65 sm:text-base sm:leading-8">
               La técnica empieza después de entender el rostro: proporciones, movimiento, soporte y aquello que conviene preservar.
             </p>
 
-            <div className="mt-8">
+            <div className="mt-6">
               <a
                 href={whatsappHref}
                 target="_blank"
@@ -117,11 +117,11 @@ export function HarmonizationHero() {
         className="relative overflow-hidden border-b border-line bg-[#efe9df] text-[#16130f]"
         aria-label="Criterio de armonización facial"
       >
-        <div className="mx-auto grid w-[min(1380px,calc(100%-24px))] gap-10 px-2 py-16 sm:px-5 sm:py-20 lg:grid-cols-[0.7fr_1.3fr] lg:items-end lg:px-7 lg:py-28">
+        <div className="mx-auto grid w-[min(1380px,calc(100%-24px))] gap-10 px-2 py-12 sm:px-5 sm:py-14 lg:grid-cols-[0.7fr_1.3fr] lg:items-end lg:px-7 lg:py-20">
           <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#7b644b]">
             Criterio HAUTLAB
           </p>
-          <p className="max-w-[18ch] font-serif text-[clamp(2.8rem,6vw,6.4rem)] leading-[0.9] tracking-[-0.06em]">
+          <p className="max-w-[18ch] font-serif text-[clamp(2.2rem,4.7vw,4.8rem)] leading-[0.9] tracking-[-0.06em]">
             No todas las zonas que pueden tratarse necesitan tratarse.
           </p>
         </div>
