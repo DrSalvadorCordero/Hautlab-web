@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const launcherClassName =
   "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 z-[90] inline-flex min-h-12 items-center gap-3 rounded-full border border-bone/15 bg-[#11100e]/95 px-4 py-3 text-sm font-medium text-bone shadow-calm backdrop-blur-xl transition hover:border-champagne/45 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/50 sm:bottom-6 sm:right-6";
@@ -38,9 +39,30 @@ const AIReceptionAssistant = dynamic(
 );
 
 export function AIReceptionLauncher() {
+  const pathname = usePathname();
+  const isArmonizacion = pathname === "/procedimientos/armonizacion-facial";
   const [activated, setActivated] = useState(false);
+  const [heroCleared, setHeroCleared] = useState(!isArmonizacion);
+
+  useEffect(() => {
+    if (!isArmonizacion) {
+      setHeroCleared(true);
+      return;
+    }
+
+    const update = () => setHeroCleared(window.scrollY > window.innerHeight * 0.48);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [isArmonizacion]);
 
   if (activated) return <AIReceptionAssistant initialOpen />;
+  if (!heroCleared) return null;
 
   return (
     <button
