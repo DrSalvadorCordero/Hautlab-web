@@ -181,6 +181,7 @@ function isPaymentUrl(url: URL) {
 export function ConsentManager({ initialConsent }: { initialConsent: ConsentValue | null }) {
   const pathname = usePathname();
   const currentPath = pathname ?? "/";
+  const isArmonizacion = currentPath === "/procedimientos/armonizacion-facial";
   const lastTrackedPath = useRef<string | null>(null);
   const trackedScrollPaths = useRef(new Set<string>());
   const trackedEngagementPaths = useRef(new Set<string>());
@@ -362,26 +363,62 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
   if (!open && consent !== null) return null;
 
   return (
-    <div className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl" role="dialog" aria-labelledby="cookie-title" aria-live="polite">
-      <div className="rounded-[1.75rem] border border-line bg-[#0b0a09]/95 p-5 shadow-calm backdrop-blur-2xl sm:p-6">
-        <div className="flex items-start gap-4">
-          <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white/[0.04] text-champagne">
-            <ShieldCheck className="h-5 w-5" />
+    <div
+      className={
+        isArmonizacion
+          ? "fixed inset-x-3 bottom-3 z-[100] sm:left-auto sm:right-4 sm:max-w-[27rem]"
+          : "fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-3xl"
+      }
+      role="dialog"
+      aria-labelledby="cookie-title"
+      aria-live="polite"
+    >
+      <div
+        className={
+          isArmonizacion
+            ? "rounded-[1.25rem] border border-line bg-[#0b0a09]/96 p-4 shadow-calm backdrop-blur-2xl"
+            : "rounded-[1.75rem] border border-line bg-[#0b0a09]/95 p-5 shadow-calm backdrop-blur-2xl sm:p-6"
+        }
+      >
+        <div className={isArmonizacion ? "flex items-start gap-3" : "flex items-start gap-4"}>
+          <div
+            className={
+              isArmonizacion
+                ? "mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line bg-white/[0.04] text-champagne"
+                : "mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white/[0.04] text-champagne"
+            }
+          >
+            <ShieldCheck className={isArmonizacion ? "h-4 w-4" : "h-5 w-5"} />
           </div>
           <div>
-            <p id="cookie-title" className="text-base font-medium text-bone">Privacidad y analítica</p>
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p id="cookie-title" className={isArmonizacion ? "text-sm font-medium text-bone" : "text-base font-medium text-bone"}>
+              Privacidad y analítica
+            </p>
+            <p className={isArmonizacion ? "mt-1.5 text-xs leading-5 text-muted" : "mt-2 text-sm leading-6 text-muted"}>
               HAUTLAB usa Google Analytics, Google Ads y Meta Pixel de forma opcional para medir visitas generales, solicitudes por WhatsApp, llamadas, ubicación y clics de pago. No se activa en páginas de condiciones o procedimientos específicos y no enviamos nombres, mensajes, diagnósticos ni datos clínicos.
             </p>
-            <p className="mt-2 text-xs leading-5 text-quiet">
+            <p className="mt-1.5 text-[11px] leading-4 text-quiet">
               Puedes cambiar tu decisión después desde el footer. Consulta el <Link href="/aviso-de-privacidad" className="text-bone underline decoration-line underline-offset-4">aviso de privacidad</Link>.
             </p>
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => saveConsent("rejected")}>Rechazar analítica</Button>
-          <Button type="button" onClick={() => saveConsent("accepted")}>Aceptar analítica</Button>
+        <div className={isArmonizacion ? "mt-3 grid grid-cols-2 gap-2" : "mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"}>
+          <Button
+            type="button"
+            variant="outline"
+            className={isArmonizacion ? "min-h-10 px-3 text-xs" : ""}
+            onClick={() => saveConsent("rejected")}
+          >
+            Rechazar analítica
+          </Button>
+          <Button
+            type="button"
+            className={isArmonizacion ? "min-h-10 px-3 text-xs" : ""}
+            onClick={() => saveConsent("accepted")}
+          >
+            Aceptar analítica
+          </Button>
         </div>
       </div>
     </div>
