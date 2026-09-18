@@ -736,8 +736,14 @@ export async function createNimboPatient(input: {
   }
 
   const { firstName, lastName } = splitFullName(input.fullName);
+  const rawDigits = input.phone.replace(/\D/g, "");
+  const isMexican = /^52(?:1)?\d{10}$/.test(rawDigits);
+  if (!isMexican) {
+    throw new NimboApiError("nimbo_new_patient_country_requires_human_review");
+  }
+
   const candidates = phoneCandidates(input.phone);
-  const telephone2 = candidates.find((value) => value.length === 10) ?? candidates[0];
+  const telephone2 = candidates.find((value) => value.length === 10);
   if (!telephone2) throw new NimboApiError("nimbo_invalid_phone");
 
   const payload = await nimboFetch(config, "people", {
@@ -747,7 +753,13 @@ export async function createNimboPatient(input: {
         first_name: firstName,
         last_name: lastName,
         telephone2,
+        phone_country_id: "142",
         account_id: String(config.doctor_account_id),
+        without_cellphone: false,
+        send_welcome_email: false,
+        person_attributes: {
+          send_reminders: false,
+        },
       },
     }),
   });
