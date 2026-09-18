@@ -668,9 +668,22 @@ function phoneCandidates(phone: string) {
   const digits = phone.replace(/\D/g, "");
   const values = new Set<string>();
   if (digits) values.add(digits);
-  if (/^521\d{10}$/.test(digits)) values.add(digits.slice(3));
-  if (/^52\d{10}$/.test(digits)) values.add(digits.slice(2));
-  if (/^1\d{10}$/.test(digits)) values.add(digits.slice(1));
+
+  const mexicoLegacy = digits.match(/^521(\d{10})$/);
+  if (mexicoLegacy) {
+    values.add("52" + mexicoLegacy[1]);
+    values.add(mexicoLegacy[1]);
+  }
+
+  const mexico = digits.match(/^52(\d{10})$/);
+  if (mexico) {
+    values.add("521" + mexico[1]);
+    values.add(mexico[1]);
+  }
+
+  const us = digits.match(/^1(\d{10})$/);
+  if (us) values.add(us[1]);
+
   return [...values];
 }
 
