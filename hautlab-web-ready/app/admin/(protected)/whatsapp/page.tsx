@@ -1,5 +1,6 @@
 import { WhatsAppCommandConsole } from "@/components/admin/whatsapp-command-console";
 import { WhatsAppLiveInbox } from "@/components/admin/whatsapp-live-inbox";
+import { NimboIntegrationCard } from "@/components/admin/nimbo-integration-card";
 
 export default function WhatsAppAdminPage() {
   return (
@@ -16,6 +17,8 @@ export default function WhatsAppAdminPage() {
           del asistente en una sola consola protegida.
         </p>
       </section>
+
+      <NimboIntegrationCard />
 
       <WhatsAppLiveInbox />
 
