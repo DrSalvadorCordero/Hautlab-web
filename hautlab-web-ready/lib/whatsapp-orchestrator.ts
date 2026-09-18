@@ -883,12 +883,69 @@ async function processTextMessage(input: {
     return;
   }
 
+  const pendingNimbo = await handlePendingNimboIdentity({
+    conversation,
+    text,
+    mode,
+  });
+  if (
+    await deliverNimboFlow({
+      result: pendingNimbo,
+      mode,
+      conversation,
+      phone: input.message.from,
+      origin: input.origin,
+    })
+  ) {
+    return;
+  }
+
   const decision = await callTriage({
     origin: input.origin,
     message: text,
     city: conversation.city,
     conversationId: conversation.id,
   });
+
+  const nimboBooking = await handleNimboBooking({
+    conversation,
+    decision,
+    text,
+    mode,
+  });
+
+  if (nimboBooking.handled) {
+    await updateConversation(conversation.id, {
+      last_intent: "booking",
+      clinical_risk: false,
+      priority: nimboBooking.escalate ? "high" : "normal",
+      human_review_reason: nimboBooking.escalate
+        ? nimboBooking.reasonCode ?? "nimbo_human_review_required"
+        : null,
+      last_ai_analysis: {
+        intent: decision.intent,
+        action: decision.action,
+        operator: decision.operator,
+        confidence: decision.confidence,
+        reasonCode: decision.reasonCode,
+        bookingDate: decision.bookingDate,
+        bookingTime: decision.bookingTime,
+        bookingDaypart: decision.bookingDaypart,
+        bookingConfirmedChoice: decision.bookingConfirmedChoice,
+        model: decision.model ?? null,
+        nimboHandled: true,
+      },
+    });
+
+    await deliverNimboFlow({
+      result: nimboBooking,
+      mode,
+      conversation,
+      phone: input.message.from,
+      origin: input.origin,
+    });
+    return;
+  }
 
   const clinicalRisk =
     decision.intent === "clinical" || decision.intent === "adverse_event";
