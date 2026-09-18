@@ -14,8 +14,8 @@ export default function WhatsAppAdminPage() {
           Command Center
         </h1>
         <p className="mt-4 max-w-3xl leading-7 text-muted">
-          Operación de conversaciones, control humano, alertas clínicas y configuración
-          del asistente en una sola consola protegida.
+          Voz, agenda, conversaciones, control humano, alertas clínicas y configuración
+          de los asistentes de HAUTLAB en una sola consola protegida.
         </p>
       </section>
 
