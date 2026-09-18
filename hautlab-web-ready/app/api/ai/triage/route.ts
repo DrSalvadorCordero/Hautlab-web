@@ -43,6 +43,10 @@ const modelDecisionSchema = z.object({
     "human_requested",
     "uncertain",
   ]),
+  bookingDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).nullable(),
+  bookingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable(),
+  bookingDaypart: z.enum(["none", "morning", "afternoon", "evening", "any"]),
+  bookingConfirmedChoice: z.boolean(),
 });
 
 type ModelDecision = z.infer<typeof modelDecisionSchema>;
@@ -124,7 +128,20 @@ function buildConversationInput(input: {
     turns.push({ role: "PACIENTE", body: input.message.trim() });
   }
 
-  const sections = [`Contexto de ciudad: ${input.city}.`];
+  const meridaNow = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Merida",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date());
+
+  const sections = [
+    `Contexto de ciudad: ${input.city}.`,
+    `Fecha y hora local de referencia en Mérida: ${meridaNow}.`,
+  ];
   if (input.memoryContext) sections.push(input.memoryContext);
 
   if (turns.length > 0) {
@@ -138,6 +155,7 @@ function buildConversationInput(input: {
 
   sections.push(
     "Responde al ÚLTIMO mensaje del PACIENTE usando el historial y la memoria como contexto. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
+    "Si la intención es booking, normaliza la preferencia vigente: bookingDate en YYYY-MM-DD si puede resolverse con certeza, bookingTime en HH:mm solo si hay hora exacta, y bookingDaypart para mañana/tarde/noche. bookingConfirmedChoice solo puede ser true cuando el paciente acepta de forma explícita un horario exacto previamente ofrecido por HAUTLAB; una preferencia inicial nunca cuenta como confirmación.",
   );
 
   return sections.join("\n\n");
@@ -325,6 +343,23 @@ export async function POST(request: NextRequest) {
                     "uncertain",
                   ],
                 },
+                bookingDate: {
+                  anyOf: [
+                    { type: "string", pattern: "^\\\\d{4}-\\\\d{2}-\\\\d{2}$" },
+                    { type: "null" },
+                  ],
+                },
+                bookingTime: {
+                  anyOf: [
+                    { type: "string", pattern: "^([01]\\\\d|2[0-3]):[0-5]\\\\d$" },
+                    { type: "null" },
+                  ],
+                },
+                bookingDaypart: {
+                  type: "string",
+                  enum: ["none", "morning", "afternoon", "evening", "any"],
+                },
+                bookingConfirmedChoice: { type: "boolean" },
               },
               required: [
                 "intent",
@@ -333,6 +368,10 @@ export async function POST(request: NextRequest) {
                 "confidence",
                 "reply",
                 "reasonCode",
+                "bookingDate",
+                "bookingTime",
+                "bookingDaypart",
+                "bookingConfirmedChoice",
               ],
             },
           },
