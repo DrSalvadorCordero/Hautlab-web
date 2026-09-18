@@ -12,6 +12,7 @@ export type NimboIntegrationConfig = {
   timezone: string;
   consultation_duration_minutes: number | null;
   portal_url: string | null;
+  access_token_expires_at: string | null;
   last_connected_at: string | null;
   last_verified_at: string | null;
   last_error: string | null;
@@ -210,21 +211,23 @@ async function requestToken(baseUrl: string, payload: Record<string, string>) {
   throw new NimboApiError("nimbo_authentication_failed", lastStatus);
 }
 
-async function storeSecret(name: "refresh_token", value: string) {
+type NimboSecretName = "refresh_token" | "access_token";
+
+async function storeSecret(name: NimboSecretName, value: string) {
   await supabaseJson("rpc/hautlab_nimbo_set_secret", {
     method: "POST",
     body: JSON.stringify({ p_name: name, p_secret: value }),
   });
 }
 
-async function readSecret(name: "refresh_token") {
+async function readSecret(name: NimboSecretName) {
   return supabaseJson<string>("rpc/hautlab_nimbo_secret", {
     method: "POST",
     body: JSON.stringify({ p_name: name }),
   });
 }
 
-async function deleteSecret(name: "refresh_token") {
+async function deleteSecret(name: NimboSecretName) {
   await supabaseJson("rpc/hautlab_nimbo_delete_secret", {
     method: "POST",
     body: JSON.stringify({ p_name: name }),
@@ -428,8 +431,14 @@ export async function connectNimbo(input: {
     locationsPayload,
   ]);
 
-  await storeSecret("refresh_token", token.refreshToken);
+  await Promise.all([
+    storeSecret("access_token", token.accessToken),
+    storeSecret("refresh_token", token.refreshToken),
+  ]);
   const now = new Date().toISOString();
+  const accessTokenExpiresAt = new Date(
+    Date.now() + Math.max(60, token.expiresIn ?? 86_400) * 1_000,
+  ).toISOString();
   return patchNimboConfig({
     enabled: true,
     base_url: baseUrl,
@@ -441,6 +450,7 @@ export async function connectNimbo(input: {
     timezone: account.timezone ?? "America/Merida",
     consultation_duration_minutes: account.duration,
     portal_url: portalUrl,
+    access_token_expires_at: accessTokenExpiresAt,
     last_connected_at: now,
     last_verified_at: now,
     last_error: null,
@@ -449,15 +459,55 @@ export async function connectNimbo(input: {
 
 async function refreshAccessToken(config: NimboIntegrationConfig) {
   if (!config.base_url) throw new NimboApiError("nimbo_not_connected");
-  const refreshToken = await readSecret("refresh_token");
-  const token = await requestToken(config.base_url, {
-    grant_type: "refresh_token",
-    refresh_token: refreshToken,
-  });
-  if (token.refreshToken !== refreshToken) {
-    await storeSecret("refresh_token", token.refreshToken);
+
+  const expiresAt = config.access_token_expires_at
+    ? Date.parse(config.access_token_expires_at)
+    : NaN;
+  if (Number.isFinite(expiresAt) && expiresAt > Date.now() + 60_000) {
+    try {
+      return await readSecret("access_token");
+    } catch {
+      // Missing access token: fall through to refresh.
+    }
   }
-  return token.accessToken;
+
+  const refreshToken = await readSecret("refresh_token");
+  try {
+    const token = await requestToken(config.base_url, {
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    });
+
+    await Promise.all([
+      storeSecret("access_token", token.accessToken),
+      token.refreshToken !== refreshToken
+        ? storeSecret("refresh_token", token.refreshToken)
+        : Promise.resolve(),
+    ]);
+
+    await patchNimboConfig({
+      access_token_expires_at: new Date(
+        Date.now() + Math.max(60, token.expiresIn ?? 86_400) * 1_000,
+      ).toISOString(),
+      last_error: null,
+    });
+
+    return token.accessToken;
+  } catch (error) {
+    // Another serverless instance may have rotated the refresh token first.
+    const latest = await getNimboConfig();
+    const latestExpiry = latest.access_token_expires_at
+      ? Date.parse(latest.access_token_expires_at)
+      : NaN;
+    if (Number.isFinite(latestExpiry) && latestExpiry > Date.now() + 30_000) {
+      try {
+        return await readSecret("access_token");
+      } catch {
+        // Preserve the original refresh error below.
+      }
+    }
+    throw error;
+  }
 }
 
 async function nimboFetch(
@@ -526,7 +576,10 @@ export async function updateNimboSettings(input: {
 }
 
 export async function disconnectNimbo() {
-  await deleteSecret("refresh_token").catch(() => undefined);
+  await Promise.all([
+    deleteSecret("access_token").catch(() => undefined),
+    deleteSecret("refresh_token").catch(() => undefined),
+  ]);
   return patchNimboConfig({
     enabled: false,
     base_url: null,
@@ -537,6 +590,7 @@ export async function disconnectNimbo() {
     location_id: null,
     consultation_duration_minutes: null,
     portal_url: null,
+    access_token_expires_at: null,
     last_error: null,
   });
 }
