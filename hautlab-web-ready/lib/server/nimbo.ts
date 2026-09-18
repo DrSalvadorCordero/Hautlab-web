@@ -710,6 +710,61 @@ export async function findNimboPatientByPhone(
   return null;
 }
 
+
+function splitFullName(value: string) {
+  const normalized = value
+    .replace(/[^\\p{L}\\p{M}'’.-]+/gu, " ")
+    .replace(/\\s+/g, " ")
+    .trim();
+  const parts = normalized.split(" ").filter(Boolean);
+  if (parts.length < 2 || normalized.length < 5) {
+    throw new NimboApiError("nimbo_full_name_required");
+  }
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
+export async function createNimboPatient(input: {
+  phone: string;
+  fullName: string;
+}): Promise<NimboPatient> {
+  const config = await getNimboConfig();
+  if (!config.enabled || !config.doctor_account_id) {
+    throw new NimboApiError("nimbo_booking_not_ready");
+  }
+
+  const { firstName, lastName } = splitFullName(input.fullName);
+  const candidates = phoneCandidates(input.phone);
+  const telephone2 = candidates.find((value) => value.length === 10) ?? candidates[0];
+  if (!telephone2) throw new NimboApiError("nimbo_invalid_phone");
+
+  const payload = await nimboFetch(config, "people", {
+    method: "POST",
+    body: JSON.stringify({
+      person: {
+        first_name: firstName,
+        last_name: lastName,
+        telephone2,
+        account_id: String(config.doctor_account_id),
+      },
+    }),
+  });
+
+  const root = asRecord(payload);
+  const person = asRecord(root?.person) ?? root;
+  const id = asFiniteNumber(person?.id);
+  if (!id) throw new NimboApiError("nimbo_patient_creation_unverified");
+
+  return {
+    id,
+    fullName:
+      cleanString(person?.full_name, 180) ??
+      [firstName, lastName].join(" "),
+  };
+}
+
 function addMinutes(iso: string, minutes: number) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) throw new NimboApiError("nimbo_invalid_slot");
