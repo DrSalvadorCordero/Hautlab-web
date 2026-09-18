@@ -1,12 +1,30 @@
+import {
+  createNimboPatient,
+  createNimboSchedule,
+  findNimboPatientByPhone,
+  getNimboAvailability,
+  getNimboConfig,
+  isNimboReadyForAutobooking,
+} from "@/lib/server/nimbo";
+
 type AiMode = "off" | "manual" | "supervised" | "automatic";
 type OperatorKey = "doctor" | "karen";
 
 type ConversationRow = {
   id: string;
   phone: string;
+  profile_name: string | null;
   city: string | null;
+  treatment: string | null;
+  next_action: string | null;
   ai_mode: "inherit" | AiMode;
   bot_paused: boolean;
+  nimbo_person_id: number | null;
+  nimbo_schedule_id: number | null;
+  nimbo_last_offered_slots: unknown;
+  nimbo_offer_expires_at: string | null;
+  nimbo_pending_slot: string | null;
+  nimbo_pending_cause: string | null;
 };
 
 type SettingsRow = {
@@ -31,6 +49,10 @@ type TriageDecision = {
   reply: string;
   reasonCode: string;
   model?: string;
+  bookingDate: string | null;
+  bookingTime: string | null;
+  bookingDaypart: "none" | "morning" | "afternoon" | "evening" | "any";
+  bookingConfirmedChoice: boolean;
 };
 
 type IncomingMessage = {
@@ -111,7 +133,7 @@ async function upsertConversation(input: {
 }): Promise<ConversationRow> {
   const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
-    "wa_conversations?on_conflict=phone&select=id,phone,city,ai_mode,bot_paused",
+    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause",
     {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
