@@ -68,6 +68,11 @@ export const treatmentFamilies = [
 
 export const testimonials = [
   {
+    name: "Jeff",
+    detail: "Patient feedback",
+    quote: "The three facial areas did very well. If you didn’t know they were there before, you wouldn’t know."
+  },
+  {
     name: "L. M.",
     detail: "Opinión de paciente",
     quote: "Maravilloso tratamiento. El profesionalismo del Dr. Salvador es altamente recomendable. Genera confianza en su trato y explicación."
