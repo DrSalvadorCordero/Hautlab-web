@@ -151,22 +151,26 @@ async function parseResponse(response: Response) {
 async function tokenAttempt(
   baseUrl: string,
   payload: Record<string, string>,
-  encoding: "json" | "form",
+  encoding: "multipart" | "json" | "form",
 ) {
-  const body =
-    encoding === "json"
-      ? JSON.stringify(payload)
-      : new URLSearchParams(payload).toString();
+  let body: BodyInit;
+  const headers: Record<string, string> = { Accept: "application/json" };
+
+  if (encoding === "multipart") {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(payload)) form.append(key, value);
+    body = form;
+  } else if (encoding === "json") {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(payload);
+  } else {
+    headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8";
+    body = new URLSearchParams(payload).toString();
+  }
 
   const response = await fetch(endpoint(baseUrl, "oauth/token"), {
     method: "POST",
-    headers: {
-      "Content-Type":
-        encoding === "json"
-          ? "application/json"
-          : "application/x-www-form-urlencoded;charset=UTF-8",
-      Accept: "application/json",
-    },
+    headers,
     body,
     cache: "no-store",
     signal: AbortSignal.timeout(15_000),
@@ -177,7 +181,10 @@ async function tokenAttempt(
 
 async function requestToken(baseUrl: string, payload: Record<string, string>) {
   const normalized = normalizeBaseUrl(baseUrl);
-  const attempts: Array<"json" | "form"> = ["json", "form"];
+  const attempts: Array<"multipart" | "json" | "form"> =
+    payload.grant_type === "password"
+      ? ["multipart", "form", "json"]
+      : ["json", "form", "multipart"];
   let lastStatus: number | null = null;
 
   for (const encoding of attempts) {
