@@ -697,10 +697,10 @@ export async function findNimboPatientByPhone(
           id,
           fullName:
             cleanString(row?.full_name, 180) ??
-            [cleanString(row?.first_name, 80), cleanString(row?.last_name, 100)]
+            ([cleanString(row?.first_name, 80), cleanString(row?.last_name, 100)]
               .filter(Boolean)
               .join(" ") ||
-            null,
+              null),
         };
       }
     } catch {
