@@ -31,7 +31,7 @@ export function TestimonialsSection() {
         </div>
 
         <p className="mt-8 max-w-3xl text-xs leading-6 text-quiet">
-          Los comentarios se muestran con iniciales. Cada experiencia es individual y no constituye una garantía de resultados clínicos o estéticos.
+          Los comentarios se muestran con nombre de pila o iniciales. Cada experiencia es individual y no constituye una garantía de resultados clínicos o estéticos.
         </p>
       </div>
     </section>
