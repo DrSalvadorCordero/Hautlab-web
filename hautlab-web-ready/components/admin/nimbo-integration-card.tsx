@@ -254,7 +254,7 @@ export function NimboIntegrationCard() {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Permite que HAUTLAB consulte disponibilidad real y, cuando exista una
             selección explícita del paciente, registre la cita directamente en Nimbo.
-            La contraseña se usa solo para autenticar; no se almacena.
+            Si tu cuenta entra con Google, no uses tu contraseña de Google. La API pública de Nimbo documenta autenticación con credencial propia de Nimbo/API; HAUTLAB no almacena esa contraseña.
           </p>
         </div>
 
@@ -306,7 +306,7 @@ export function NimboIntegrationCard() {
               className="w-full rounded-xl border border-line bg-black/10 px-4 py-3 text-sm text-bone outline-none focus:border-champagne/50"
             />
             <span className="block text-xs leading-5 text-muted">
-              Usa el endpoint de API de tu cuenta, no la dirección del panel web.
+              Usa el endpoint de API de tu cuenta, no la dirección del panel web. Si accedes a Nimbo con Google SSO, espera la credencial/API indicada por Nimbo; no pegues aquí tu contraseña de Google.
             </span>
           </label>
 
@@ -326,12 +326,12 @@ export function NimboIntegrationCard() {
 
           <label className="space-y-2">
             <span className="text-xs uppercase tracking-[0.16em] text-muted">
-              Contraseña de Nimbo
+              Contraseña nativa de Nimbo / API
             </span>
             <input
               required
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-xl border border-line bg-black/10 px-4 py-3 text-sm text-bone outline-none focus:border-champagne/50"
