@@ -88,6 +88,17 @@ function initials(name: string | null, phone: string) {
   return (parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : source.slice(0, 2)).toUpperCase();
 }
 
+function acquisitionLabel(value: Conversation["last_attribution"]) {
+  if (!value) return null;
+  const source = value.source?.trim();
+  const medium = value.medium?.trim();
+  const campaign = value.campaign?.trim();
+  if (campaign && source) return `${source} · ${campaign}`;
+  if (source && medium) return `${source} / ${medium}`;
+  if (source) return source;
+  return "Web HAUTLAB";
+}
+
 function badgeClass(kind: "risk" | "human" | "neutral" | "ai") {
   if (kind === "risk") return "border-red-400/25 bg-red-400/[0.07] text-red-200";
   if (kind === "human") return "border-amber-300/25 bg-amber-300/[0.06] text-amber-100";
@@ -323,6 +334,7 @@ export function WhatsAppLiveInbox() {
                     <p className="mt-1 text-xs text-muted">{selected.phone}{selected.city ? ` · ${selected.city}` : ""}{selected.stage ? ` · ${selected.stage}` : ""}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {selected.treatment ? <span className={`rounded-full border px-2.5 py-1 text-[10px] ${badgeClass("neutral")}`}>{selected.treatment}</span> : null}
+                      {acquisitionLabel(selected.last_attribution) ? <span className="rounded-full border border-champagne/25 bg-champagne/[0.05] px-2.5 py-1 text-[10px] text-champagne">Origen: {acquisitionLabel(selected.last_attribution)}</span> : null}
                       {selected.assigned_to ? <span className={`rounded-full border px-2.5 py-1 text-[10px] ${badgeClass("human")}`}>Asignado: {selected.assigned_to}</span> : null}
                       <span className={`rounded-full border px-2.5 py-1 text-[10px] ${badgeClass(selected.bot_paused ? "human" : "ai")}`}>{selected.bot_paused ? "IA pausada" : "IA disponible"}</span>
                     </div>
@@ -336,6 +348,15 @@ export function WhatsAppLiveInbox() {
                     </div>
                   ) : null}
                 </div>
+                {selected.last_attribution ? (
+                  <div className="mt-4 rounded-xl border border-champagne/15 bg-champagne/[0.025] p-3">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-champagne">Adquisición</p>
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      {acquisitionLabel(selected.last_attribution)}
+                      {selected.last_attribution.landing_url ? ` · ${selected.last_attribution.landing_url}` : ""}
+                    </p>
+                  </div>
+                ) : null}
                 {selected.human_review_reason || selected.conversation_summary || selected.patient_goal ? (
                   <div className="mt-4 grid gap-3 lg:grid-cols-3">
                     {selected.human_review_reason ? <div className="rounded-xl border border-red-400/15 bg-red-400/[0.03] p-3"><p className="text-[10px] uppercase tracking-[0.14em] text-red-200">Motivo de pase</p><p className="mt-1 text-xs leading-5 text-muted">{selected.human_review_reason}</p></div> : null}
