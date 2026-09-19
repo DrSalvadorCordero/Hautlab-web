@@ -195,7 +195,6 @@ export default async function EnglishHomePage() {
         description:
           "Private clinical dermatology, facial medical aesthetics and individualized skin treatment planning in Mérida, Mexico.",
         telephone: siteConfig.whatsappDisplay,
-        priceRange: "$$$",
         availableLanguage: ["Spanish", "English appointment coordination"],
         address: {
           "@type": "PostalAddress",
@@ -206,17 +205,19 @@ export default async function EnglishHomePage() {
           addressCountry: "MX"
         },
         founder: { "@id": `${siteConfig.url}#doctor` },
-        sameAs: [siteConfig.instagram]
+        sameAs: [siteConfig.clinicInstagram]
       },
       {
         "@type": "Person",
         "@id": `${siteConfig.url}#doctor`,
         name: siteConfig.legalDoctorName,
+        url: siteConfig.doctorProfileUrl,
         jobTitle: siteConfig.professionalTitle,
         identifier: siteConfig.professionalLicense,
         description: "Medical practice focused on clinical dermatology, medical aesthetics and facial design.",
         knowsAbout: ["Clinical dermatology", "Medical aesthetics", "Facial design", "Skin quality"],
-        worksFor: { "@id": `${siteConfig.url}#clinic` }
+        worksFor: { "@id": `${siteConfig.url}#clinic` },
+        sameAs: [siteConfig.instagram, siteConfig.linkedin, siteConfig.doctoralia]
       },
       {
         "@type": "FAQPage",
