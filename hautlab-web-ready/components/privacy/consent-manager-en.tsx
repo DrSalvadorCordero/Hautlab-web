@@ -230,6 +230,12 @@ export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentVa
         event.preventDefault();
         const originalHref = anchor.href;
         void buildAttributedWhatsAppUrl(originalHref, "en").then((nextHref) => {
+          if (nextHref !== originalHref) {
+            gtag("event", "whatsapp_attributed_click", {
+              page_language: "en",
+              link_type: "whatsapp"
+            });
+          }
           window.location.assign(nextHref);
         });
       }
