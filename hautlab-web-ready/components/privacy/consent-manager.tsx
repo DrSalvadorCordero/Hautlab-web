@@ -6,7 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { analyticsConfig, generalTrackingPaths } from "@/lib/analytics-config";
-import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
+import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";\nimport { buildAttributedWhatsAppUrl, rememberGrowthAttribution } from "@/lib/client/growth-attribution";
 
 type GoogleConsentValue = "granted" | "denied";
 type GtagFunction = (...args: unknown[]) => void;
@@ -265,6 +265,12 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
         sendLeadConversion("whatsapp");
         fbq("track", "Lead");
         fbq("trackCustom", "WhatsAppClick");
+
+        event.preventDefault();
+        const originalHref = anchor.href;
+        void buildAttributedWhatsAppUrl(originalHref, "es").then((nextHref) => {
+          window.location.assign(nextHref);
+        });
         return;
       }
 
