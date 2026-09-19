@@ -19,6 +19,7 @@ type ConversationRow = {
   next_action: string | null;
   ai_mode: "inherit" | AiMode;
   bot_paused: boolean;
+  first_attribution: Record<string, unknown> | null;
   nimbo_person_id: number | null;
   nimbo_schedule_id: number | null;
   nimbo_last_offered_slots: unknown;
