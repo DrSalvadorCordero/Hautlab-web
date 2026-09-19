@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { analyticsConfig } from "@/lib/analytics-config";
 import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
+import { buildAttributedWhatsAppUrl, rememberGrowthAttribution } from "@/lib/client/growth-attribution";
 
 type GtagFunction = (...args: unknown[]) => void;
 type MetaPixelFunction = (...args: unknown[]) => void;
@@ -226,6 +227,18 @@ export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentVa
         });
         fbq("track", "Lead");
         fbq("trackCustom", "WhatsAppClick", { language: "en" });
+
+        event.preventDefault();
+        const originalHref = anchor.href;
+        void buildAttributedWhatsAppUrl(originalHref, "en").then((nextHref) => {
+          if (nextHref !== originalHref) {
+            gtag("event", "whatsapp_attributed_click", {
+              page_language: "en",
+              link_type: "whatsapp"
+            });
+          }
+          window.location.assign(nextHref);
+        });
       }
     };
 

@@ -19,6 +19,7 @@ type ConversationRow = {
   next_action: string | null;
   ai_mode: "inherit" | AiMode;
   bot_paused: boolean;
+  first_attribution: Record<string, unknown> | null;
   nimbo_person_id: number | null;
   nimbo_schedule_id: number | null;
   nimbo_last_offered_slots: unknown;
@@ -133,7 +134,7 @@ async function upsertConversation(input: {
 }): Promise<ConversationRow> {
   const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
-    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause",
+    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause",
     {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -252,6 +253,94 @@ function extractText(message: IncomingMessage): string | null {
     );
   }
   return null;
+}
+
+type AttributionTouchpoint = {
+  code: string;
+  landing_url: string;
+  current_url: string;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+  msclkid: string | null;
+  language: string;
+  matched_conversation_id: string | null;
+  created_at: string;
+};
+
+const ATTRIBUTION_REFERENCE_PATTERN = /(?:\n|\s)*Ref:\s*(HL-[A-Z0-9]{12})\s*$/i;
+
+function getAttributionReference(text: string | null) {
+  if (!text) return null;
+  return text.match(ATTRIBUTION_REFERENCE_PATTERN)?.[1]?.toUpperCase() ?? null;
+}
+
+function stripAttributionReference(text: string | null) {
+  if (!text) return null;
+  const cleaned = text.replace(ATTRIBUTION_REFERENCE_PATTERN, "").trim();
+  return cleaned || null;
+}
+
+async function attachAttribution(
+  conversation: ConversationRow,
+  code: string,
+) {
+  const rows = await supabaseRequest<AttributionTouchpoint[]>(
+    `growth_attribution_touchpoints?code=eq.${encodeURIComponent(code)}&select=code,landing_url,current_url,referrer,utm_source,utm_medium,utm_campaign,utm_content,utm_term,gclid,fbclid,msclkid,language,matched_conversation_id,created_at&limit=1`,
+  );
+  const touchpoint = rows[0];
+  if (!touchpoint) return;
+  if (
+    touchpoint.matched_conversation_id &&
+    touchpoint.matched_conversation_id !== conversation.id
+  ) {
+    return;
+  }
+
+  const now = new Date().toISOString();
+  if (!touchpoint.matched_conversation_id) {
+    await supabaseRequest(
+      `growth_attribution_touchpoints?code=eq.${encodeURIComponent(code)}&matched_conversation_id=is.null`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          matched_conversation_id: conversation.id,
+          matched_at: now,
+        }),
+      },
+    );
+  }
+
+  const snapshot = {
+    code: touchpoint.code,
+    source: touchpoint.utm_source,
+    medium: touchpoint.utm_medium,
+    campaign: touchpoint.utm_campaign,
+    content: touchpoint.utm_content,
+    term: touchpoint.utm_term,
+    landing_url: touchpoint.landing_url,
+    current_url: touchpoint.current_url,
+    referrer: touchpoint.referrer,
+    gclid: touchpoint.gclid,
+    fbclid: touchpoint.fbclid,
+    msclkid: touchpoint.msclkid,
+    language: touchpoint.language,
+    click_at: touchpoint.created_at,
+  };
+
+  await updateConversation(conversation.id, {
+    ...(conversation.first_attribution
+      ? {}
+      : { first_attribution: snapshot, first_attributed_at: now }),
+    last_attribution: snapshot,
+    last_attributed_at: now,
+  });
 }
 
 
@@ -840,7 +929,9 @@ async function processTextMessage(input: {
     profileName: input.profileName,
   });
 
-  const text = extractText(input.message);
+  const rawText = extractText(input.message);
+  const attributionCode = getAttributionReference(rawText);
+  const text = stripAttributionReference(rawText);
   const isNew = await insertInboundMessage({
     conversationId: conversation.id,
     metaMessageId: input.message.id,
@@ -848,6 +939,10 @@ async function processTextMessage(input: {
     messageType: input.message.type,
   });
   if (!isNew) return;
+
+  if (attributionCode) {
+    await attachAttribution(conversation, attributionCode);
+  }
 
   const settings = await getSettings();
   const mode = effectiveMode(conversation, settings);

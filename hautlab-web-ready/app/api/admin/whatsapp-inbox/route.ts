@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
         appointment_status: string | null;
       }>
     >(
-      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status&order=last_message_at.desc&limit=100",
+      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=100",
     );
 
     const effectiveSelected =
