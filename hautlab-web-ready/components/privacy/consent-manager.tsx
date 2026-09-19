@@ -269,6 +269,9 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
         event.preventDefault();
         const originalHref = anchor.href;
         void buildAttributedWhatsAppUrl(originalHref, "es").then((nextHref) => {
+          if (nextHref !== originalHref) {
+            sendGoogleEvent("whatsapp_attributed_click", { link_type: "whatsapp" });
+          }
           window.location.assign(nextHref);
         });
         return;
