@@ -38,6 +38,21 @@ type Conversation = {
   last_patient_message_at: string | null;
   last_team_message_at: string | null;
   appointment_status: string | null;
+  first_attribution: AttributionSnapshot | null;
+  last_attribution: AttributionSnapshot | null;
+  first_attributed_at: string | null;
+  last_attributed_at: string | null;
+};
+
+type AttributionSnapshot = {
+  code?: string | null;
+  source?: string | null;
+  medium?: string | null;
+  campaign?: string | null;
+  content?: string | null;
+  landing_url?: string | null;
+  current_url?: string | null;
+  referrer?: string | null;
 };
 
 type Message = {
