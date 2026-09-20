@@ -1,5 +1,7 @@
 "use client";
 
+import { getLeadAttribution } from "@/lib/lead-attribution";
+
 type AttributionSnapshot = {
   landingUrl: string;
   referrer: string | null;
@@ -23,16 +25,34 @@ function campaignValue(url: URL, key: string) {
 
 function readSnapshot(): AttributionSnapshot {
   const url = new URL(window.location.href);
+  const lead = getLeadAttribution();
+
+  let landingUrl = url.toString();
+  if (lead.landing_path) {
+    try {
+      landingUrl = new URL(lead.landing_path, window.location.origin).toString();
+    } catch {
+      // Fall back to the current URL.
+    }
+  }
+
+  const referrer =
+    document.referrer?.trim()
+      ? document.referrer.slice(0, 2048)
+      : lead.referrer_host
+        ? `https://${lead.referrer_host}`
+        : null;
+
   return {
-    landingUrl: url.toString(),
-    referrer: document.referrer?.trim() ? document.referrer.slice(0, 2048) : null,
-    utmSource: campaignValue(url, "utm_source"),
-    utmMedium: campaignValue(url, "utm_medium"),
-    utmCampaign: campaignValue(url, "utm_campaign"),
-    utmContent: campaignValue(url, "utm_content"),
-    utmTerm: campaignValue(url, "utm_term"),
-    gclid: campaignValue(url, "gclid"),
-    fbclid: campaignValue(url, "fbclid"),
+    landingUrl,
+    referrer,
+    utmSource: lead.utm_source ?? campaignValue(url, "utm_source"),
+    utmMedium: lead.utm_medium ?? campaignValue(url, "utm_medium"),
+    utmCampaign: lead.utm_campaign ?? campaignValue(url, "utm_campaign"),
+    utmContent: lead.utm_content ?? campaignValue(url, "utm_content"),
+    utmTerm: lead.utm_term ?? campaignValue(url, "utm_term"),
+    gclid: lead.gclid ?? campaignValue(url, "gclid"),
+    fbclid: lead.fbclid ?? campaignValue(url, "fbclid"),
     msclkid: campaignValue(url, "msclkid"),
   };
 }
