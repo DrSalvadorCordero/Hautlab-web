@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { analyticsConfig, generalTrackingPaths } from "@/lib/analytics-config";
 import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
-import { buildAttributedWhatsAppUrl, rememberGrowthAttribution } from "@/lib/client/growth-attribution";
+import { buildAttributedWhatsAppUrl } from "@/lib/client/growth-attribution";
 
 type GoogleConsentValue = "granted" | "denied";
 type GtagFunction = (...args: unknown[]) => void;
