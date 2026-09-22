@@ -11,6 +11,7 @@ export type NimboIntegrationConfig = {
   location_id: number | null;
   timezone: string;
   consultation_duration_minutes: number | null;
+  booking_min_lead_minutes: number;
   portal_url: string | null;
   access_token_expires_at: string | null;
   last_connected_at: string | null;
