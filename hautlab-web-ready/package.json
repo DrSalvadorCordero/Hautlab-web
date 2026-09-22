@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "smoke-test": "node scripts/smoke-test.mjs"
+    "smoke-test": "node scripts/smoke-test.mjs",
+    "eval:whatsapp": "node scripts/whatsapp-eval.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "7.5.22",
