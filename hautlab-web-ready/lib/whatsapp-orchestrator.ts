@@ -5,6 +5,7 @@ import {
   getNimboAvailability,
   getNimboConfig,
   isNimboReadyForAutobooking,
+  updateNimboPatientDemographics,
 } from "@/lib/server/nimbo";
 
 type AiMode = "off" | "manual" | "supervised" | "automatic";
@@ -650,6 +651,15 @@ async function finalizeBookingIntake(input: {
       patient = await createNimboPatient({
         phone: input.whatsapp,
         fullName: input.fullName,
+        birthDate: input.birthDate,
+        email: input.email,
+      });
+    } else {
+      patient = await updateNimboPatientDemographics(patient.id, {
+        phone: input.whatsapp,
+        fullName: input.fullName,
+        birthDate: input.birthDate,
+        email: input.email,
       });
     }
 
