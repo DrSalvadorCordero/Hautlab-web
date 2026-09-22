@@ -22,8 +22,15 @@ type PublicNimboConfig = {
   updatedAt: string;
 };
 
+type NimboAvailabilityDay = {
+  date: string;
+  available: boolean;
+  slots: Array<{ startsAt: string; label: string }>;
+};
+
 type StatusPayload = {
   config?: PublicNimboConfig;
+  days?: NimboAvailabilityDay[];
   error?: string;
 };
 
@@ -59,6 +66,8 @@ export function NimboIntegrationCard() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [availabilityDays, setAvailabilityDays] = useState<NimboAvailabilityDay[] | null>(null);
+  const [testingAvailability, setTestingAvailability] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -178,6 +187,56 @@ export function NimboIntegrationCard() {
           : "No se pudo guardar.",
       );
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function testAvailability() {
+    if (busy || !config) return;
+    setBusy(true);
+    setTestingAvailability(true);
+    setError(null);
+    setMessage(null);
+    setAvailabilityDays(null);
+
+    const dateInTimezone = (offsetDays: number) => {
+      const date = new Date(Date.now() + offsetDays * 86_400_000);
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: config.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(date);
+      const value = Object.fromEntries(
+        parts
+          .filter((part) => part.type !== "literal")
+          .map((part) => [part.type, part.value]),
+      );
+      return `${value.year}-${value.month}-${value.day}`;
+    };
+
+    try {
+      const body = await nimboAction({
+        action: "availability",
+        from: dateInTimezone(0),
+        to: dateInTimezone(6),
+      });
+      const days = body.days ?? [];
+      setAvailabilityDays(days);
+      const slotCount = days.reduce((total, day) => total + day.slots.length, 0);
+      setMessage(
+        slotCount > 0
+          ? `Nimbo devolvió ${slotCount} horario${slotCount === 1 ? "" : "s"} disponible${slotCount === 1 ? "" : "s"} en los próximos 7 días.`
+          : "La conexión funciona, pero Nimbo no devolvió horarios disponibles en los próximos 7 días.",
+      );
+    } catch (availabilityError) {
+      setError(
+        availabilityError instanceof Error
+          ? availabilityError.message
+          : "No se pudo consultar la disponibilidad.",
+      );
+    } finally {
+      setTestingAvailability(false);
       setBusy(false);
     }
   }
@@ -425,6 +484,15 @@ export function NimboIntegrationCard() {
             <button
               type="button"
               disabled={busy}
+              onClick={() => void testAvailability()}
+              className="inline-flex items-center gap-2 rounded-full border border-champagne/30 bg-champagne/[0.06] px-4 py-2 text-xs text-bone transition hover:bg-champagne/[0.1] disabled:opacity-40"
+            >
+              <CalendarCheck2 className="h-3.5 w-3.5" />
+              {testingAvailability ? "Consultando…" : "Probar disponibilidad"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
               onClick={() => void verify()}
               className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-xs text-muted transition hover:text-bone disabled:opacity-40"
             >
@@ -449,6 +517,58 @@ export function NimboIntegrationCard() {
               Desconectar
             </button>
           </div>
+
+          {availabilityDays ? (
+            <div className="rounded-2xl border border-line bg-black/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-champagne">
+                    Disponibilidad de Nimbo
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Consulta de solo lectura · próximos 7 días
+                  </p>
+                </div>
+                <span className="rounded-full border border-line px-3 py-1 text-xs text-muted">
+                  {availabilityDays.reduce((total, day) => total + day.slots.length, 0)} horarios
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {availabilityDays.map((day) => (
+                  <div key={day.date} className="rounded-xl border border-line/80 bg-white/[0.02] p-3">
+                    <p className="text-xs font-medium text-bone">
+                      {new Intl.DateTimeFormat("es-MX", {
+                        timeZone: config.timezone,
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(`${day.date}T12:00:00`))}
+                    </p>
+                    {day.slots.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {day.slots.slice(0, 12).map((slot) => (
+                          <span
+                            key={slot.startsAt}
+                            className="rounded-full border border-emerald-300/20 bg-emerald-300/[0.04] px-2.5 py-1 text-xs text-emerald-100"
+                          >
+                            {slot.label}
+                          </span>
+                        ))}
+                        {day.slots.length > 12 ? (
+                          <span className="px-2 py-1 text-xs text-muted">
+                            +{day.slots.length - 12} más
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted">Sin horarios</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <p className="text-xs leading-5 text-muted">
             El token renovable se guarda cifrado en Supabase Vault. HAUTLAB no expone
