@@ -326,6 +326,64 @@ function discoverAccount(payload: unknown) {
   return { id, fullName, duration, timezone };
 }
 
+
+function organizationMemberArray(payload: unknown) {
+  if (Array.isArray(payload)) return payload;
+  const root = asRecord(payload);
+  for (const key of ["organization_members", "members", "accounts", "data"]) {
+    if (Array.isArray(root?.[key])) return root![key] as unknown[];
+  }
+  return [];
+}
+
+function discoverAccountFromMembers(payload: unknown, username: string) {
+  const normalizedUsername = username.trim().toLowerCase();
+  const members = organizationMemberArray(payload);
+
+  for (const item of members) {
+    const row = asRecord(item);
+    if (!row) continue;
+    const nestedAccount = asRecord(row.account);
+
+    const email =
+      cleanString(nestedAccount?.email, 240) ??
+      cleanString(row.email, 240) ??
+      cleanString(
+        deepFind(
+          item,
+          (key, candidate) =>
+            ["email", "username"].includes(key) && typeof candidate === "string",
+        ),
+        240,
+      );
+
+    if (!email || email.toLowerCase() !== normalizedUsername) continue;
+
+    const id =
+      asFiniteNumber(row.account_id) ??
+      asFiniteNumber(nestedAccount?.id) ??
+      asFiniteNumber(
+        deepFind(
+          item,
+          (key, candidate) =>
+            key === "account_id" &&
+            (typeof candidate === "number" || typeof candidate === "string"),
+        ),
+      );
+
+    const accountLike = nestedAccount ?? row;
+    const discovered = discoverAccount(accountLike);
+    return {
+      id: id ?? discovered.id,
+      fullName: discovered.fullName,
+      duration: discovered.duration,
+      timezone: discovered.timezone,
+    };
+  }
+
+  return { id: null, fullName: null, duration: null, timezone: null };
+}
+
 function discoverOrganization(payload: unknown) {
   const record = nestedRecord(payload, ["organization", "data"]);
   return {
@@ -414,13 +472,21 @@ export async function connectNimbo(input: {
     password,
   });
 
-  const [accountPayload, organizationPayload, locationsPayload] = await Promise.all([
-    rawNimboFetch(baseUrl, "accounts/me", token.accessToken).catch(() => null),
-    rawNimboFetch(baseUrl, "organizations/current", token.accessToken).catch(() => null),
-    rawNimboFetch(baseUrl, "locations", token.accessToken).catch(() => null),
-  ]);
+  const [accountPayload, organizationPayload, membersPayload, locationsPayload] =
+    await Promise.all([
+      // Some production accounts do not expose accounts/me even though the
+      // public API token is valid, so keep this as an optional fast path.
+      rawNimboFetch(baseUrl, "accounts/me", token.accessToken).catch(() => null),
+      rawNimboFetch(baseUrl, "organizations/current", token.accessToken),
+      rawNimboFetch(baseUrl, "organization_members", token.accessToken).catch(
+        () => null,
+      ),
+      rawNimboFetch(baseUrl, "locations", token.accessToken).catch(() => null),
+    ]);
 
-  const account = discoverAccount(accountPayload);
+  const directAccount = discoverAccount(accountPayload);
+  const memberAccount = discoverAccountFromMembers(membersPayload, username);
+  const account = directAccount.id ? directAccount : memberAccount;
   if (!account.id) {
     throw new NimboApiError("nimbo_doctor_account_not_found");
   }
@@ -428,6 +494,7 @@ export async function connectNimbo(input: {
   const portalUrl = discoverPortalUrl([
     accountPayload,
     organizationPayload,
+    membersPayload,
     locationsPayload,
   ]);
 
@@ -523,13 +590,24 @@ export async function verifyNimboConnection() {
   const config = await getNimboConfig();
   if (!config.base_url) throw new NimboApiError("nimbo_not_connected");
   try {
-    const payload = await nimboFetch(config, "accounts/me");
-    const account = discoverAccount(payload);
-    if (!account.id) throw new NimboApiError("nimbo_doctor_account_not_found");
+    const [accountPayload, organizationPayload] = await Promise.all([
+      nimboFetch(config, "accounts/me").catch(() => null),
+      // organizations/current is part of Nimbo's published API and is enough
+      // to prove that the stored OAuth token is still valid.
+      nimboFetch(config, "organizations/current"),
+    ]);
+    const account = discoverAccount(accountPayload);
+    const organization = discoverOrganization(organizationPayload);
+    const doctorAccountId = account.id ?? config.doctor_account_id;
+    if (!doctorAccountId) {
+      throw new NimboApiError("nimbo_doctor_account_not_found");
+    }
     return patchNimboConfig({
       enabled: true,
-      doctor_account_id: account.id,
+      doctor_account_id: doctorAccountId,
       doctor_name: account.fullName ?? config.doctor_name,
+      organization_id: organization.id ?? config.organization_id,
+      organization_slug: organization.slug ?? config.organization_slug,
       timezone: account.timezone ?? config.timezone,
       consultation_duration_minutes:
         account.duration ?? config.consultation_duration_minutes,
@@ -700,7 +778,7 @@ export async function getNimboAvailability(input: {
     try {
       const orgPayload = await nimboFetch(
         config,
-        `api/v1/calendar/available_hours_organization?${params.toString()}`,
+        `calendar/available_hours_organization?${params.toString()}`,
       );
       const parsed = parseAvailability(orgPayload, config.timezone);
       if (parsed.some((day) => day.slots.length > 0)) return parsed;
