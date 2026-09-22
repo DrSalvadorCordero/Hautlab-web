@@ -31,6 +31,13 @@ export type NimboPatient = {
   fullName: string | null;
 };
 
+export type NimboPatientDemographics = {
+  phone: string;
+  fullName: string;
+  birthDate: string;
+  email: string;
+};
+
 export type NimboCreatedSchedule = {
   id: number;
   startsAt: string;
@@ -900,10 +907,9 @@ function splitFullName(value: string) {
   };
 }
 
-export async function createNimboPatient(input: {
-  phone: string;
-  fullName: string;
-}): Promise<NimboPatient> {
+export async function createNimboPatient(
+  input: NimboPatientDemographics,
+): Promise<NimboPatient> {
   const config = await getNimboConfig();
   if (!config.enabled || !config.doctor_account_id) {
     throw new NimboApiError("nimbo_booking_not_ready");
@@ -926,7 +932,9 @@ export async function createNimboPatient(input: {
       person: {
         first_name: firstName,
         last_name: lastName,
+        born_at: input.birthDate,
         telephone2,
+        email: input.email,
         phone_country_id: "142",
         account_id: String(config.doctor_account_id),
         without_cellphone: false,
@@ -942,6 +950,67 @@ export async function createNimboPatient(input: {
   const person = asRecord(root?.person) ?? root;
   const id = asFiniteNumber(person?.id);
   if (!id) throw new NimboApiError("nimbo_patient_creation_unverified");
+
+  return {
+    id,
+    fullName:
+      cleanString(person?.full_name, 180) ??
+      [firstName, lastName].join(" "),
+  };
+}
+
+export async function updateNimboPatientDemographics(
+  personId: number,
+  input: NimboPatientDemographics,
+): Promise<NimboPatient> {
+  const config = await getNimboConfig();
+  if (!config.enabled || !config.doctor_account_id) {
+    throw new NimboApiError("nimbo_booking_not_ready");
+  }
+
+  const { firstName, lastName } = splitFullName(input.fullName);
+  const rawDigits = input.phone.replace(/\D/g, "");
+  const isMexican = /^52(?:1)?\d{10}$/.test(rawDigits);
+  if (!isMexican) {
+    throw new NimboApiError("nimbo_patient_country_requires_human_review");
+  }
+
+  const candidates = phoneCandidates(input.phone);
+  const telephone2 = candidates.find((value) => value.length === 10);
+  if (!telephone2) throw new NimboApiError("nimbo_invalid_phone");
+
+  const existingPayload = await nimboFetch(config, `people/${personId}`);
+  const root = asRecord(existingPayload);
+  const existing = asRecord(root?.person) ?? root ?? {};
+
+  const gender = cleanString(existing.gender, 10);
+  const notes = cleanString(existing.notes, 5_000);
+
+  const payload = await nimboFetch(config, `people/${personId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      person: {
+        first_name: firstName,
+        last_name: lastName,
+        born_at: input.birthDate,
+        ...(gender ? { gender } : {}),
+        phone_country_id: "142",
+        telephone2,
+        email: input.email,
+        account_id: String(config.doctor_account_id),
+        ...(notes ? { notes } : {}),
+        without_cellphone: false,
+        send_welcome_email: false,
+        person_attributes: asRecord(existing.person_attributes) ?? {
+          send_reminders: false,
+        },
+      },
+    }),
+  });
+
+  const updatedRoot = asRecord(payload);
+  const person = asRecord(updatedRoot?.person) ?? updatedRoot;
+  const id = asFiniteNumber(person?.id) ?? personId;
 
   return {
     id,
