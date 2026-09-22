@@ -983,6 +983,9 @@ export async function updateNimboPatientDemographics(
   const root = asRecord(existingPayload);
   const existing = asRecord(root?.person) ?? root ?? {};
 
+  const gender = cleanString(existing.gender, 10);
+  const notes = cleanString(existing.notes, 5_000);
+
   const payload = await nimboFetch(config, `people/${personId}`, {
     method: "PUT",
     body: JSON.stringify({
@@ -990,12 +993,12 @@ export async function updateNimboPatientDemographics(
         first_name: firstName,
         last_name: lastName,
         born_at: input.birthDate,
-        gender: cleanString(existing.gender, 10),
+        ...(gender ? { gender } : {}),
         phone_country_id: "142",
         telephone2,
         email: input.email,
         account_id: String(config.doctor_account_id),
-        notes: cleanString(existing.notes, 5_000),
+        ...(notes ? { notes } : {}),
         without_cellphone: false,
         send_welcome_email: false,
         person_attributes: asRecord(existing.person_attributes) ?? {
