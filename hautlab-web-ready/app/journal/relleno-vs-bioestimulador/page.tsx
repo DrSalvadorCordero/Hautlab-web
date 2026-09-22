@@ -180,7 +180,8 @@ export default function FillerVsBiostimulatorArticle() {
               </p>
             </div>
 
-            <div className="mt-10 overflow-hidden rounded-[1.75rem] border border-line">
+            <div className="mt-10 overflow-x-auto rounded-[1.75rem] border border-line">
+              <div className="min-w-[760px]">
               <div className="grid grid-cols-[.72fr_1fr_1fr] border-b border-line bg-white/[0.04] text-xs uppercase tracking-[0.14em] text-bone">
                 <div className="p-4 sm:p-5">Punto</div>
                 <div className="border-l border-line p-4 sm:p-5">Relleno de ácido hialurónico</div>
@@ -193,6 +194,7 @@ export default function FillerVsBiostimulatorArticle() {
                   <div className="border-l border-line p-4 text-sm leading-7 text-muted sm:p-5">{row.biostimulator}</div>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         </section>
