@@ -26,6 +26,12 @@ type ConversationRow = {
   nimbo_offer_expires_at: string | null;
   nimbo_pending_slot: string | null;
   nimbo_pending_cause: string | null;
+  booking_full_name: string | null;
+  booking_birth_date: string | null;
+  booking_email: string | null;
+  booking_whatsapp: string | null;
+  booking_reason: string | null;
+  booking_intake_completed_at: string | null;
 };
 
 type SettingsRow = {
@@ -134,7 +140,7 @@ async function upsertConversation(input: {
 }): Promise<ConversationRow> {
   const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
-    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause",
+    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
     {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -479,14 +485,294 @@ async function getUsableNimboConfig() {
   }
 }
 
-async function handlePendingNimboIdentity(input: {
+function normalizeBookingBirthDate(text: string) {
+  const value = text.trim();
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const iso = value.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  const latam = value.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+
+  if (iso) {
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else if (latam) {
+    day = Number(latam[1]);
+    month = Number(latam[2]);
+    year = Number(latam[3]);
+  } else {
+    return null;
+  }
+
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() !== month - 1 ||
+    candidate.getUTCDate() !== day ||
+    year < 1900 ||
+    candidate.getTime() > Date.now()
+  ) {
+    return null;
+  }
+
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+}
+
+function normalizeBookingEmail(text: string) {
+  const value = text.trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254
+    ? value
+    : null;
+}
+
+function normalizeBookingWhatsapp(text: string) {
+  const digits = text.replace(/\D/g, "");
+  if (digits.length === 10) return "52" + digits;
+  if (/^52\d{10}$/.test(digits)) return digits;
+  if (/^521\d{10}$/.test(digits)) return "52" + digits.slice(3);
+  if (/^1\d{10}$/.test(digits)) return digits;
+  return null;
+}
+
+function isAffirmative(text: string) {
+  return /^(?:s[ií]|si|yes|correcto|ese|ese mismo|este|este mismo|confirmo)$/i.test(
+    text.trim(),
+  );
+}
+
+function isNegative(text: string) {
+  return /^(?:no|otro|otro n[uú]mero|no es|no,? otro)$/i.test(text.trim());
+}
+
+type BookingIntakeAction =
+  | "collect_booking_full_name"
+  | "collect_booking_birth_date"
+  | "collect_booking_email"
+  | "confirm_booking_whatsapp"
+  | "collect_booking_whatsapp_number"
+  | "collect_booking_reason";
+
+function nextBookingIntakeAction(
+  conversation: ConversationRow,
+): BookingIntakeAction | null {
+  if (!conversation.booking_full_name) return "collect_booking_full_name";
+  if (!conversation.booking_birth_date) return "collect_booking_birth_date";
+  if (!conversation.booking_email) return "collect_booking_email";
+  if (!conversation.booking_whatsapp) return "confirm_booking_whatsapp";
+  if (!conversation.booking_reason && !conversation.treatment) {
+    return "collect_booking_reason";
+  }
+  return null;
+}
+
+function bookingIntakePrompt(action: BookingIntakeAction) {
+  if (action === "collect_booking_full_name") {
+    return "Antes de confirmar necesito completar tus datos. ¿Cuál es tu nombre completo?";
+  }
+  if (action === "collect_booking_birth_date") {
+    return "¿Cuál es tu fecha de nacimiento? Escríbela como dd/mm/aaaa.";
+  }
+  if (action === "collect_booking_email") {
+    return "¿Qué correo electrónico usamos para tu registro?";
+  }
+  if (action === "confirm_booking_whatsapp") {
+    return "¿Este mismo número es tu WhatsApp de contacto?";
+  }
+  if (action === "collect_booking_whatsapp_number") {
+    return "Escríbeme el número de WhatsApp que quieres dejar como contacto.";
+  }
+  return "¿Cuál es el motivo de consulta?";
+}
+
+async function finalizeBookingIntake(input: {
+  conversation: ConversationRow;
+  mode: AiMode;
+  pendingSlot: string;
+  fullName: string;
+  birthDate: string;
+  email: string;
+  whatsapp: string;
+  reason: string;
+}): Promise<NimboFlowResult> {
+  const config = await getUsableNimboConfig();
+  if (!config) return { handled: false };
+
+  if (!isBeyondMinimumLead(input.pendingSlot, config.booking_min_lead_minutes)) {
+    await updateConversation(input.conversation.id, {
+      next_action: "ask_date",
+      nimbo_pending_slot: null,
+      nimbo_pending_cause: null,
+      nimbo_last_offered_slots: null,
+      nimbo_offer_expires_at: null,
+    });
+    return {
+      handled: true,
+      reply:
+        "Ese horario ya quedó dentro de la ventana mínima de anticipación. ¿Qué otro día u horario te funciona?",
+    };
+  }
+
+  if (input.mode !== "automatic") {
+    await updateConversation(input.conversation.id, {
+      booking_full_name: input.fullName,
+      booking_birth_date: input.birthDate,
+      booking_email: input.email,
+      booking_whatsapp: input.whatsapp,
+      booking_reason: input.reason,
+      booking_intake_completed_at: new Date().toISOString(),
+    });
+    return {
+      handled: true,
+      reply:
+        "Ya tengo tus datos completos. El equipo revisará el registro antes de finalizar la cita.",
+      escalate: "karen",
+      reasonCode: "nimbo_supervised_intake",
+    };
+  }
+
+  try {
+    let patient =
+      input.conversation.nimbo_person_id
+        ? { id: input.conversation.nimbo_person_id, fullName: input.fullName }
+        : await findNimboPatientByPhone(input.whatsapp);
+
+    if (!patient && input.whatsapp !== input.conversation.phone) {
+      patient = await findNimboPatientByPhone(input.conversation.phone);
+    }
+
+    if (!patient) {
+      patient = await createNimboPatient({
+        phone: input.whatsapp,
+        fullName: input.fullName,
+      });
+    }
+
+    const schedule = await createNimboSchedule({
+      personId: patient.id,
+      startsAt: input.pendingSlot,
+      cause: input.reason,
+    });
+
+    await updateConversation(input.conversation.id, {
+      booking_full_name: input.fullName,
+      booking_birth_date: input.birthDate,
+      booking_email: input.email,
+      booking_whatsapp: input.whatsapp,
+      booking_reason: input.reason,
+      booking_intake_completed_at: new Date().toISOString(),
+      nimbo_person_id: patient.id,
+      nimbo_schedule_id: schedule.id,
+      nimbo_pending_slot: null,
+      nimbo_pending_cause: null,
+      nimbo_last_offered_slots: null,
+      nimbo_offer_expires_at: null,
+      appointment_status: "confirmed",
+      appointment_confirmed_at: new Date().toISOString(),
+      appointment_datetime: schedule.startsAt,
+      appointment_source: "nimbo_whatsapp",
+      stage: "scheduled",
+      next_action: "confirm_registered_appointment",
+    });
+
+    return {
+      handled: true,
+      booked: true,
+      reply:
+        "Listo. Tu cita quedó agendada para " +
+        formatAppointmentLabel(schedule.startsAt, config.timezone) +
+        ".",
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "nimbo_booking_failed";
+    if (message.includes("slot_no_longer_available")) {
+      await updateConversation(input.conversation.id, {
+        next_action: "ask_date",
+        nimbo_pending_slot: null,
+        nimbo_pending_cause: null,
+        nimbo_last_offered_slots: null,
+        nimbo_offer_expires_at: null,
+      });
+      return {
+        handled: true,
+        reply:
+          "Ese horario acaba de dejar de estar disponible. ¿Qué otro horario te funciona?",
+      };
+    }
+
+    return {
+      handled: true,
+      reply:
+        "Ya tengo tus datos, pero no pude finalizar el registro de forma segura. Voy a pasar el caso al equipo.",
+      escalate: "karen",
+      reasonCode: "nimbo_patient_registration_failed",
+    };
+  }
+}
+
+async function beginBookingIntake(input: {
+  conversation: ConversationRow;
+  selectedSlot: string;
+  mode: AiMode;
+}): Promise<NimboFlowResult> {
+  const reason =
+    input.conversation.booking_reason ??
+    input.conversation.treatment ??
+    input.conversation.nimbo_pending_cause ??
+    null;
+
+  const pendingConversation: ConversationRow = {
+    ...input.conversation,
+    nimbo_pending_slot: input.selectedSlot,
+    booking_reason: reason,
+  };
+
+  const action = nextBookingIntakeAction(pendingConversation);
+
+  await updateConversation(input.conversation.id, {
+    nimbo_pending_slot: input.selectedSlot,
+    nimbo_pending_cause: reason ?? "Cita HAUTLAB",
+    nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+    booking_reason: reason,
+    next_action: action ?? "finalize_booking_intake",
+  });
+
+  if (action) {
+    return { handled: true, reply: bookingIntakePrompt(action) };
+  }
+
+  return finalizeBookingIntake({
+    conversation: pendingConversation,
+    mode: input.mode,
+    pendingSlot: input.selectedSlot,
+    fullName: pendingConversation.booking_full_name!,
+    birthDate: pendingConversation.booking_birth_date!,
+    email: pendingConversation.booking_email!,
+    whatsapp: pendingConversation.booking_whatsapp!,
+    reason: reason!,
+  });
+}
+
+async function handlePendingBookingIntake(input: {
   conversation: ConversationRow;
   text: string;
   mode: AiMode;
 }): Promise<NimboFlowResult> {
-  if (input.conversation.next_action !== "collect_nimbo_identity") {
-    return { handled: false };
-  }
+  const action = input.conversation.next_action as BookingIntakeAction | null;
+  const validActions = new Set<BookingIntakeAction>([
+    "collect_booking_full_name",
+    "collect_booking_birth_date",
+    "collect_booking_email",
+    "confirm_booking_whatsapp",
+    "collect_booking_whatsapp_number",
+    "collect_booking_reason",
+  ]);
+  if (!action || !validActions.has(action)) return { handled: false };
 
   const config = await getUsableNimboConfig();
   if (!config) return { handled: false };
@@ -512,104 +798,117 @@ async function handlePendingNimboIdentity(input: {
     return {
       handled: true,
       reply:
-        "Ese horario ya necesita verificarse nuevamente en Nimbo. ¿Qué día te funciona?",
+        "Ese horario necesita revisarse nuevamente. ¿Qué otro día u horario te funciona?",
     };
   }
 
-  if (!looksLikeFullName(input.text)) {
-    return {
-      handled: true,
-      reply: "Necesito tu nombre y apellido tal como quieres que aparezcan en Nimbo.",
-    };
-  }
+  const patch: Record<string, unknown> = {};
+  const updated: ConversationRow = { ...input.conversation };
 
-  if (input.mode !== "automatic") {
-    return {
-      handled: true,
-      reply:
-        "Ya tengo tu nombre. El equipo revisará el registro antes de finalizar la cita.",
-      escalate: "karen",
-      reasonCode: "nimbo_supervised_identity",
-    };
-  }
-
-  try {
-    let patient = await findNimboPatientByPhone(input.conversation.phone);
-    if (!patient) {
-      patient = await createNimboPatient({
-        phone: input.conversation.phone,
-        fullName: normalizeExplicitFullName(input.text),
-      });
+  if (action === "collect_booking_full_name") {
+    if (!looksLikeFullName(input.text)) {
+      return {
+        handled: true,
+        reply: "Necesito tu nombre completo, incluyendo al menos nombre y apellido.",
+      };
     }
-
-    const schedule = await createNimboSchedule({
-      personId: patient.id,
-      startsAt: pendingSlot,
-      cause: input.conversation.nimbo_pending_cause ?? input.conversation.treatment ?? "Cita HAUTLAB",
-    });
-
-    await updateConversation(input.conversation.id, {
-      nimbo_person_id: patient.id,
-      nimbo_schedule_id: schedule.id,
-      nimbo_pending_slot: null,
-      nimbo_pending_cause: null,
-      nimbo_last_offered_slots: null,
-      nimbo_offer_expires_at: null,
-      appointment_status: "confirmed",
-      appointment_confirmed_at: new Date().toISOString(),
-      appointment_datetime: schedule.startsAt,
-      appointment_source: "nimbo_whatsapp",
-      stage: "scheduled",
-      next_action: "confirm_registered_appointment",
-    });
-
-    return {
-      handled: true,
-      booked: true,
-      reply:
-        "Listo. Tu cita quedó agendada en Nimbo para " +
-        formatAppointmentLabel(schedule.startsAt, config.timezone) +
-        ".",
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "nimbo_booking_failed";
-    if (message.includes("slot_no_longer_available")) {
+    const value = normalizeExplicitFullName(input.text);
+    patch.booking_full_name = value;
+    updated.booking_full_name = value;
+  } else if (action === "collect_booking_birth_date") {
+    const value = normalizeBookingBirthDate(input.text);
+    if (!value) {
+      return {
+        handled: true,
+        reply: "No pude leer la fecha. Escríbela como dd/mm/aaaa.",
+      };
+    }
+    patch.booking_birth_date = value;
+    updated.booking_birth_date = value;
+  } else if (action === "collect_booking_email") {
+    const value = normalizeBookingEmail(input.text);
+    if (!value) {
+      return {
+        handled: true,
+        reply: "Ese correo no parece válido. Escríbelo de nuevo, por favor.",
+      };
+    }
+    patch.booking_email = value;
+    updated.booking_email = value;
+  } else if (action === "confirm_booking_whatsapp") {
+    if (isAffirmative(input.text)) {
+      patch.booking_whatsapp = input.conversation.phone;
+      updated.booking_whatsapp = input.conversation.phone;
+    } else if (isNegative(input.text)) {
       await updateConversation(input.conversation.id, {
-        next_action: "ask_date",
-        nimbo_pending_slot: null,
-        nimbo_pending_cause: null,
-        nimbo_last_offered_slots: null,
-        nimbo_offer_expires_at: null,
+        next_action: "collect_booking_whatsapp_number",
       });
       return {
         handled: true,
-        reply:
-          "Ese horario acaba de dejar de estar disponible en Nimbo. ¿Qué otro horario te funciona?",
+        reply: bookingIntakePrompt("collect_booking_whatsapp_number"),
       };
-    }
-
-    if (config.portal_url) {
-      await updateConversation(input.conversation.id, {
-        next_action: "self_booking",
-        nimbo_pending_slot: null,
-        nimbo_pending_cause: null,
-      });
+    } else {
       return {
         handled: true,
-        reply:
-          "Nimbo necesita completar tu registro antes de reservar. Puedes hacerlo aquí: " +
-          config.portal_url,
+        reply: "Solo necesito confirmar: ¿este mismo número es tu WhatsApp de contacto?",
       };
     }
-
-    return {
-      handled: true,
-      reply:
-        "No pude completar el registro en Nimbo de forma segura. Voy a pasar el caso al equipo para finalizar la cita.",
-      escalate: "karen",
-      reasonCode: "nimbo_patient_registration_failed",
-    };
+  } else if (action === "collect_booking_whatsapp_number") {
+    const value = normalizeBookingWhatsapp(input.text);
+    if (!value) {
+      return {
+        handled: true,
+        reply: "No pude validar ese número. Escríbelo con 10 dígitos o con lada internacional.",
+      };
+    }
+    patch.booking_whatsapp = value;
+    updated.booking_whatsapp = value;
+  } else if (action === "collect_booking_reason") {
+    const value = input.text.trim().slice(0, 300);
+    if (value.length < 3) {
+      return {
+        handled: true,
+        reply: "Cuéntame brevemente el motivo de consulta.",
+      };
+    }
+    patch.booking_reason = value;
+    updated.booking_reason = value;
   }
+
+  if (!updated.booking_reason && updated.treatment) {
+    patch.booking_reason = updated.treatment;
+    updated.booking_reason = updated.treatment;
+  }
+
+  const next = nextBookingIntakeAction(updated);
+  if (next) {
+    patch.next_action = next;
+    await updateConversation(input.conversation.id, patch);
+    return { handled: true, reply: bookingIntakePrompt(next) };
+  }
+
+  const fullName = updated.booking_full_name!;
+  const birthDate = updated.booking_birth_date!;
+  const email = updated.booking_email!;
+  const whatsapp = updated.booking_whatsapp!;
+  const reason = updated.booking_reason!;
+
+  await updateConversation(input.conversation.id, {
+    ...patch,
+    next_action: "finalize_booking_intake",
+    booking_intake_completed_at: new Date().toISOString(),
+  });
+
+  return finalizeBookingIntake({
+    conversation: updated,
+    mode: input.mode,
+    pendingSlot,
+    fullName,
+    birthDate,
+    email,
+    whatsapp,
+    reason,
+  });
 }
 
 async function handleNimboBooking(input: {
@@ -697,60 +996,11 @@ async function handleNimboBooking(input: {
         };
       }
 
-      const existingPatient =
-        input.conversation.nimbo_person_id
-          ? { id: input.conversation.nimbo_person_id, fullName: null }
-          : await findNimboPatientByPhone(input.conversation.phone);
-
-      if (existingPatient) {
-        try {
-          const schedule = await createNimboSchedule({
-            personId: existingPatient.id,
-            startsAt: selected.startsAt,
-            cause: input.conversation.treatment ?? "Cita HAUTLAB",
-          });
-
-          await updateConversation(input.conversation.id, {
-            nimbo_person_id: existingPatient.id,
-            nimbo_schedule_id: schedule.id,
-            nimbo_last_offered_slots: null,
-            nimbo_offer_expires_at: null,
-            appointment_status: "confirmed",
-      appointment_confirmed_at: new Date().toISOString(),
-      appointment_datetime: schedule.startsAt,
-            appointment_source: "nimbo_whatsapp",
-            stage: "scheduled",
-            next_action: "confirm_registered_appointment",
-          });
-
-          return {
-            handled: true,
-            booked: true,
-            reply:
-              "Listo. Tu cita quedó agendada en Nimbo para " +
-              formatAppointmentLabel(schedule.startsAt, config.timezone) +
-              ".",
-          };
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : "nimbo_booking_failed";
-          if (!message.includes("slot_no_longer_available")) {
-            return { handled: false };
-          }
-        }
-      } else {
-        await updateConversation(input.conversation.id, {
-          next_action: "collect_nimbo_identity",
-          nimbo_pending_slot: selected.startsAt,
-          nimbo_pending_cause: input.conversation.treatment ?? "Cita HAUTLAB",
-          nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
-        });
-        return {
-          handled: true,
-          reply:
-            "Para registrarte en Nimbo y finalizar esa cita necesito tu nombre y apellido.",
-        };
-      }
+      return beginBookingIntake({
+        conversation: input.conversation,
+        selectedSlot: selected.startsAt,
+        mode: input.mode,
+      });
     }
   }
 
@@ -1043,7 +1293,7 @@ async function processTextMessage(input: {
     return;
   }
 
-  const pendingNimbo = await handlePendingNimboIdentity({
+  const pendingNimbo = await handlePendingBookingIntake({
     conversation,
     text,
     mode,
