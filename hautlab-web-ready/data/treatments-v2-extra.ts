@@ -85,7 +85,11 @@ export const extraTreatmentsV2: Record<string, TreatmentPageContent> = {
       { question: "¿El resultado se ve de inmediato?", answer: "El efecto principal suele ser progresivo. La apariencia inicial puede estar influida por líquido, inflamación o técnica de aplicación." },
       { question: "¿Sustituye al ácido hialurónico?", answer: "No necesariamente. Son herramientas diferentes y pueden indicarse por separado o dentro de un plan combinado." }
     ],
-    related: [{ label: "Skin booster", href: "/procedimientos/skin-booster" }, { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" }],
+    related: [
+      { label: "Relleno vs bioestimulador", href: "/journal/relleno-vs-bioestimulador" },
+      { label: "Skin booster", href: "/procedimientos/skin-booster" },
+      { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" }
+    ],
     whatsappMessage: "Hola, quiero agendar valoración para bioestimulación."
   },
   "hollywood-peel": {
