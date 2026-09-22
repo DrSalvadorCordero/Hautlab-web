@@ -58,6 +58,7 @@ const areas = [
 
 const secondaryNav = [
   { label: "Método", href: "/#metodo" },
+  { label: "Journal", href: "/journal" },
   { label: "Publicaciones", href: "/publicaciones" },
   { label: "Cabina Dermatocosmética", href: "/cabina" },
   { label: "Testimonios", href: "/#testimonios" },
@@ -96,6 +97,7 @@ export function Header() {
 
         <nav className="hidden items-center gap-5 text-sm text-muted xl:flex" aria-label="Navegación principal">
           <Link href="/#metodo" className="transition hover:text-bone">Método</Link>
+          <Link href="/journal" className="transition hover:text-bone">Journal</Link>
           <Link href="/publicaciones" className="transition hover:text-bone">Publicaciones</Link>
 
           <details className="group relative">
