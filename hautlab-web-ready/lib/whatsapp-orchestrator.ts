@@ -423,6 +423,13 @@ function formatAppointmentLabel(startsAt: string, timeZone: string) {
   }).format(value);
 }
 
+function isBeyondMinimumLead(startsAt: string, minLeadMinutes: number) {
+  const startsAtMs = Date.parse(startsAt);
+  if (!Number.isFinite(startsAtMs)) return false;
+  const leadMs = Math.max(0, minLeadMinutes) * 60_000;
+  return startsAtMs >= Date.now() + leadMs;
+}
+
 function isSlotForDaypart(
   startsAt: string,
   timeZone: string,
@@ -492,7 +499,8 @@ async function handlePendingNimboIdentity(input: {
   if (
     !pendingSlot ||
     !Number.isFinite(expiresAt) ||
-    expiresAt <= Date.now()
+    expiresAt <= Date.now() ||
+    !isBeyondMinimumLead(pendingSlot, config.booking_min_lead_minutes)
   ) {
     await updateConversation(input.conversation.id, {
       next_action: "ask_date",
@@ -638,8 +646,17 @@ async function handleNimboBooking(input: {
 
   const requestedDay = days.find((day) => day.date === bookingDate);
   const allRequestedSlots = requestedDay?.slots ?? [];
-  let eligible = allRequestedSlots.filter((slot) =>
-    isSlotForDaypart(slot.startsAt, config.timezone, input.decision.bookingDaypart),
+  let eligible = allRequestedSlots.filter(
+    (slot) =>
+      isSlotForDaypart(
+        slot.startsAt,
+        config.timezone,
+        input.decision.bookingDaypart,
+      ) &&
+      isBeyondMinimumLead(
+        slot.startsAt,
+        config.booking_min_lead_minutes,
+      ),
   );
 
   if (input.decision.bookingTime) {
@@ -772,10 +789,18 @@ async function handleNimboBooking(input: {
   }
 
   const nextDay = days.find(
-    (day) => day.date > bookingDate && day.slots.length > 0,
+    (day) =>
+      day.date > bookingDate &&
+      day.slots.some((slot) =>
+        isBeyondMinimumLead(slot.startsAt, config.booking_min_lead_minutes),
+      ),
   );
   if (nextDay) {
-    const options = nextDay.slots.slice(0, 3);
+    const options = nextDay.slots
+      .filter((slot) =>
+        isBeyondMinimumLead(slot.startsAt, config.booking_min_lead_minutes),
+      )
+      .slice(0, 3);
     await updateConversation(input.conversation.id, {
       nimbo_last_offered_slots: options,
       nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
