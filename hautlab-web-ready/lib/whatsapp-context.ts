@@ -41,6 +41,19 @@ type ServiceRow = {
   valid_until: string | null;
 };
 
+type TrainingExampleRow = {
+  category: string;
+  scenario: string;
+  patient_message: string;
+  context_hint: string | null;
+  expected_intent: string;
+  expected_action: string;
+  expected_operator: string;
+  ideal_response: string;
+  priority: number;
+  active: boolean;
+};
+
 export type WhatsAppAssistantContext = {
   trustedSystemContext: string;
   memoryContext: string;
@@ -151,6 +164,28 @@ function buildServiceContext(rows: ServiceRow[], city: string) {
   ].join("\n");
 }
 
+function buildTrainingContext(rows: TrainingExampleRow[]) {
+  const activeRows = rows
+    .filter((row) => row.active)
+    .slice(0, 16);
+
+  if (activeRows.length === 0) return "";
+
+  return [
+    "EJEMPLOS CANÓNICOS DE ENTRENAMIENTO — USA EL PATRÓN, NO COPIES MECÁNICAMENTE",
+    "Estos ejemplos calibran intención, acción, operador y estilo. Las reglas de seguridad, catálogo y contexto real siempre tienen prioridad.",
+    ...activeRows.map((row) => {
+      const context = row.context_hint ? ` · contexto: ${row.context_hint}` : "";
+      return [
+        `- [${row.category}/${row.scenario}]${context}`,
+        `  PACIENTE: ${row.patient_message}`,
+        `  DECISIÓN: intent=${row.expected_intent}; action=${row.expected_action}; operator=${row.expected_operator}`,
+        `  RESPUESTA IDEAL: ${row.ideal_response}`,
+      ].join("\n");
+    }),
+  ].join("\n");
+}
+
 function buildMemoryContext(row: ConversationMemoryRow | undefined) {
   if (!row) return "";
 
@@ -186,7 +221,7 @@ export async function loadWhatsAppAssistantContext(input: {
     : null;
 
   try {
-    const [memoryRows, knowledgeRows, serviceRows] = await Promise.all([
+    const [memoryRows, knowledgeRows, serviceRows, trainingRows] = await Promise.all([
       conversationPath
         ? supabaseJson<ConversationMemoryRow[]>(conversationPath)
         : Promise.resolve([] as ConversationMemoryRow[]),
@@ -196,13 +231,19 @@ export async function loadWhatsAppAssistantContext(input: {
       supabaseJson<ServiceRow[]>(
         "wa_service_catalog?select=city,service_key,service_name,price_mxn,cash_price_mxn,installments,includes,notes,active,valid_from,valid_until&active=eq.true&order=service_name.asc&limit=100",
       ),
+      supabaseJson<TrainingExampleRow[]>(
+        "wa_training_examples?select=category,scenario,patient_message,context_hint,expected_intent,expected_action,expected_operator,ideal_response,priority,active&active=eq.true&order=priority.desc,updated_at.desc&limit=16",
+      ),
     ]);
 
     const knowledgeContext = buildKnowledgeContext(knowledgeRows, input.city);
     const serviceContext = buildServiceContext(serviceRows, input.city);
+    const trainingContext = buildTrainingContext(trainingRows);
 
     return {
-      trustedSystemContext: [knowledgeContext, serviceContext].filter(Boolean).join("\n\n"),
+      trustedSystemContext: [knowledgeContext, serviceContext, trainingContext]
+        .filter(Boolean)
+        .join("\n\n"),
       memoryContext: buildMemoryContext(memoryRows[0]),
     };
   } catch (error) {

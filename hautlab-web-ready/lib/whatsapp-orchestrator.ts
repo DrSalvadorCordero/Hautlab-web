@@ -177,6 +177,33 @@ async function insertInboundMessage(input: {
   return rows.length > 0;
 }
 
+async function isLatestInboundMessage(
+  conversationId: string,
+  metaMessageId: string,
+) {
+  const rows = await supabaseRequest<Array<{ meta_message_id: string | null }>>(
+    `wa_messages?conversation_id=eq.${encodeURIComponent(conversationId)}&direction=eq.inbound&select=meta_message_id&order=created_at.desc&limit=1`,
+  );
+  return rows[0]?.meta_message_id === metaMessageId;
+}
+
+function whatsappBurstWindowMs() {
+  const configured = Number(process.env.WHATSAPP_BURST_WINDOW_MS ?? "2200");
+  if (!Number.isFinite(configured)) return 2200;
+  return Math.max(0, Math.min(5000, Math.round(configured)));
+}
+
+async function waitForMessageBurstToSettle(
+  conversationId: string,
+  metaMessageId: string,
+) {
+  const delay = whatsappBurstWindowMs();
+  if (delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+  return isLatestInboundMessage(conversationId, metaMessageId);
+}
+
 async function updateConversation(
   conversationId: string,
   body: Record<string, unknown>,
@@ -942,6 +969,17 @@ async function processTextMessage(input: {
 
   if (attributionCode) {
     await attachAttribution(conversation, attributionCode);
+  }
+
+  // Patients often send one thought as several WhatsApp bubbles. Wait briefly
+  // and let only the newest inbound bubble trigger a response, so the bot
+  // answers the complete thought instead of replying two or three times.
+  if (text) {
+    const isLatest = await waitForMessageBurstToSettle(
+      conversation.id,
+      input.message.id,
+    );
+    if (!isLatest) return;
   }
 
   const settings = await getSettings();

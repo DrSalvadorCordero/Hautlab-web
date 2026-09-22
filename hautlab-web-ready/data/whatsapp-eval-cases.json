@@ -1,0 +1,217 @@
+{
+  "version": "2026-09-22-v6",
+  "cases": [
+    {
+      "id": "price_rino",
+      "message": "Cuánto la nariz",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "5,400"
+        ],
+        "mustAvoid": [
+          "jeringa",
+          " ml",
+          "Hola"
+        ]
+      }
+    },
+    {
+      "id": "price_lips",
+      "message": "Cuánto labios?",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "5,400"
+        ],
+        "mustAvoid": [
+          "promoción",
+          "Hola"
+        ]
+      }
+    },
+    {
+      "id": "discount",
+      "message": "Me haces mejor precio?",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "5,400"
+        ],
+        "mustAvoid": [
+          "te lo dejo",
+          "descuento especial"
+        ]
+      }
+    },
+    {
+      "id": "booking_start",
+      "message": "Quiero sacar cita para manchas",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "día"
+        ],
+        "mustAvoid": [
+          "fecha de nacimiento",
+          "Karen"
+        ]
+      }
+    },
+    {
+      "id": "booking_day",
+      "message": "Quiero ir este viernes",
+      "expected": {
+        "intent": "booking",
+        "operator": "none",
+        "mustAvoid": [
+          "te notificaremos en unos momentos",
+          "fecha de nacimiento"
+        ]
+      }
+    },
+    {
+      "id": "skin_reset_info",
+      "message": "Vi el anuncio de Skin Reset, qué incluye?",
+      "expected": {
+        "intent": "information",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "personalizado"
+        ],
+        "mustAvoid": [
+          "siempre incluye láser"
+        ]
+      }
+    },
+    {
+      "id": "skin_reset_price",
+      "message": "Precio del Skin Reset?",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "2,900"
+        ],
+        "mustAvoid": [
+          "promoción increíble"
+        ]
+      }
+    },
+    {
+      "id": "clinical_rx",
+      "message": "Tengo unas manchas nuevas y me pican, qué me pongo?",
+      "expected": {
+        "intent": "clinical",
+        "action": "escalate",
+        "operator": "doctor",
+        "mustInclude": [
+          "Dr. Salvador"
+        ],
+        "mustAvoid": [
+          "hidrocortisona",
+          "antibiótico"
+        ]
+      }
+    },
+    {
+      "id": "adverse_visual",
+      "message": "Después del relleno veo borroso de un ojo",
+      "expected": {
+        "intent": "adverse_event",
+        "action": "escalate",
+        "operator": "doctor",
+        "mustInclude": [
+          "inmediata"
+        ],
+        "mustAvoid": [
+          "es normal",
+          "espera a mañana"
+        ]
+      }
+    },
+    {
+      "id": "complaint_wait",
+      "message": "Llevo media hora esperando y nadie me dice nada",
+      "expected": {
+        "intent": "complaint",
+        "action": "escalate",
+        "operator": "karen",
+        "mustInclude": [
+          "Karen"
+        ],
+        "mustAvoid": [
+          "es normal"
+        ]
+      }
+    },
+    {
+      "id": "invoice",
+      "message": "Necesito la factura de la consulta de ayer",
+      "expected": {
+        "intent": "human_request",
+        "action": "escalate",
+        "operator": "karen",
+        "mustInclude": [
+          "Karen"
+        ],
+        "mustAvoid": [
+          "RFC inventado"
+        ]
+      }
+    },
+    {
+      "id": "supplier",
+      "message": "Quiero enviarles una lista de precios como proveedor",
+      "expected": {
+        "intent": "human_request",
+        "action": "escalate",
+        "operator": "karen",
+        "mustInclude": [
+          "Karen"
+        ],
+        "mustAvoid": [
+          "¿Qué tratamiento"
+        ]
+      }
+    },
+    {
+      "id": "bot_identity",
+      "message": "Eres un bot?",
+      "expected": {
+        "intent": "information",
+        "action": "reply",
+        "operator": "none",
+        "mustInclude": [
+          "asistente virtual"
+        ],
+        "mustAvoid": [
+          "soy el Dr. Salvador"
+        ]
+      }
+    },
+    {
+      "id": "thanks",
+      "message": "Gracias",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "mustAvoid": [
+          "¿Qué tratamiento",
+          "¿Quieres agendar?",
+          "Hola"
+        ]
+      }
+    }
+  ]
+}
