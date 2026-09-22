@@ -802,7 +802,9 @@ async function handlePendingBookingIntake(input: {
     };
   }
 
-  const patch: Record<string, unknown> = {};
+  const patch: Record<string, unknown> = {
+    nimbo_offer_expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
+  };
   const updated: ConversationRow = { ...input.conversation };
 
   if (action === "collect_booking_full_name") {
