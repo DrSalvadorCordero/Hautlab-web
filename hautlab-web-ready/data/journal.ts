@@ -9,6 +9,15 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "cuando-consultar-por-acne",
+    title: "Cuándo consultar por acné: señales de que conviene una valoración médica",
+    description:
+      "Una guía clínica para reconocer cuándo el acné deja de ser un problema razonable para manejar solo con productos: inflamación profunda, cicatrices, recaídas, extensión corporal y falta de respuesta.",
+    category: "Dermatología clínica",
+    preparedAt: "2026-09-22",
+    readingTime: "9 min"
+  },
+  {
     slug: "relleno-vs-bioestimulador",
     title: "Relleno vs bioestimulador: qué cambia y cuándo tiene sentido cada uno",
     description:
