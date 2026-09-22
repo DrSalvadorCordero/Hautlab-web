@@ -95,8 +95,7 @@
     },
     {
       "id": "skin_reset_price",
-      "message": "Precio del facial?",
-      "context": "Contexto vigente: campaña SKIN RESET.",
+      "message": "Precio del Skin Reset?",
       "expected": {
         "intent": "pricing",
         "action": "reply",
