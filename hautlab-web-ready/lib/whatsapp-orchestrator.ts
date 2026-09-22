@@ -737,7 +737,7 @@ async function beginBookingIntake(input: {
   await updateConversation(input.conversation.id, {
     nimbo_pending_slot: input.selectedSlot,
     nimbo_pending_cause: reason ?? "Cita HAUTLAB",
-    nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+    nimbo_offer_expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
     booking_reason: reason,
     next_action: action ?? "finalize_booking_intake",
   });
@@ -986,16 +986,6 @@ async function handleNimboBooking(input: {
     });
 
     if (selected) {
-      if (input.mode !== "automatic") {
-        return {
-          handled: true,
-          reply:
-            "El horario quedó seleccionado en Nimbo y está pendiente de aprobación del equipo.",
-          escalate: "karen",
-          reasonCode: "nimbo_supervised_booking",
-        };
-      }
-
       return beginBookingIntake({
         conversation: input.conversation,
         selectedSlot: selected.startsAt,
