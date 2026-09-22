@@ -109,6 +109,7 @@ export default function FillerVsBiostimulatorArticle() {
         dateCreated: article.preparedAt,
         dateModified: article.preparedAt,
         author: { "@id": `${siteConfig.url}#clinic` },
+        reviewedBy: { "@id": `${siteConfig.url}#doctor` },
         publisher: { "@id": `${siteConfig.url}#clinic` },
         isPartOf: { "@id": `${siteConfig.url}#website` },
         breadcrumb: { "@id": `${pageUrl}#breadcrumb` }
@@ -152,7 +153,7 @@ export default function FillerVsBiostimulatorArticle() {
             <div className="mt-8 flex flex-wrap gap-3 text-xs leading-5 text-quiet">
               <span>Preparado: 22 de septiembre de 2026</span>
               <span aria-hidden="true">·</span>
-              <span>Revisión médica requerida antes de publicación</span>
+              <span>Revisión médica: Dr. Salvador Cordero · 22 de septiembre de 2026</span>
             </div>
           </div>
         </section>
@@ -303,11 +304,11 @@ export default function FillerVsBiostimulatorArticle() {
         <section className="py-16 lg:py-24">
           <div className="mx-auto grid w-[min(1040px,calc(100%-32px))] gap-6 lg:grid-cols-[.9fr_1.1fr]">
             <Card className="p-7">
-              <p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p>
-              <p className="mt-5 text-lg font-medium text-bone">Revisión médica pendiente</p>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                Este borrador no debe publicarse hasta que el Dr. Salvador Cordero revise y apruebe las afirmaciones clínicas, el encuadre de riesgos y las referencias.
-              </p>
+              <p className="text-xs uppercase tracking-[0.2em] text-champagne">Revisión médica</p>
+              <p className="mt-5 text-lg font-medium text-bone">{siteConfig.legalDoctorName}</p>
+              <p className="mt-2 text-sm text-muted">{siteConfig.professionalTitle} · {siteConfig.practiceArea}</p>
+              <p className="mt-1 text-xs text-quiet">{siteConfig.professionalLicense}</p>
+              <p className="mt-5 text-xs text-quiet">Revisado y aprobado: 22 de septiembre de 2026.</p>
             </Card>
 
             <Card className="p-7">
