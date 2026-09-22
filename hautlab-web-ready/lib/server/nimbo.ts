@@ -187,11 +187,23 @@ async function requestToken(baseUrl: string, payload: Record<string, string>) {
       ? ["multipart", "form", "json"]
       : ["json", "form", "multipart"];
   let lastStatus: number | null = null;
+  let lastDiagnostic: string | null = null;
 
   for (const encoding of attempts) {
     const { response, result } = await tokenAttempt(normalized, payload, encoding);
     lastStatus = response.status;
-    const record = asRecord(result) as TokenPayload | null;
+    const diagnosticRecord = asRecord(result);
+    const diagnostic =
+      cleanString(diagnosticRecord?.error_description, 180) ??
+      cleanString(diagnosticRecord?.error, 120) ??
+      cleanString(diagnosticRecord?.message, 180) ??
+      (typeof result === "string" ? cleanString(result, 180) : null);
+    if (diagnostic) {
+      lastDiagnostic = diagnostic
+        .replace(/(password|access_token|refresh_token|token)\\s*[=:]\\s*[^\\s,;]+/gi, "$1=[redacted]")
+        .slice(0, 180);
+    }
+    const record = diagnosticRecord as TokenPayload | null;
     const accessToken = cleanString(record?.access_token, 8_000);
     const refreshToken = cleanString(record?.refresh_token, 8_000);
 
@@ -208,7 +220,16 @@ async function requestToken(baseUrl: string, payload: Record<string, string>) {
     }
   }
 
-  throw new NimboApiError("nimbo_authentication_failed", lastStatus);
+  const suffix = [
+    lastStatus ? `http_${lastStatus}` : null,
+    lastDiagnostic ? lastDiagnostic.replace(/[^a-zA-Z0-9_. -]+/g, " ").trim() : null,
+  ]
+    .filter(Boolean)
+    .join(":");
+  throw new NimboApiError(
+    suffix ? `nimbo_authentication_failed:${suffix}` : "nimbo_authentication_failed",
+    lastStatus,
+  );
 }
 
 type NimboSecretName = "refresh_token" | "access_token";
