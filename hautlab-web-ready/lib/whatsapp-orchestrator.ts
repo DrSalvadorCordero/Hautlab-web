@@ -1131,6 +1131,20 @@ async function deliverNimboFlow(input: {
   return true;
 }
 
+function normalizeCityForTriage(city: string | null) {
+  const value = (city ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+  if (value.includes("merida")) return "merida" as const;
+  if (value === "cdmx" || value.includes("ciudad de mexico")) {
+    return "cdmx" as const;
+  }
+  return "unknown" as const;
+}
+
 async function callTriage(input: {
   origin: string;
   message: string;
@@ -1140,7 +1154,7 @@ async function callTriage(input: {
   const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ?? "";
   if (!internalKey) throw new Error("internal_api_key_not_configured");
 
-  const city = input.city === "merida" || input.city === "cdmx" ? input.city : "unknown";
+  const city = normalizeCityForTriage(input.city);
   const response = await fetch(`${input.origin}/api/ai/triage`, {
     method: "POST",
     headers: {
