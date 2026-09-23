@@ -43,8 +43,8 @@ const modelDecisionSchema = z.object({
     "human_requested",
     "uncertain",
   ]),
-  bookingDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).nullable(),
-  bookingTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/).nullable(),
+  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  bookingTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
   bookingDaypart: z.enum(["none", "morning", "afternoon", "evening", "any"]),
   bookingConfirmedChoice: z.boolean(),
 });
@@ -88,7 +88,7 @@ async function loadConversationHistory(conversationId?: string): Promise<History
     select: "direction,body,status,created_at",
     status: "neq.draft",
     order: "created_at.desc",
-    limit: "12",
+    limit: "24",
   });
 
   try {
@@ -180,18 +180,57 @@ function extractOutputText(payload: unknown): string | null {
   return null;
 }
 
-function applyHardGuardrails(decision: ModelDecision): ModelDecision {
-  if (decision.intent === "clinical" || decision.intent === "adverse_event") {
+function hasUrgentRedFlag(message: string) {
+  const normalized = message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return [
+    /vision (?:borrosa|doble|disminuida)/,
+    /perdi(?:da|) de vision/,
+    /no (?:veo|puedo ver)/,
+    /dolor ocular/,
+    /dificultad (?:para )?respirar/,
+    /falta de aire/,
+    /lengua .*hinch/,
+    /garganta .*hinch/,
+    /anafil/,
+    /piel .*?(?:palida|violacea|reticulada|negra)/,
+    /cambio de color .*?(?:palido|violaceo|negro)/,
+    /dolor (?:muy |demasiado |)intenso/,
+    /debilidad subita/,
+    /desmayo/,
+    /perdi(?:da|) de conciencia/,
+    /sangrado abundante/,
+  ].some((pattern) => pattern.test(normalized));
+}
+
+function applyHardGuardrails(
+  decision: ModelDecision,
+  message: string,
+): ModelDecision {
+  if (decision.intent === "adverse_event") {
+    const urgent = hasUrgentRedFlag(message);
+    return {
+      ...decision,
+      action: "escalate",
+      operator: "doctor",
+      reply: urgent
+        ? "Ese síntoma requiere valoración médica inmediata. Acude a un servicio de urgencias ahora; también voy a avisar al Dr. Salvador."
+        : "Quiero que esto lo revise directamente el Dr. Salvador antes de darte una indicación. Voy a escalar la conversación.",
+      reasonCode: "adverse_event_boundary",
+    };
+  }
+
+  if (decision.intent === "clinical") {
     return {
       ...decision,
       action: "escalate",
       operator: "doctor",
       reply:
         "Quiero que esto lo revise directamente el Dr. Salvador antes de darte una indicación. Voy a escalar la conversación.",
-      reasonCode:
-        decision.intent === "adverse_event"
-          ? "adverse_event_boundary"
-          : "clinical_boundary",
+      reasonCode: "clinical_boundary",
     };
   }
 
@@ -345,13 +384,13 @@ export async function POST(request: NextRequest) {
                 },
                 bookingDate: {
                   anyOf: [
-                    { type: "string", pattern: "^\\\\d{4}-\\\\d{2}-\\\\d{2}$" },
+                    { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
                     { type: "null" },
                   ],
                 },
                 bookingTime: {
                   anyOf: [
-                    { type: "string", pattern: "^([01]\\\\d|2[0-3]):[0-5]\\\\d$" },
+                    { type: "string", pattern: "^([01]\\d|2[0-3]):[0-5]\\d$" },
                     { type: "null" },
                   ],
                 },
@@ -415,7 +454,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decision = applyHardGuardrails(parsedDecision.data);
+    const decision = applyHardGuardrails(parsedDecision.data, message);
 
     return NextResponse.json(
       {
