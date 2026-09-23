@@ -14,6 +14,11 @@ type ConversationMemoryRow = {
   appointment_time_preference: string | null;
   known_facts: Record<string, unknown> | null;
   missing_information: unknown[] | null;
+  first_attribution: Record<string, unknown> | null;
+  last_attribution: Record<string, unknown> | null;
+  appointment_status: string | null;
+  appointment_datetime: string | null;
+  booking_reason: string | null;
 };
 
 type KnowledgeRow = {
@@ -95,8 +100,10 @@ function normalize(value: string | null | undefined) {
 
 function cityMatches(rowCity: string | null | undefined, requestedCity: string) {
   if (!rowCity) return true;
-  if (requestedCity === "unknown") return true;
   const normalizedRow = normalize(rowCity);
+  if (["all", "global", "todas", "todos"].includes(normalizedRow)) return true;
+  if (requestedCity === "unknown") return false;
+
   const normalizedRequested = normalize(requestedCity);
   if (normalizedRequested === "merida") return normalizedRow.includes("merida");
   if (normalizedRequested === "cdmx") {
@@ -127,7 +134,7 @@ function buildKnowledgeContext(rows: KnowledgeRow[], city: string) {
   const activeRows = rows
     .filter((row) => row.active && cityMatches(row.city, city))
     .filter((row) => isCurrentlyValid(row.valid_from, row.valid_until))
-    .slice(0, 30);
+    .slice(0, 60);
 
   if (activeRows.length === 0) return "";
 
@@ -151,11 +158,15 @@ function buildServiceContext(rows: ServiceRow[], city: string) {
     "Si cualquier cifra del prompt editable contradice este catálogo, prevalece SIEMPRE este catálogo dinámico.",
     "Si aquí un servicio aparece sin precio autorizado, no inventes una cifra: pide confirmación humana.",
     ...activeRows.map((row) => {
-      const parts = [
-        `${row.service_name} (${row.service_key})`,
-        `precio: ${formatMoney(row.price_mxn)}`,
-        `preferencial: ${formatMoney(row.cash_price_mxn)}`,
-      ];
+      const parts = [`${row.service_name} (${row.service_key})`];
+      if (row.price_mxn != null && row.price_mxn !== "") {
+        parts.push(`precio: ${formatMoney(row.price_mxn)}`);
+      } else {
+        parts.push("precio: requiere confirmación");
+      }
+      if (row.cash_price_mxn != null && row.cash_price_mxn !== "") {
+        parts.push(`preferencial: ${formatMoney(row.cash_price_mxn)}`);
+      }
       if (row.installments) parts.push(`condiciones: ${row.installments}`);
       if (row.includes) parts.push(`incluye: ${row.includes}`);
       if (row.notes) parts.push(`notas: ${row.notes}`);
@@ -167,7 +178,7 @@ function buildServiceContext(rows: ServiceRow[], city: string) {
 function buildTrainingContext(rows: TrainingExampleRow[]) {
   const activeRows = rows
     .filter((row) => row.active)
-    .slice(0, 16);
+    .slice(0, 24);
 
   if (activeRows.length === 0) return "";
 
@@ -203,6 +214,11 @@ function buildMemoryContext(row: ConversationMemoryRow | undefined) {
     appointment_time_preference: row.appointment_time_preference,
     known_facts: row.known_facts ?? {},
     missing_information: row.missing_information ?? [],
+    first_attribution: row.first_attribution ?? null,
+    last_attribution: row.last_attribution ?? null,
+    appointment_status: row.appointment_status ?? null,
+    appointment_datetime: row.appointment_datetime ?? null,
+    booking_reason: row.booking_reason ?? null,
   };
 
   return [
@@ -217,7 +233,7 @@ export async function loadWhatsAppAssistantContext(input: {
   city: string;
 }): Promise<WhatsAppAssistantContext> {
   const conversationPath = input.conversationId
-    ? `wa_conversations?id=eq.${encodeURIComponent(input.conversationId)}&select=treatment,stage,conversation_summary,patient_goal,communication_style,language,pending_question,last_question_asked,objection,appointment_date_preference,appointment_time_preference,known_facts,missing_information&limit=1`
+    ? `wa_conversations?id=eq.${encodeURIComponent(input.conversationId)}&select=treatment,stage,conversation_summary,patient_goal,communication_style,language,pending_question,last_question_asked,objection,appointment_date_preference,appointment_time_preference,known_facts,missing_information,first_attribution,last_attribution,appointment_status,appointment_datetime,booking_reason&limit=1`
     : null;
 
   try {
