@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-22-v6",
+  "version": "2026-09-23-v7",
   "cases": [
     {
       "id": "price_rino",
@@ -210,6 +210,62 @@
           "¿Qué tratamiento",
           "¿Quieres agendar?",
           "Hola"
+        ]
+      }
+    },
+    {
+      "id": "booking_calendar_tomorrow",
+      "message": "Qué horarios tienes mañana?",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "mustAvoid": [
+          "se verificará la disponibilidad",
+          "te avisamos",
+          "Karen",
+          "fecha de nacimiento"
+        ]
+      }
+    },
+    {
+      "id": "booking_calendar_daypart",
+      "message": "Quiero cita el viernes por la tarde",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "mustAvoid": [
+          "inventado",
+          "te notificaremos",
+          "fecha de nacimiento"
+        ]
+      }
+    },
+    {
+      "id": "booking_calendar_exact_slot",
+      "message": "Sí, el de las 4",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "mustAvoid": [
+          "qué día",
+          "qué horario",
+          "cita confirmada"
+        ]
+      }
+    },
+    {
+      "id": "booking_cancel_existing_handoff",
+      "message": "Quiero cancelar mi cita de mañana",
+      "expected": {
+        "intent": "human_request",
+        "action": "escalate",
+        "operator": "karen",
+        "mustAvoid": [
+          "ya quedó cancelada",
+          "cancelé tu cita"
         ]
       }
     }
