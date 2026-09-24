@@ -159,7 +159,7 @@ export const prioritySeoPages: Record<string, PrioritySeoPage> = {
       professionalTitle: "Médico Cirujano",
       practiceArea: "Dermatología Clínica y Estética",
       license: "Cédula Profesional 11804418",
-      reviewedAt: "Pendiente de revisión médica — 23 de septiembre de 2026",
+      reviewedAt: "23 de septiembre de 2026",
       sources: [
         {
           label: "American Academy of Dermatology · Diagnóstico y tratamiento de la rosácea",
