@@ -95,6 +95,23 @@ type TriageDecision = {
   bookingTime: string | null;
   bookingDaypart: "none" | "morning" | "afternoon" | "evening" | "any";
   bookingConfirmedChoice: boolean;
+  pricingServices: Array<
+    | "dermatology_consultation"
+    | "upper_face_botulinum_toxin"
+    | "hyaluronic_acid_one_syringe"
+  >;
+  askedDiscount: boolean;
+  paymentMode: "unknown" | "preferential" | "card" | "installments";
+  concessionStage: "none" | "package_presented" | "final_presented";
+  salesQuote?: {
+    publicValue: number;
+    offeredPrice: number;
+    targetPrice: number;
+    lastConcession: number;
+    commercialFloor: number;
+    closeScore: number;
+    offerStage: "package" | "final" | "hold";
+  };
 };
 
 type IncomingMessage = {
@@ -1476,6 +1493,11 @@ async function processTextMessage(input: {
         bookingTime: decision.bookingTime,
         bookingDaypart: decision.bookingDaypart,
         bookingConfirmedChoice: decision.bookingConfirmedChoice,
+        pricingServices: decision.pricingServices,
+        askedDiscount: decision.askedDiscount,
+        paymentMode: decision.paymentMode,
+        concessionStage: decision.concessionStage,
+        salesQuote: decision.salesQuote ?? null,
         model: decision.model ?? null,
         nimboHandled: true,
       },
@@ -1534,6 +1556,11 @@ async function processTextMessage(input: {
       bookingTime: decision.bookingTime,
       bookingDaypart: decision.bookingDaypart,
       bookingConfirmedChoice: decision.bookingConfirmedChoice,
+      pricingServices: decision.pricingServices,
+      askedDiscount: decision.askedDiscount,
+      paymentMode: decision.paymentMode,
+      concessionStage: decision.concessionStage,
+      salesQuote: decision.salesQuote ?? null,
       model: decision.model ?? null,
     },
   });
