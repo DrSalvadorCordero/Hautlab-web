@@ -63,14 +63,14 @@ function commercialSeoOverride(slug: string, seo?: PrioritySeoPage): PrioritySeo
     ...seo,
     schema: {
       ...seo.schema,
-      offerPrice: "5400"
+      offerPrice: "5500"
     },
     additionalFaq: seo.additionalFaq.map((item) =>
       item.question === "¿Cuánto cuesta una rinomodelación en Mérida?"
         ? {
             ...item,
             answer:
-              "En HAUTLAB la rinomodelación tiene una inversión de $5,400 MXN en modalidad preferencial de pago o $6,300 MXN hasta 6 meses sin intereses. Incluye valoración, procedimiento, revisión y retoque cuando existe indicación clínica."
+              "En HAUTLAB la rinomodelación tiene una inversión de $5,500 MXN en modalidad preferencial de pago o $6,300 MXN hasta 6 meses sin intereses. Incluye valoración, procedimiento, revisión y retoque cuando existe indicación clínica."
           }
         : item
     )
@@ -100,7 +100,7 @@ function applyProcedureOverrides(slug: string, treatment: TreatmentPageContent):
     ...(slug === "rinomodelacion"
       ? {
           investment: {
-            label: "$5,400 MXN · modalidad preferencial",
+            label: "$5,500 MXN · modalidad preferencial",
             note:
               "También disponible en $6,300 MXN hasta 6 meses sin intereses. Incluye valoración, procedimiento, revisión y retoque cuando esté indicado. La viabilidad se confirma durante la valoración."
           }
