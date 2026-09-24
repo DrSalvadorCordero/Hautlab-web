@@ -1,1 +1,4 @@
 Redeploy production after Vercel build-rate limit reset.
+Reason: publish HAUTLAB WhatsApp Brain v8 after PR #123 merge.
+No application logic, clinical content, pricing, credentials, or privacy settings changed by this trigger.
+Trigger timestamp: 2026-09-24T05:02:00Z
