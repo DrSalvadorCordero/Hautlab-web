@@ -2,7 +2,6 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  DEFAULT_WHATSAPP_SYSTEM_PROMPT,
   getWhatsAppPromptSettings,
   WHATSAPP_SAFETY_INSTRUCTIONS,
 } from "@/lib/whatsapp-prompt";
@@ -369,17 +368,9 @@ export async function POST(request: NextRequest) {
       loadWhatsAppAssistantContext({ conversationId, city }),
     ]);
 
-    const useDefaultPromptForPreviewEval =
-      process.env.VERCEL_ENV !== "production" &&
-      process.env.VERCEL_GIT_COMMIT_REF === "feat/whatsapp-brain-v8-conversion" &&
-      request.headers.get("x-hautlab-eval-default-prompt") === "1";
-
     const systemInstructions = [
       WHATSAPP_SAFETY_INSTRUCTIONS.trim(),
-      (useDefaultPromptForPreviewEval
-        ? DEFAULT_WHATSAPP_SYSTEM_PROMPT
-        : promptSettings.prompt
-      ).trim(),
+      promptSettings.prompt.trim(),
       assistantContext.trustedSystemContext,
     ]
       .filter(Boolean)
