@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import {
   createNimboPatient,
   createNimboSchedule,
@@ -139,6 +140,9 @@ type WebhookPayload = {
   }>;
 };
 
+const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
+const RELAY_SECRET_KEY = "relay_hmac_secret";
+
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
   const key = (
@@ -177,6 +181,13 @@ async function supabaseRequest<T>(path: string, init?: RequestInit): Promise<T> 
     throw new Error(`supabase_error:${response.status}`);
   }
   return payload as T;
+}
+
+async function getRelaySecret(): Promise<string> {
+  const rows = await supabaseRequest<Array<{ secret_value?: string }>>(
+    `wa_internal_config?key=eq.${encodeURIComponent(RELAY_SECRET_KEY)}&select=secret_value&limit=1`,
+  );
+  return rows[0]?.secret_value?.trim() || "";
 }
 
 async function getSettings(): Promise<SettingsRow> {
@@ -1263,7 +1274,8 @@ async function callTriage(input: {
   city: string | null;
   conversationId: string;
 }): Promise<TriageDecision> {
-  const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ?? "";
+  const internalKey =
+    process.env.HAUTLAB_INTERNAL_API_KEY?.trim() || (await getRelaySecret());
   if (!internalKey) throw new Error("internal_api_key_not_configured");
 
   const city = normalizeCityForTriage(input.city);
@@ -1287,41 +1299,87 @@ async function callTriage(input: {
 }
 
 async function sendWhatsAppText(to: string, body: string) {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim() ?? "";
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ?? "";
+  const accessToken =
+    process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
+    process.env.WHATSAPP_TOKEN?.trim() ||
+    "";
+  const phoneNumberId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+    process.env.PHONE_NUMBER_ID?.trim() ||
+    "";
   const graphVersion = process.env.META_GRAPH_VERSION?.trim() || "v23.0";
-  if (!accessToken || !phoneNumberId) throw new Error("whatsapp_send_not_configured");
 
-  const response = await fetch(
-    `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+  if (accessToken && phoneNumberId) {
+    const response = await fetch(
+      `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "text",
+          text: { body, preview_url: false },
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body, preview_url: false },
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(12000),
-    },
-  );
+    );
 
-  const text = await response.text();
-  let payload: { messages?: Array<{ id?: string }> } = {};
-  if (text) {
+    const text = await response.text();
+    let payload: { messages?: Array<{ id?: string }> } = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text) as { messages?: Array<{ id?: string }> };
+      } catch {
+        payload = {};
+      }
+    }
+    if (!response.ok) throw new Error(`whatsapp_send_failed:${response.status}`);
+    return payload.messages?.[0]?.id ?? null;
+  }
+
+  const relaySecret = await getRelaySecret();
+  if (!relaySecret) throw new Error("whatsapp_send_not_configured");
+
+  const rawBody = JSON.stringify({
+    to,
+    message: {
+      type: "text",
+      text: { body, preview_url: false },
+    },
+  });
+  const signature = createHmac("sha256", relaySecret)
+    .update(rawBody, "utf8")
+    .digest("hex");
+
+  const relayResponse = await fetch(LEGACY_SEND_RELAY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-hautlab-relay-signature": `sha256=${signature}`,
+    },
+    body: rawBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12000),
+  });
+
+  const relayText = await relayResponse.text();
+  let relayPayload: { messageId?: string } = {};
+  if (relayText) {
     try {
-      payload = JSON.parse(text) as { messages?: Array<{ id?: string }> };
+      relayPayload = JSON.parse(relayText) as { messageId?: string };
     } catch {
-      payload = {};
+      relayPayload = {};
     }
   }
-  if (!response.ok) throw new Error(`whatsapp_send_failed:${response.status}`);
-  return payload.messages?.[0]?.id ?? null;
+  if (!relayResponse.ok) {
+    throw new Error(`whatsapp_relay_failed:${relayResponse.status}`);
+  }
+  return relayPayload.messageId ?? null;
 }
 
 async function triggerEscalation(input: {
@@ -1329,7 +1387,8 @@ async function triggerEscalation(input: {
   conversationId: string;
   operator: OperatorKey;
 }) {
-  const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ?? "";
+  const internalKey =
+    process.env.HAUTLAB_INTERNAL_API_KEY?.trim() || (await getRelaySecret());
   if (!internalKey) throw new Error("internal_api_key_not_configured");
 
   const response = await fetch(`${input.origin}/api/whatsapp/escalate`, {
