@@ -57,6 +57,40 @@ type TriageDecision = {
   reply: string;
   reasonCode: string;
   model?: string;
+  commercialStage:
+    | "exploring"
+    | "qualified"
+    | "considering"
+    | "ready_to_book"
+    | "booking"
+    | "scheduled"
+    | "post_booking"
+    | "human_review";
+  leadTemperature: "cold" | "warm" | "hot";
+  serviceInterest: string | null;
+  patientGoal: string | null;
+  objection:
+    | "none"
+    | "price"
+    | "trust"
+    | "fear"
+    | "timing"
+    | "comparison"
+    | "uncertainty"
+    | "other";
+  nextBestAction:
+    | "answer"
+    | "ask_goal"
+    | "frame_value"
+    | "resolve_objection"
+    | "offer_booking"
+    | "ask_date"
+    | "offer_slots"
+    | "collect_intake"
+    | "close"
+    | "escalate";
+  pendingQuestion: string | null;
+  conversationSummary: string | null;
   bookingDate: string | null;
   bookingTime: string | null;
   bookingDaypart: "none" | "morning" | "afternoon" | "evening" | "any";
@@ -541,6 +575,47 @@ function normalizeBookingWhatsapp(text: string) {
   return null;
 }
 
+function extractBookingIdentityBundle(text: string) {
+  const raw = text.trim();
+  const emailMatch = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  const dateMatch = raw.match(
+    /\b(?:\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}[\/-]\d{1,2}[\/-]\d{1,2})\b/,
+  );
+
+  let fullName: string | null = null;
+  const segments = raw.split(/[\n\r;]+/).map((item) => item.trim()).filter(Boolean);
+  for (const segment of segments) {
+    const match = segment.match(
+      /^(?:nombre(?:\s+completo)?|name)\s*[:\-]\s*(.+)$/i,
+    );
+    if (match && looksLikeFullName(match[1])) {
+      fullName = normalizeExplicitFullName(match[1]);
+      break;
+    }
+  }
+
+  if (!fullName) {
+    let residual = raw;
+    if (emailMatch?.[0]) residual = residual.replace(emailMatch[0], " ");
+    if (dateMatch?.[0]) residual = residual.replace(dateMatch[0], " ");
+    residual = residual
+      .replace(
+        /\b(?:nombre(?:\s+completo)?|name|fecha(?:\s+de\s+nacimiento)?|nacimiento|correo(?:\s+electr[oó]nico)?|email)\s*[:\-]?/gi,
+        " ",
+      )
+      .replace(/[|,]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (looksLikeFullName(residual)) fullName = normalizeExplicitFullName(residual);
+  }
+
+  return {
+    fullName,
+    birthDate: dateMatch?.[0] ? normalizeBookingBirthDate(dateMatch[0]) : null,
+    email: emailMatch?.[0] ? normalizeBookingEmail(emailMatch[0]) : null,
+  };
+}
+
 function isAffirmative(text: string) {
   return /^(?:s[ií]|si|yes|correcto|ese|ese mismo|este|este mismo|confirmo)$/i.test(
     text.trim(),
@@ -574,7 +649,7 @@ function nextBookingIntakeAction(
 
 function bookingIntakePrompt(action: BookingIntakeAction) {
   if (action === "collect_booking_full_name") {
-    return "Antes de confirmar necesito completar tus datos. ¿Cuál es tu nombre completo?";
+    return "Para registrar la cita necesito nombre completo, fecha de nacimiento (dd/mm/aaaa) y correo. Puedes enviarme los tres en un solo mensaje; usaré este mismo número como WhatsApp de contacto.";
   }
   if (action === "collect_booking_birth_date") {
     return "¿Cuál es tu fecha de nacimiento? Escríbela como dd/mm/aaaa.";
@@ -740,6 +815,8 @@ async function beginBookingIntake(input: {
     ...input.conversation,
     nimbo_pending_slot: input.selectedSlot,
     booking_reason: reason,
+    booking_whatsapp:
+      input.conversation.booking_whatsapp ?? input.conversation.phone,
   };
 
   const action = nextBookingIntakeAction(pendingConversation);
@@ -749,6 +826,7 @@ async function beginBookingIntake(input: {
     nimbo_pending_cause: reason ?? "Cita HAUTLAB",
     nimbo_offer_expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
     booking_reason: reason,
+    booking_whatsapp: pendingConversation.booking_whatsapp,
     next_action: action ?? "finalize_booking_intake",
   });
 
@@ -816,9 +894,24 @@ async function handlePendingBookingIntake(input: {
     nimbo_offer_expires_at: new Date(Date.now() + 30 * 60_000).toISOString(),
   };
   const updated: ConversationRow = { ...input.conversation };
+  const identity = extractBookingIdentityBundle(input.text);
 
-  if (action === "collect_booking_full_name") {
+  if (!updated.booking_full_name && identity.fullName) {
+    patch.booking_full_name = identity.fullName;
+    updated.booking_full_name = identity.fullName;
+  }
+  if (!updated.booking_birth_date && identity.birthDate) {
+    patch.booking_birth_date = identity.birthDate;
+    updated.booking_birth_date = identity.birthDate;
+  }
+  if (!updated.booking_email && identity.email) {
+    patch.booking_email = identity.email;
+    updated.booking_email = identity.email;
+  }
+
+  if (action === "collect_booking_full_name" && !updated.booking_full_name) {
     if (!looksLikeFullName(input.text)) {
+      await updateConversation(input.conversation.id, patch);
       return {
         handled: true,
         reply: "Necesito tu nombre completo, incluyendo al menos nombre y apellido.",
@@ -827,9 +920,10 @@ async function handlePendingBookingIntake(input: {
     const value = normalizeExplicitFullName(input.text);
     patch.booking_full_name = value;
     updated.booking_full_name = value;
-  } else if (action === "collect_booking_birth_date") {
+  } else if (action === "collect_booking_birth_date" && !updated.booking_birth_date) {
     const value = normalizeBookingBirthDate(input.text);
     if (!value) {
+      await updateConversation(input.conversation.id, patch);
       return {
         handled: true,
         reply: "No pude leer la fecha. Escríbela como dd/mm/aaaa.",
@@ -837,9 +931,10 @@ async function handlePendingBookingIntake(input: {
     }
     patch.booking_birth_date = value;
     updated.booking_birth_date = value;
-  } else if (action === "collect_booking_email") {
+  } else if (action === "collect_booking_email" && !updated.booking_email) {
     const value = normalizeBookingEmail(input.text);
     if (!value) {
+      await updateConversation(input.conversation.id, patch);
       return {
         handled: true,
         reply: "Ese correo no parece válido. Escríbelo de nuevo, por favor.",
@@ -1343,17 +1438,40 @@ async function processTextMessage(input: {
   if (nimboBooking.handled) {
     await updateConversation(conversation.id, {
       last_intent: "booking",
+      stage: nimboBooking.booked ? "scheduled" : "booking",
       clinical_risk: false,
       priority: nimboBooking.escalate ? "high" : "normal",
       human_review_reason: nimboBooking.escalate
         ? nimboBooking.reasonCode ?? "nimbo_human_review_required"
         : null,
+      ...(decision.serviceInterest ? { treatment: decision.serviceInterest } : {}),
+      ...(decision.patientGoal ? { patient_goal: decision.patientGoal } : {}),
+      objection: decision.objection === "none" ? null : decision.objection,
+      pending_question: decision.pendingQuestion,
+      last_question_asked: decision.pendingQuestion,
+      ...(decision.conversationSummary
+        ? { conversation_summary: decision.conversationSummary }
+        : {}),
+      ...(decision.bookingDate
+        ? { appointment_date_preference: decision.bookingDate }
+        : {}),
+      ...(decision.bookingTime
+        ? { appointment_time_preference: decision.bookingTime }
+        : {}),
       last_ai_analysis: {
         intent: decision.intent,
         action: decision.action,
         operator: decision.operator,
         confidence: decision.confidence,
         reasonCode: decision.reasonCode,
+        commercialStage: decision.commercialStage,
+        leadTemperature: decision.leadTemperature,
+        serviceInterest: decision.serviceInterest,
+        patientGoal: decision.patientGoal,
+        objection: decision.objection,
+        nextBestAction: decision.nextBestAction,
+        pendingQuestion: decision.pendingQuestion,
+        conversationSummary: decision.conversationSummary,
         bookingDate: decision.bookingDate,
         bookingTime: decision.bookingTime,
         bookingDaypart: decision.bookingDaypart,
@@ -1379,16 +1497,43 @@ async function processTextMessage(input: {
 
   await updateConversation(conversation.id, {
     last_intent: decision.intent,
-    next_action: decision.action,
+    stage: decision.action === "escalate" ? "human_review" : decision.commercialStage,
+    next_action: decision.nextBestAction,
     clinical_risk: clinicalRisk,
     priority,
     human_review_reason: decision.action === "escalate" ? decision.reasonCode : null,
+    ...(decision.serviceInterest ? { treatment: decision.serviceInterest } : {}),
+    ...(decision.patientGoal ? { patient_goal: decision.patientGoal } : {}),
+    objection: decision.objection === "none" ? null : decision.objection,
+    pending_question: decision.pendingQuestion,
+    last_question_asked: decision.pendingQuestion,
+    ...(decision.conversationSummary
+      ? { conversation_summary: decision.conversationSummary }
+      : {}),
+    ...(decision.bookingDate
+      ? { appointment_date_preference: decision.bookingDate }
+      : {}),
+    ...(decision.bookingTime
+      ? { appointment_time_preference: decision.bookingTime }
+      : {}),
     last_ai_analysis: {
       intent: decision.intent,
       action: decision.action,
       operator: decision.operator,
       confidence: decision.confidence,
       reasonCode: decision.reasonCode,
+      commercialStage: decision.commercialStage,
+      leadTemperature: decision.leadTemperature,
+      serviceInterest: decision.serviceInterest,
+      patientGoal: decision.patientGoal,
+      objection: decision.objection,
+      nextBestAction: decision.nextBestAction,
+      pendingQuestion: decision.pendingQuestion,
+      conversationSummary: decision.conversationSummary,
+      bookingDate: decision.bookingDate,
+      bookingTime: decision.bookingTime,
+      bookingDaypart: decision.bookingDaypart,
+      bookingConfirmedChoice: decision.bookingConfirmedChoice,
       model: decision.model ?? null,
     },
   });

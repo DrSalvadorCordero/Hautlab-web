@@ -11,6 +11,7 @@ const APP_SECRET =
   process.env.META_APP_SECRET ?? process.env.WHATSAPP_APP_SECRET ?? "";
 const META_APP_ID = process.env.META_APP_ID ?? "";
 const LEGACY_META_VERIFY_URL = "https://nuevo-zzys.vercel.app/api/meta-verify";
+const LEGACY_BRIDGE_HEADER = "x-hautlab-legacy-signature";
 const COMMAND_RELAY_URL =
   "https://mwnmopsybpvjnfnepadv.supabase.co/functions/v1/wa-command-router";
 const RELAY_SECRET_KEY = "relay_hmac_secret";
@@ -26,6 +27,15 @@ function verifyMetaSignatureLocally(rawBody: string, signatureHeader: string | n
   if (!APP_SECRET || !signatureHeader?.startsWith("sha256=")) return false;
   const receivedDigest = signatureHeader.slice("sha256=".length);
   const expectedDigest = createHmac("sha256", APP_SECRET)
+    .update(rawBody, "utf8")
+    .digest("hex");
+  return secureStringEqual(receivedDigest, expectedDigest);
+}
+
+function verifyLegacyBridge(rawBody: string, signatureHeader: string | null) {
+  if (!VERIFY_TOKEN || !signatureHeader?.startsWith("sha256=")) return false;
+  const receivedDigest = signatureHeader.slice("sha256=".length);
+  const expectedDigest = createHmac("sha256", VERIFY_TOKEN)
     .update(rawBody, "utf8")
     .digest("hex");
   return secureStringEqual(receivedDigest, expectedDigest);
@@ -248,7 +258,7 @@ export async function GET(request: NextRequest) {
         configuration: {
           metaAppId: Boolean(META_APP_ID),
           verifyToken: Boolean(VERIFY_TOKEN),
-          signatureVerification: APP_SECRET ? "local" : "secure-bridge",
+          signatureVerification: APP_SECRET ? "local" : "legacy-signed-bridge",
           orchestrator: "hautlab-command-center-internal",
         },
       },
@@ -284,8 +294,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-hub-signature-256");
+  const legacyBridgeSignature = request.headers.get(LEGACY_BRIDGE_HEADER);
+  const verifiedByLegacyBridge = verifyLegacyBridge(rawBody, legacyBridgeSignature);
 
-  if (!(await verifyMetaSignature(rawBody, signature))) {
+  if (!verifiedByLegacyBridge && !(await verifyMetaSignature(rawBody, signature))) {
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
 
@@ -299,7 +311,10 @@ export async function POST(request: NextRequest) {
   const summary = summarizeWebhook(payload);
   const incoming = extractInbound(payload);
   const origin = request.nextUrl.origin;
-  console.info("[whatsapp-webhook] verified event", summary);
+  console.info("[whatsapp-webhook] verified event", {
+    ...summary,
+    transport: verifiedByLegacyBridge ? "legacy-signed-bridge" : "meta-direct",
+  });
 
   after(async () => {
     try {

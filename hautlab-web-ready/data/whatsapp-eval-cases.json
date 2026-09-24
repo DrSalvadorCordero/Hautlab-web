@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-23-v7",
+  "version": "2026-09-23-v8",
   "cases": [
     {
       "id": "price_rino",
@@ -266,6 +266,171 @@
         "mustAvoid": [
           "ya quedó cancelada",
           "cancelé tu cita"
+        ]
+      }
+    },
+    {
+      "id": "v8_cold_quote_only",
+      "message": "Solo estoy cotizando. Cuánto cuesta la rinomodelación?",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "exploring",
+        "leadTemperature": "cold",
+        "objection": "none",
+        "nextBestAction": "answer",
+        "mustInclude": [
+          "5,400"
+        ],
+        "mustAvoid": [
+          "¿Quieres agendar?",
+          "aprovecha",
+          "últimos lugares"
+        ]
+      }
+    },
+    {
+      "id": "v8_hot_ready_to_book",
+      "message": "Me interesa la rinomodelación y quiero hacerlo esta semana. ¿Cómo agendo?",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "ready_to_book",
+        "leadTemperature": "hot",
+        "objection": "none",
+        "nextBestAction": "ask_date",
+        "serviceInterest": "rino",
+        "mustInclude": [
+          "día"
+        ],
+        "mustAvoid": [
+          "descuento",
+          "promoción"
+        ]
+      }
+    },
+    {
+      "id": "v8_price_objection",
+      "message": "Se me hace caro el relleno de labios, ¿por qué cuesta eso?",
+      "expected": {
+        "intent": "pricing",
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "considering",
+        "leadTemperature": "warm",
+        "objection": "price",
+        "nextBestAction": "resolve_objection",
+        "serviceInterest": "labio",
+        "mustInclude": [
+          "5,400"
+        ],
+        "mustAvoid": [
+          "te lo dejo",
+          "descuento especial",
+          "última oportunidad"
+        ]
+      }
+    },
+    {
+      "id": "v8_comparison_objection",
+      "message": "En otra clínica me cobran menos por la nariz. ¿Qué diferencia hay?",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "considering",
+        "leadTemperature": "warm",
+        "objection": "comparison",
+        "nextBestAction": "resolve_objection",
+        "mustAvoid": [
+          "son peores",
+          "mala clínica",
+          "te igualo el precio"
+        ]
+      }
+    },
+    {
+      "id": "v8_fear_natural_result",
+      "message": "Me da miedo verme muy operada. Quiero algo natural en los labios.",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "considering",
+        "leadTemperature": "warm",
+        "objection": "fear",
+        "serviceInterest": "labio",
+        "patientGoal": "natural",
+        "mustAvoid": [
+          "garantizado",
+          "100%",
+          "no te va a pasar"
+        ]
+      }
+    },
+    {
+      "id": "v8_hot_tomorrow",
+      "message": "Quiero hacerme los labios mañana, ¿qué horarios tienes?",
+      "expected": {
+        "intent": "booking",
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "booking",
+        "leadTemperature": "hot",
+        "objection": "none",
+        "nextBestAction": "offer_slots",
+        "serviceInterest": "labio",
+        "mustAvoid": [
+          "se verificará",
+          "te avisamos",
+          "fecha de nacimiento"
+        ]
+      }
+    },
+    {
+      "id": "v8_timing_objection",
+      "message": "Sí me interesa, pero solo puedo los sábados.",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "leadTemperature": "hot",
+        "objection": "timing",
+        "nextBestAction": "ask_date",
+        "mustAvoid": [
+          "¿Quieres agendar?",
+          "promoción"
+        ]
+      }
+    },
+    {
+      "id": "v8_no_pressure_decline",
+      "message": "Gracias, por ahora no quiero agendar.",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "leadTemperature": "cold",
+        "nextBestAction": "close",
+        "mustAvoid": [
+          "¿Qué día",
+          "¿Quieres agendar?",
+          "aprovecha"
+        ]
+      }
+    },
+    {
+      "id": "v8_trust_question",
+      "message": "¿Cómo sé que el resultado no se verá exagerado?",
+      "expected": {
+        "action": "reply",
+        "operator": "none",
+        "commercialStage": "considering",
+        "leadTemperature": "warm",
+        "objection": "trust",
+        "nextBestAction": "resolve_objection",
+        "mustAvoid": [
+          "te garantizo",
+          "imposible",
+          "100%"
         ]
       }
     }
