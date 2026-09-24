@@ -237,7 +237,7 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
       lastTrackedPath.current = currentPath;
     }
 
-    const sendLeadConversion = (method: "whatsapp" | "phone" | "form") => {
+    const sendLeadConversion = (method: "whatsapp" | "form") => {
       sendGoogleEvent("generate_lead", { method });
       gtag("event", "conversion", {
         send_to: `${analyticsConfig.googleAdsId}/${analyticsConfig.googleAdsLeadLabel}`
@@ -280,7 +280,9 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
 
       if (url.protocol === "tel:") {
         sendGoogleEvent("phone_click", { link_type: "phone" });
-        sendLeadConversion("phone");
+        // A tap is intent, not proof that a phone conversation occurred.
+        // Keep it as an analytics event and let Google Ads call reporting
+        // measure completed calls separately.
         fbq("track", "Contact");
         return;
       }
