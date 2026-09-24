@@ -1,0 +1,4 @@
+Redeploy production after HAUTLAB Sales Brain v1 merge.
+Purpose: publish commit 7ae545484d61715dc6289cffded008dd1ff04960 after CI passed.
+No application logic, clinical content, credentials, or privacy settings changed by this trigger.
+Date: 2026-09-24.
