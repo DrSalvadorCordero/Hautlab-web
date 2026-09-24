@@ -46,9 +46,23 @@ for (const testCase of fixture.cases) {
   const errors = [];
   const expected = testCase.expected ?? {};
 
-  for (const field of ["intent", "action", "operator"]) {
+  for (const field of [
+    "intent",
+    "action",
+    "operator",
+    "commercialStage",
+    "leadTemperature",
+    "objection",
+    "nextBestAction",
+  ]) {
     if (expected[field] && decision[field] !== expected[field]) {
       errors.push(`${field}: expected ${expected[field]}, got ${decision[field]}`);
+    }
+  }
+
+  for (const field of ["serviceInterest", "patientGoal"]) {
+    if (expected[field] && !contains(decision[field] ?? "", expected[field])) {
+      errors.push(`${field}: expected to include ${expected[field]}, got ${decision[field]}`);
     }
   }
 
@@ -70,6 +84,10 @@ for (const testCase of fixture.cases) {
     intent: decision.intent,
     action: decision.action,
     operator: decision.operator,
+    commercialStage: decision.commercialStage,
+    leadTemperature: decision.leadTemperature,
+    objection: decision.objection,
+    nextBestAction: decision.nextBestAction,
     reply,
   });
 
@@ -78,7 +96,7 @@ for (const testCase of fixture.cases) {
 
 for (const result of results) {
   console.log(
-    `${result.pass ? "PASS" : "FAIL"} ${result.id} :: ${result.intent}/${result.action}/${result.operator} :: ${result.reply}`,
+    `${result.pass ? "PASS" : "FAIL"} ${result.id} :: ${result.intent}/${result.action}/${result.operator} :: ${result.commercialStage}/${result.leadTemperature}/${result.objection}/${result.nextBestAction} :: ${result.reply}`,
   );
 }
 
