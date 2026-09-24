@@ -170,6 +170,9 @@ export function calculateSalesQuote(input: SalesQuoteInput): SalesQuoteResult {
   if (input.leadTemperature === "hot" && !input.askedDiscount) {
     desiredDiscount = Math.max(0, desiredDiscount - 0.02);
   }
+  // No automatic package discount on financed/MSI pricing until the exact
+  // financing cost is available to the engine. The public MSI price remains valid.
+  if (input.paymentMode === "installments") desiredDiscount = 0;
   desiredDiscount = clamp(desiredDiscount, 0, 0.12);
 
   const paymentFeeRate = input.paymentMode === "preferential" ? 0 : CARD_FEE_RATE;
@@ -192,7 +195,10 @@ export function calculateSalesQuote(input: SalesQuoteInput): SalesQuoteResult {
   let targetPrice = roundUp100(publicValue - eligibleSubtotal * desiredDiscount);
   targetPrice = clamp(targetPrice, commercialFloor, publicValue);
 
-  let lastDiscount = clamp(desiredDiscount + (input.askedDiscount ? 0.025 : 0.015), 0, 0.15);
+  let lastDiscount =
+    input.paymentMode === "installments"
+      ? 0
+      : clamp(desiredDiscount + (input.askedDiscount ? 0.025 : 0.015), 0, 0.15);
   let lastConcession = roundUp100(publicValue - eligibleSubtotal * lastDiscount);
   lastConcession = clamp(lastConcession, commercialFloor, targetPrice);
 
