@@ -57,6 +57,40 @@ type TriageDecision = {
   reply: string;
   reasonCode: string;
   model?: string;
+  commercialStage:
+    | "exploring"
+    | "qualified"
+    | "considering"
+    | "ready_to_book"
+    | "booking"
+    | "scheduled"
+    | "post_booking"
+    | "human_review";
+  leadTemperature: "cold" | "warm" | "hot";
+  serviceInterest: string | null;
+  patientGoal: string | null;
+  objection:
+    | "none"
+    | "price"
+    | "trust"
+    | "fear"
+    | "timing"
+    | "comparison"
+    | "uncertainty"
+    | "other";
+  nextBestAction:
+    | "answer"
+    | "ask_goal"
+    | "frame_value"
+    | "resolve_objection"
+    | "offer_booking"
+    | "ask_date"
+    | "offer_slots"
+    | "collect_intake"
+    | "close"
+    | "escalate";
+  pendingQuestion: string | null;
+  conversationSummary: string | null;
   bookingDate: string | null;
   bookingTime: string | null;
   bookingDaypart: "none" | "morning" | "afternoon" | "evening" | "any";
@@ -1404,17 +1438,40 @@ async function processTextMessage(input: {
   if (nimboBooking.handled) {
     await updateConversation(conversation.id, {
       last_intent: "booking",
+      stage: nimboBooking.booked ? "scheduled" : "booking",
       clinical_risk: false,
       priority: nimboBooking.escalate ? "high" : "normal",
       human_review_reason: nimboBooking.escalate
         ? nimboBooking.reasonCode ?? "nimbo_human_review_required"
         : null,
+      ...(decision.serviceInterest ? { treatment: decision.serviceInterest } : {}),
+      ...(decision.patientGoal ? { patient_goal: decision.patientGoal } : {}),
+      objection: decision.objection === "none" ? null : decision.objection,
+      pending_question: decision.pendingQuestion,
+      last_question_asked: decision.pendingQuestion,
+      ...(decision.conversationSummary
+        ? { conversation_summary: decision.conversationSummary }
+        : {}),
+      ...(decision.bookingDate
+        ? { appointment_date_preference: decision.bookingDate }
+        : {}),
+      ...(decision.bookingTime
+        ? { appointment_time_preference: decision.bookingTime }
+        : {}),
       last_ai_analysis: {
         intent: decision.intent,
         action: decision.action,
         operator: decision.operator,
         confidence: decision.confidence,
         reasonCode: decision.reasonCode,
+        commercialStage: decision.commercialStage,
+        leadTemperature: decision.leadTemperature,
+        serviceInterest: decision.serviceInterest,
+        patientGoal: decision.patientGoal,
+        objection: decision.objection,
+        nextBestAction: decision.nextBestAction,
+        pendingQuestion: decision.pendingQuestion,
+        conversationSummary: decision.conversationSummary,
         bookingDate: decision.bookingDate,
         bookingTime: decision.bookingTime,
         bookingDaypart: decision.bookingDaypart,
@@ -1440,16 +1497,43 @@ async function processTextMessage(input: {
 
   await updateConversation(conversation.id, {
     last_intent: decision.intent,
-    next_action: decision.action,
+    stage: decision.action === "escalate" ? "human_review" : decision.commercialStage,
+    next_action: decision.nextBestAction,
     clinical_risk: clinicalRisk,
     priority,
     human_review_reason: decision.action === "escalate" ? decision.reasonCode : null,
+    ...(decision.serviceInterest ? { treatment: decision.serviceInterest } : {}),
+    ...(decision.patientGoal ? { patient_goal: decision.patientGoal } : {}),
+    objection: decision.objection === "none" ? null : decision.objection,
+    pending_question: decision.pendingQuestion,
+    last_question_asked: decision.pendingQuestion,
+    ...(decision.conversationSummary
+      ? { conversation_summary: decision.conversationSummary }
+      : {}),
+    ...(decision.bookingDate
+      ? { appointment_date_preference: decision.bookingDate }
+      : {}),
+    ...(decision.bookingTime
+      ? { appointment_time_preference: decision.bookingTime }
+      : {}),
     last_ai_analysis: {
       intent: decision.intent,
       action: decision.action,
       operator: decision.operator,
       confidence: decision.confidence,
       reasonCode: decision.reasonCode,
+      commercialStage: decision.commercialStage,
+      leadTemperature: decision.leadTemperature,
+      serviceInterest: decision.serviceInterest,
+      patientGoal: decision.patientGoal,
+      objection: decision.objection,
+      nextBestAction: decision.nextBestAction,
+      pendingQuestion: decision.pendingQuestion,
+      conversationSummary: decision.conversationSummary,
+      bookingDate: decision.bookingDate,
+      bookingTime: decision.bookingTime,
+      bookingDaypart: decision.bookingDaypart,
+      bookingConfirmedChoice: decision.bookingConfirmedChoice,
       model: decision.model ?? null,
     },
   });
