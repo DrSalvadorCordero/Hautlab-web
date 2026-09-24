@@ -250,7 +250,7 @@ async function main() {
   record(
     /urgencias/i.test(ambiguousEmergencyReply) &&
       !ambiguousEmergencyReply.includes("$6,300") &&
-      !ambiguousEmergencyReply.includes("$5,400"),
+      !ambiguousEmergencyReply.includes("$5,500"),
     "una señal de alarma siempre tiene prioridad sobre la respuesta comercial"
   );
 
@@ -266,7 +266,7 @@ async function main() {
   record(tearTroughAssistantResponse.status === 200, "el asistente responde la consulta inicial de ojeras");
   record(
     tearTroughReply.includes("$6,300") &&
-      tearTroughReply.includes("$5,400") &&
+      tearTroughReply.includes("$5,500") &&
       /6 (?:meses sin intereses|MSI)/i.test(tearTroughReply),
     "la respuesta de ojeras explica las tres condiciones de pago vigentes"
   );
@@ -293,7 +293,7 @@ async function main() {
   record(
     !/ácido hialurónico/i.test(legacyPriceReply) &&
       !legacyPriceReply.includes("$6,300") &&
-      !legacyPriceReply.includes("$5,400"),
+      !legacyPriceReply.includes("$5,500"),
     "la referencia aislada de $4,900 permanece neutral hasta identificar el servicio"
   );
 
@@ -314,7 +314,7 @@ async function main() {
   record(
     /verific/i.test(fillerLegacyPriceReply) &&
       fillerLegacyPriceReply.includes("$6,300") &&
-      fillerLegacyPriceReply.includes("$5,400") &&
+      fillerLegacyPriceReply.includes("$5,500") &&
       /6 (?:meses sin intereses|MSI)/i.test(fillerLegacyPriceReply),
     "la verificación contextual de relleno conserva las condiciones vigentes"
   );
