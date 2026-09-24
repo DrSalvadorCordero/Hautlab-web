@@ -1,9 +1,12 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
+const RELAY_SECRET_KEY = "relay_hmac_secret";
 
 const inputSchema = z.object({
   conversationId: z.string().uuid(),
@@ -62,6 +65,17 @@ async function supabaseRequest<T>(path: string, init?: RequestInit): Promise<T> 
   return payload as T;
 }
 
+async function getRelaySecret(): Promise<string> {
+  try {
+    const rows = await supabaseRequest<Array<{ secret_value?: string }>>(
+      `wa_internal_config?key=eq.${encodeURIComponent(RELAY_SECRET_KEY)}&select=secret_value&limit=1`,
+    );
+    return rows[0]?.secret_value?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
 async function patchConversation(conversationId: string, body: Record<string, unknown>) {
   await supabaseRequest(
     `wa_conversations?id=eq.${encodeURIComponent(conversationId)}`,
@@ -109,6 +123,82 @@ async function updateNotification(
   );
 }
 
+async function sendWhatsAppPayload(input: {
+  to: string;
+  template: Record<string, unknown>;
+  accessToken: string;
+  phoneNumberId: string;
+  graphVersion: string;
+  relaySecret: string;
+}) {
+  if (input.accessToken && input.phoneNumberId) {
+    const response = await fetch(
+      `https://graph.facebook.com/${input.graphVersion}/${input.phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${input.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: input.to,
+          type: "template",
+          template: input.template,
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      },
+    );
+    const text = await response.text();
+    let payload: Record<string, unknown> = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text) as Record<string, unknown>;
+      } catch {
+        payload = { raw: text };
+      }
+    }
+    return { ok: response.ok, status: response.status, payload };
+  }
+
+  const rawBody = JSON.stringify({
+    to: input.to,
+    message: {
+      type: "template",
+      template: input.template,
+    },
+  });
+  const signature = createHmac("sha256", input.relaySecret)
+    .update(rawBody, "utf8")
+    .digest("hex");
+  const response = await fetch(LEGACY_SEND_RELAY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-hautlab-relay-signature": `sha256=${signature}`,
+    },
+    body: rawBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12000),
+  });
+  const text = await response.text();
+  let relayPayload: Record<string, unknown> = {};
+  if (text) {
+    try {
+      relayPayload = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      relayPayload = { raw: text };
+    }
+  }
+  const messageId =
+    typeof relayPayload.messageId === "string" ? relayPayload.messageId : null;
+  const payload: Record<string, unknown> = messageId
+    ? { messages: [{ id: messageId }] }
+    : relayPayload;
+  return { ok: response.ok, status: response.status, payload };
+}
+
 async function appendHandoffEvent(input: {
   conversationId: string;
   eventType: "alert_queued" | "alert_sent" | "alert_failed";
@@ -129,7 +219,9 @@ async function appendHandoffEvent(input: {
 }
 
 export async function POST(request: NextRequest) {
-  const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ?? "";
+  const relaySecretForAuth = await getRelaySecret();
+  const internalKey =
+    process.env.HAUTLAB_INTERNAL_API_KEY?.trim() || relaySecretForAuth;
   const receivedKey = request.headers.get("x-hautlab-internal-key")?.trim() ?? "";
 
   if (!internalKey) {
@@ -164,13 +256,21 @@ export async function POST(request: NextRequest) {
     "alerta_escalamiento_humano";
   const languageCode =
     process.env.WHATSAPP_ESCALATION_TEMPLATE_LANGUAGE?.trim() || "es_MX";
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim() ?? "";
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ?? "";
+  const accessToken =
+    process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
+    process.env.WHATSAPP_TOKEN?.trim() ||
+    "";
+  const phoneNumberId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+    process.env.PHONE_NUMBER_ID?.trim() ||
+    "";
   const graphVersion = process.env.META_GRAPH_VERSION?.trim() || "v23.0";
+  const relaySecret =
+    accessToken && phoneNumberId ? "" : relaySecretForAuth || (await getRelaySecret());
 
-  if (!accessToken || !phoneNumberId) {
+  if ((!accessToken || !phoneNumberId) && !relaySecret) {
     return NextResponse.json(
-      { error: "WhatsApp Cloud API sending is not configured." },
+      { error: "WhatsApp sending is not configured." },
       { status: 503 },
     );
   }
@@ -230,37 +330,23 @@ export async function POST(request: NextRequest) {
       metadata: { reference, templateName, languageCode },
     });
 
-    const metaResponse = await fetch(
-      `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templatePayload),
-        cache: "no-store",
-      },
-    );
-
-    const metaText = await metaResponse.text();
-    let metaPayload: Record<string, unknown> = {};
-    if (metaText) {
-      try {
-        metaPayload = JSON.parse(metaText) as Record<string, unknown>;
-      } catch {
-        metaPayload = { raw: metaText };
-      }
-    }
-
-    if (!metaResponse.ok) {
+    const metaResult = await sendWhatsAppPayload({
+      to: target.phone_e164,
+      template: templatePayload.template,
+      accessToken,
+      phoneNumberId,
+      graphVersion,
+      relaySecret,
+    });
+    const metaPayload = metaResult.payload;
+    if (!metaResult.ok) {
       if (notificationId) {
         await updateNotification(notificationId, {
           status: "failed",
           attempts: 1,
           error_code: String(
             (metaPayload.error as Record<string, unknown> | undefined)?.code ??
-              metaResponse.status,
+              metaResult.status,
           ),
           error_message: String(
             (metaPayload.error as Record<string, unknown> | undefined)?.message ??
@@ -276,7 +362,7 @@ export async function POST(request: NextRequest) {
         conversationId,
         eventType: "alert_failed",
         actorKey: operator,
-        metadata: { reference, status: metaResponse.status },
+        metadata: { reference, status: metaResult.status },
       });
 
       return NextResponse.json(
