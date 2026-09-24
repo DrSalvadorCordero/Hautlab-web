@@ -16,13 +16,13 @@ const cabinaServiceKnowledge = cabinaServices
   .join("\n");
 
 const standardAestheticPriceReply =
-  "$5,400 MXN en modalidad preferencial o $6,300 MXN hasta 6 meses sin intereses, cuando el procedimiento corresponde a la tarifa estándar. Si el plan combina zonas o requiere una cotización distinta, el equipo la confirma antes de agendar.";
+  "$5,500 MXN en modalidad preferencial o $6,300 MXN hasta 6 meses sin intereses, cuando el procedimiento corresponde a la tarifa estándar. Si el plan combina zonas o requiere una cotización distinta, el equipo la confirma antes de agendar.";
 
 const tearTroughDiscoveryReply =
-  "Sí. Si predomina el hundimiento, las ojeras pueden valorarse con ácido hialurónico; si predominan pigmentación o bolsas, puede requerirse otra estrategia. El procedimiento estándar, cuando está indicado, es $5,400 preferencial o $6,300 hasta 6 MSI. ¿Qué notas más: hundimiento, color oscuro o bolsas?";
+  "Sí. Si predomina el hundimiento, las ojeras pueden valorarse con ácido hialurónico; si predominan pigmentación o bolsas, puede requerirse otra estrategia. El procedimiento estándar, cuando está indicado, es $5,500 preferencial o $6,300 hasta 6 MSI. ¿Qué notas más: hundimiento, color oscuro o bolsas?";
 
 const priceVerificationReply =
-  "La referencia de $4,900 MXN debe verificarla directamente el equipo antes de confirmarla. Para la tarifa estándar vigente, el procedimiento se maneja en $5,400 preferencial o $6,300 hasta 6 MSI.";
+  "La referencia de $4,900 MXN debe verificarla directamente el equipo antes de confirmarla. Para la tarifa estándar vigente, el procedimiento se maneja en $5,500 preferencial o $6,300 hasta 6 MSI.";
 
 const neutralPriceVerificationReply =
   "Esa referencia de $4,900 MXN debe verificarla directamente el equipo antes de confirmarla. ¿A qué tratamiento corresponde?";
