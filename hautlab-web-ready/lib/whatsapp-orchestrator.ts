@@ -382,6 +382,51 @@ function stripAttributionReference(text: string | null) {
   return cleaned || null;
 }
 
+
+function safeAttributionValue(value: unknown, maxLength = 512) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : null;
+}
+
+async function recordConfirmedAppointmentConversion(input: {
+  conversationId: string;
+  occurredAt: string;
+  appointmentSource: string;
+  nimboScheduleId: number;
+}) {
+  const rows = await supabaseRequest<
+    Array<{ first_attribution: Record<string, unknown> | null }>
+  >(
+    `wa_conversations?id=eq.${encodeURIComponent(input.conversationId)}&select=first_attribution&limit=1`,
+  );
+  const attribution = rows[0]?.first_attribution ?? null;
+
+  await supabaseRequest(
+    "growth_conversion_events?on_conflict=event_name,conversation_id",
+    {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({
+        event_name: "appointment_confirmed",
+        conversation_id: input.conversationId,
+        occurred_at: input.occurredAt,
+        source: safeAttributionValue(attribution?.source, 160),
+        medium: safeAttributionValue(attribution?.medium, 160),
+        campaign: safeAttributionValue(attribution?.campaign, 256),
+        content: safeAttributionValue(attribution?.content, 256),
+        term: safeAttributionValue(attribution?.term, 256),
+        gclid: safeAttributionValue(attribution?.gclid, 512),
+        fbclid: safeAttributionValue(attribution?.fbclid, 512),
+        msclkid: safeAttributionValue(attribution?.msclkid, 512),
+        appointment_source: input.appointmentSource,
+        nimbo_schedule_id: input.nimboScheduleId,
+        export_status: attribution?.gclid ? "pending" : "not_applicable",
+      }),
+    },
+  );
+}
+
 async function attachAttribution(
   conversation: ConversationRow,
   code: string,
@@ -772,13 +817,15 @@ async function finalizeBookingIntake(input: {
       cause: input.reason,
     });
 
+    const confirmedAt = new Date().toISOString();
+
     await updateConversation(input.conversation.id, {
       booking_full_name: input.fullName,
       booking_birth_date: input.birthDate,
       booking_email: input.email,
       booking_whatsapp: input.whatsapp,
       booking_reason: input.reason,
-      booking_intake_completed_at: new Date().toISOString(),
+      booking_intake_completed_at: confirmedAt,
       nimbo_person_id: patient.id,
       nimbo_schedule_id: schedule.id,
       nimbo_pending_slot: null,
@@ -786,12 +833,26 @@ async function finalizeBookingIntake(input: {
       nimbo_last_offered_slots: null,
       nimbo_offer_expires_at: null,
       appointment_status: "confirmed",
-      appointment_confirmed_at: new Date().toISOString(),
+      appointment_confirmed_at: confirmedAt,
       appointment_datetime: schedule.startsAt,
       appointment_source: "nimbo_whatsapp",
       stage: "scheduled",
       next_action: "confirm_registered_appointment",
     });
+
+    try {
+      await recordConfirmedAppointmentConversion({
+        conversationId: input.conversation.id,
+        occurredAt: confirmedAt,
+        appointmentSource: "nimbo_whatsapp",
+        nimboScheduleId: schedule.id,
+      });
+    } catch (error) {
+      console.error(
+        "growth_conversion_event_failed",
+        error instanceof Error ? error.message : "unknown_error",
+      );
+    }
 
     return {
       handled: true,
