@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getNimboAvailability,
+  getNimboConfig,
   isNimboReadyForAutobooking,
-  verifyNimboConnection,
 } from "@/lib/server/nimbo";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const config = await verifyNimboConnection();
+    const config = await getNimboConfig();
     const days = await getNimboAvailability({
       from: "2026-09-24",
       to: "2026-09-30",
