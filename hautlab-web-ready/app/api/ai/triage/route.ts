@@ -6,6 +6,7 @@ import {
   WHATSAPP_SAFETY_INSTRUCTIONS,
 } from "@/lib/whatsapp-prompt";
 import { loadWhatsAppAssistantContext } from "@/lib/whatsapp-context";
+import { calculateSalesQuote, formatMoney } from "@/lib/sales-brain";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,6 +85,14 @@ const modelDecisionSchema = z.object({
   bookingTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
   bookingDaypart: z.enum(["none", "morning", "afternoon", "evening", "any"]),
   bookingConfirmedChoice: z.boolean(),
+  pricingServices: z.array(z.enum([
+    "dermatology_consultation",
+    "upper_face_botulinum_toxin",
+    "hyaluronic_acid_one_syringe",
+  ])).max(8),
+  askedDiscount: z.boolean(),
+  paymentMode: z.enum(["unknown", "preferential", "card", "installments"]),
+  concessionStage: z.enum(["none", "package_presented", "final_presented"]),
 });
 
 type ModelDecision = z.infer<typeof modelDecisionSchema>;
@@ -193,6 +202,9 @@ function buildConversationInput(input: {
   sections.push(
     "Responde al ÚLTIMO mensaje del PACIENTE usando el historial y la memoria como contexto. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
     "Completa los campos comerciales de forma conservadora: usa solo señales presentes en el mensaje, historial o memoria. No inventes objetivo, servicio u objeción para llenar CRM.",
+    "pricingServices es exclusivamente para cotización determinista: añade una entrada por cada procedimiento estándar ACTUALMENTE solicitado. Para rinomodelación, labios, ojeras, mentón/contorno mandibular y pómulos/tercio medio usa hyaluronic_acid_one_syringe, una entrada por área. Para tercio superior usa upper_face_botulinum_toxin. Para consulta usa dermatology_consultation solo si forma parte explícita del plan. Si la cantidad de producto es especial, el servicio no está en esa lista o no puedes identificar con certeza el plan vigente, no inventes entradas.",
+    "askedDiscount=true solo si el paciente pide explícitamente bajar precio, mejor precio, descuento o equivalente. paymentMode solo se marca si se conoce; si no, unknown.",
+    "concessionStage describe lo que HAUTLAB ya hizo antes en el historial: none si aún no presentó un precio integral; package_presented si ya presentó un primer valor integral; final_presented si ya comunicó que era la última/mejor condición disponible. No avances de etapa por tu cuenta.",
     "conversationSummary debe ser una síntesis factual muy breve del estado actual de la conversación, útil para continuidad humana; no incluyas diagnósticos inferidos.",
     "Si la intención es booking, normaliza la preferencia vigente: bookingDate en YYYY-MM-DD si puede resolverse con certeza, bookingTime en HH:mm solo si hay hora exacta, y bookingDaypart para mañana/tarde/noche. bookingConfirmedChoice solo puede ser true cuando el paciente acepta de forma explícita un horario exacto previamente ofrecido por HAUTLAB; una preferencia inicial nunca cuenta como confirmación.",
   );
@@ -243,6 +255,115 @@ function hasUrgentRedFlag(message: string) {
     /perdi(?:da|) de conciencia/,
     /sangrado abundante/,
   ].some((pattern) => pattern.test(normalized));
+}
+
+type GuardedDecision = ModelDecision & {
+  salesQuote?: {
+    publicValue: number;
+    offeredPrice: number;
+    targetPrice: number;
+    lastConcession: number;
+    commercialFloor: number;
+    closeScore: number;
+    offerStage: "package" | "final" | "hold";
+  };
+};
+
+function compressPricingServices(services: ModelDecision["pricingServices"]) {
+  const counts = new Map<string, number>();
+  for (const serviceKey of services) {
+    counts.set(serviceKey, (counts.get(serviceKey) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([serviceKey, quantity]) => ({
+    serviceKey: serviceKey as
+      | "dermatology_consultation"
+      | "upper_face_botulinum_toxin"
+      | "hyaluronic_acid_one_syringe",
+    quantity,
+  }));
+}
+
+function applySalesPricingGuardrail(decision: ModelDecision): GuardedDecision {
+  if (
+    decision.action === "escalate" ||
+    decision.intent !== "pricing" ||
+    decision.pricingServices.length < 2
+  ) {
+    return decision;
+  }
+
+  const objection =
+    decision.objection === "other" ? "uncertainty" : decision.objection;
+  const paymentMode =
+    decision.paymentMode === "unknown" ? "preferential" : decision.paymentMode;
+
+  const quote = calculateSalesQuote({
+    items: compressPricingServices(decision.pricingServices),
+    leadTemperature: decision.leadTemperature,
+    objection,
+    history: "new",
+    askedDiscount: decision.askedDiscount,
+    prepaid: false,
+    paymentMode,
+  });
+
+  const hasPackageBenefit = quote.targetPrice < quote.publicValue;
+  let offeredPrice = quote.targetPrice;
+  let offerStage: "package" | "final" | "hold" = "package";
+
+  if (decision.concessionStage === "package_presented" && decision.askedDiscount) {
+    offeredPrice = quote.lastConcession;
+    offerStage = "final";
+  } else if (decision.concessionStage === "final_presented") {
+    offeredPrice = quote.lastConcession;
+    offerStage = "hold";
+  }
+
+  let reply: string;
+  if (offerStage === "hold") {
+    reply =
+      "Ese es el valor integral disponible para ese plan: " +
+      formatMoney(offeredPrice) +
+      ". Las tarifas individuales se mantienen.";
+  } else if (hasPackageBenefit) {
+    const label = decision.pricingServices.length === 2 ? "ambos tratamientos" : "los tratamientos";
+    reply =
+      "El valor preferencial individual de " +
+      label +
+      " suma " +
+      formatMoney(quote.publicValue) +
+      ". Al realizarlos dentro del mismo plan, el valor integral queda en " +
+      formatMoney(offeredPrice) +
+      ".";
+  } else {
+    reply =
+      "El valor del plan es " +
+      formatMoney(quote.publicValue) +
+      ". En esta modalidad las tarifas se mantienen.";
+  }
+
+  if (decision.leadTemperature === "hot" && decision.nextBestAction !== "escalate") {
+    reply += " ¿Qué día te funciona?";
+  } else if (
+    decision.leadTemperature === "warm" &&
+    decision.nextBestAction === "offer_booking"
+  ) {
+    reply += " Si te funciona esa propuesta, puedo revisar disponibilidad.";
+  }
+
+  return {
+    ...decision,
+    reply,
+    salesQuote: {
+      publicValue: quote.publicValue,
+      offeredPrice,
+      targetPrice: quote.targetPrice,
+      lastConcession: quote.lastConcession,
+      commercialFloor: quote.commercialFloor,
+      closeScore: quote.closeScore,
+      offerStage,
+    },
+  };
 }
 
 function applyHardGuardrails(
@@ -520,6 +641,27 @@ export async function POST(request: NextRequest) {
                   enum: ["none", "morning", "afternoon", "evening", "any"],
                 },
                 bookingConfirmedChoice: { type: "boolean" },
+                pricingServices: {
+                  type: "array",
+                  maxItems: 8,
+                  items: {
+                    type: "string",
+                    enum: [
+                      "dermatology_consultation",
+                      "upper_face_botulinum_toxin",
+                      "hyaluronic_acid_one_syringe",
+                    ],
+                  },
+                },
+                askedDiscount: { type: "boolean" },
+                paymentMode: {
+                  type: "string",
+                  enum: ["unknown", "preferential", "card", "installments"],
+                },
+                concessionStage: {
+                  type: "string",
+                  enum: ["none", "package_presented", "final_presented"],
+                },
               },
               required: [
                 "intent",
@@ -540,6 +682,10 @@ export async function POST(request: NextRequest) {
                 "bookingTime",
                 "bookingDaypart",
                 "bookingConfirmedChoice",
+                "pricingServices",
+                "askedDiscount",
+                "paymentMode",
+                "concessionStage",
               ],
             },
           },
@@ -583,7 +729,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decision = applyHardGuardrails(parsedDecision.data, message);
+    const decision = applySalesPricingGuardrail(
+      applyHardGuardrails(parsedDecision.data, message),
+    );
 
     return NextResponse.json(
       {
