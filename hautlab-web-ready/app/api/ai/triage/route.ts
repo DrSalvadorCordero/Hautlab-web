@@ -11,6 +11,8 @@ import { calculateSalesQuote, formatMoney } from "@/lib/sales-brain";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const RELAY_SECRET_KEY = "relay_hmac_secret";
+
 const inputSchema = z.object({
   message: z.string().trim().min(1).max(4000),
   city: z.enum(["merida", "cdmx", "unknown"]).default("unknown"),
@@ -122,6 +124,34 @@ function getSupabaseConfig() {
     process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
   )?.trim();
   return url && key ? { url, key } : null;
+}
+
+async function getInternalApiKey(): Promise<string> {
+  const configured = process.env.HAUTLAB_INTERNAL_API_KEY?.trim();
+  if (configured) return configured;
+
+  const config = getSupabaseConfig();
+  if (!config) return "";
+
+  try {
+    const response = await fetch(
+      `${config.url}/rest/v1/wa_internal_config?key=eq.${encodeURIComponent(RELAY_SECRET_KEY)}&select=secret_value&limit=1`,
+      {
+        headers: {
+          apikey: config.key,
+          Authorization: `Bearer ${config.key}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (!response.ok) return "";
+    const rows = (await response.json()) as Array<{ secret_value?: string }>;
+    return rows[0]?.secret_value?.trim() || "";
+  } catch {
+    return "";
+  }
 }
 
 async function loadConversationHistory(conversationId?: string): Promise<HistoryRow[]> {
@@ -443,7 +473,7 @@ function applyHardGuardrails(
 }
 
 export async function POST(request: NextRequest) {
-  const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ?? "";
+  const internalKey = await getInternalApiKey();
   const receivedKey = request.headers.get("x-hautlab-internal-key")?.trim() ?? "";
   const isProduction = process.env.VERCEL_ENV === "production";
 
