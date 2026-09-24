@@ -24,11 +24,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  const internalKey = process.env.HAUTLAB_INTERNAL_API_KEY?.trim();
-  if (!internalKey) {
-    return NextResponse.json({ error: "Internal API key missing." }, { status: 503 });
-  }
-
   const origin = request.nextUrl.origin;
   const results = [];
 
@@ -37,7 +32,6 @@ export async function GET(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-hautlab-internal-key": internalKey,
         "x-hautlab-eval-default-prompt": "1",
       },
       body: JSON.stringify({
