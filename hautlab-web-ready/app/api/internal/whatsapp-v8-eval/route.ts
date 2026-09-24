@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "x-hautlab-internal-key": internalKey,
+        "x-hautlab-eval-default-prompt": "1",
       },
       body: JSON.stringify({
         message: testCase.message,
