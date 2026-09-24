@@ -43,6 +43,43 @@ const modelDecisionSchema = z.object({
     "human_requested",
     "uncertain",
   ]),
+  commercialStage: z.enum([
+    "exploring",
+    "qualified",
+    "considering",
+    "ready_to_book",
+    "booking",
+    "scheduled",
+    "post_booking",
+    "human_review",
+  ]),
+  leadTemperature: z.enum(["cold", "warm", "hot"]),
+  serviceInterest: z.string().trim().max(120).nullable(),
+  patientGoal: z.string().trim().max(240).nullable(),
+  objection: z.enum([
+    "none",
+    "price",
+    "trust",
+    "fear",
+    "timing",
+    "comparison",
+    "uncertainty",
+    "other",
+  ]),
+  nextBestAction: z.enum([
+    "answer",
+    "ask_goal",
+    "frame_value",
+    "resolve_objection",
+    "offer_booking",
+    "ask_date",
+    "offer_slots",
+    "collect_intake",
+    "close",
+    "escalate",
+  ]),
+  pendingQuestion: z.string().trim().max(240).nullable(),
+  conversationSummary: z.string().trim().max(400).nullable(),
   bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   bookingTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
   bookingDaypart: z.enum(["none", "morning", "afternoon", "evening", "any"]),
@@ -155,6 +192,8 @@ function buildConversationInput(input: {
 
   sections.push(
     "Responde al ÚLTIMO mensaje del PACIENTE usando el historial y la memoria como contexto. No reinicies la conversación, no repitas saludos ya enviados y no vuelvas a preguntar datos que ya aparecen arriba.",
+    "Completa los campos comerciales de forma conservadora: usa solo señales presentes en el mensaje, historial o memoria. No inventes objetivo, servicio u objeción para llenar CRM.",
+    "conversationSummary debe ser una síntesis factual muy breve del estado actual de la conversación, útil para continuidad humana; no incluyas diagnósticos inferidos.",
     "Si la intención es booking, normaliza la preferencia vigente: bookingDate en YYYY-MM-DD si puede resolverse con certeza, bookingTime en HH:mm solo si hay hora exacta, y bookingDaypart para mañana/tarde/noche. bookingConfirmedChoice solo puede ser true cuando el paciente acepta de forma explícita un horario exacto previamente ofrecido por HAUTLAB; una preferencia inicial nunca cuenta como confirmación.",
   );
 
@@ -220,6 +259,9 @@ function applyHardGuardrails(
         ? "Ese síntoma requiere valoración médica inmediata. Acude a un servicio de urgencias ahora; también voy a avisar al Dr. Salvador."
         : "Quiero que esto lo revise directamente el Dr. Salvador antes de darte una indicación. Voy a escalar la conversación.",
       reasonCode: "adverse_event_boundary",
+      commercialStage: "human_review",
+      nextBestAction: "escalate",
+      pendingQuestion: null,
     };
   }
 
@@ -231,6 +273,9 @@ function applyHardGuardrails(
       reply:
         "Quiero que esto lo revise directamente el Dr. Salvador antes de darte una indicación. Voy a escalar la conversación.",
       reasonCode: "clinical_boundary",
+      commercialStage: "human_review",
+      nextBestAction: "escalate",
+      pendingQuestion: null,
     };
   }
 
@@ -242,6 +287,9 @@ function applyHardGuardrails(
       reply:
         "Voy a pasar tu conversación con Karen para que revise personalmente lo ocurrido y le dé seguimiento.",
       reasonCode: "complaint_boundary",
+      commercialStage: "human_review",
+      nextBestAction: "escalate",
+      pendingQuestion: null,
     };
   }
 
@@ -252,6 +300,9 @@ function applyHardGuardrails(
       operator: "karen",
       reply: "Claro. Voy a pasar tu conversación con una persona del equipo.",
       reasonCode: "human_requested",
+      commercialStage: "human_review",
+      nextBestAction: "escalate",
+      pendingQuestion: null,
     };
   }
 
@@ -263,6 +314,7 @@ function applyHardGuardrails(
       reply:
         "Para orientarte correctamente, necesito un poco más de contexto antes de continuar.",
       reasonCode: "uncertain",
+      nextBestAction: decision.patientGoal ? "answer" : "ask_goal",
     };
   }
 
@@ -382,6 +434,75 @@ export async function POST(request: NextRequest) {
                     "uncertain",
                   ],
                 },
+                commercialStage: {
+                  type: "string",
+                  enum: [
+                    "exploring",
+                    "qualified",
+                    "considering",
+                    "ready_to_book",
+                    "booking",
+                    "scheduled",
+                    "post_booking",
+                    "human_review",
+                  ],
+                },
+                leadTemperature: {
+                  type: "string",
+                  enum: ["cold", "warm", "hot"],
+                },
+                serviceInterest: {
+                  anyOf: [
+                    { type: "string", maxLength: 120 },
+                    { type: "null" },
+                  ],
+                },
+                patientGoal: {
+                  anyOf: [
+                    { type: "string", maxLength: 240 },
+                    { type: "null" },
+                  ],
+                },
+                objection: {
+                  type: "string",
+                  enum: [
+                    "none",
+                    "price",
+                    "trust",
+                    "fear",
+                    "timing",
+                    "comparison",
+                    "uncertainty",
+                    "other",
+                  ],
+                },
+                nextBestAction: {
+                  type: "string",
+                  enum: [
+                    "answer",
+                    "ask_goal",
+                    "frame_value",
+                    "resolve_objection",
+                    "offer_booking",
+                    "ask_date",
+                    "offer_slots",
+                    "collect_intake",
+                    "close",
+                    "escalate",
+                  ],
+                },
+                pendingQuestion: {
+                  anyOf: [
+                    { type: "string", maxLength: 240 },
+                    { type: "null" },
+                  ],
+                },
+                conversationSummary: {
+                  anyOf: [
+                    { type: "string", maxLength: 400 },
+                    { type: "null" },
+                  ],
+                },
                 bookingDate: {
                   anyOf: [
                     { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
@@ -407,6 +528,14 @@ export async function POST(request: NextRequest) {
                 "confidence",
                 "reply",
                 "reasonCode",
+                "commercialStage",
+                "leadTemperature",
+                "serviceInterest",
+                "patientGoal",
+                "objection",
+                "nextBestAction",
+                "pendingQuestion",
+                "conversationSummary",
                 "bookingDate",
                 "bookingTime",
                 "bookingDaypart",
