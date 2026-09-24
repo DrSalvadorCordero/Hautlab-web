@@ -1,0 +1,4 @@
+Redeploy official HAUTLAB production after Vercel Pro upgrade.
+Purpose: publish current main including WhatsApp Brain v8 and Sales Brain.
+No application logic, pricing, clinical logic, secrets, environment variables, or privacy settings changed.
+Date: 2026-09-24.
