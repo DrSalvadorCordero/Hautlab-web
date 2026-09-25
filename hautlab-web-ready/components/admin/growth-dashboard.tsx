@@ -14,7 +14,7 @@ import {
   TrendingUp,
   WalletCards
 } from "lucide-react";
-import type { GrowthOsSnapshot } from "@/lib/growth-os-db";
+import type { GrowthOsSnapshot } from "@/lib/growth-os-types";
 
 const money = new Intl.NumberFormat("es-MX", {
   style: "currency",
