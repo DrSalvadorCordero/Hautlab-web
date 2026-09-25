@@ -140,6 +140,7 @@ type WebhookPayload = {
   }>;
 };
 
+const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
 const RELAY_SECRET_KEY = "relay_hmac_secret";
 
 function getSupabaseConfig() {
@@ -1369,51 +1370,92 @@ async function sendWhatsAppText(to: string, body: string) {
     "";
   const graphVersion = process.env.META_GRAPH_VERSION?.trim() || "v25.0";
 
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("whatsapp_send_not_configured");
+  if (accessToken && phoneNumberId) {
+    const response = await fetch(
+      `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "text",
+          text: { body, preview_url: false },
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12000),
+      },
+    );
+
+    const text = await response.text();
+    let payload: {
+      messages?: Array<{ id?: string }>;
+      error?: { code?: number; type?: string };
+    } = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text) as typeof payload;
+      } catch {
+        payload = {};
+      }
+    }
+
+    if (!response.ok) {
+      console.error("[whatsapp-orchestrator] Meta send failed", {
+        status: response.status,
+        code: payload.error?.code ?? null,
+        type: payload.error?.type ?? null,
+      });
+      throw new Error(`whatsapp_send_failed:${response.status}`);
+    }
+    return payload.messages?.[0]?.id ?? null;
   }
 
-  const response = await fetch(
-    `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body, preview_url: false },
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(12000),
-    },
-  );
+  const relaySecret = await getRelaySecret();
+  if (!relaySecret) throw new Error("whatsapp_send_not_configured");
 
-  const text = await response.text();
-  let payload: {
-    messages?: Array<{ id?: string }>;
-    error?: { code?: number; type?: string };
-  } = {};
-  if (text) {
+  const rawBody = JSON.stringify({
+    to,
+    message: {
+      type: "text",
+      text: { body, preview_url: false },
+    },
+  });
+  const signature = createHmac("sha256", relaySecret)
+    .update(rawBody, "utf8")
+    .digest("hex");
+
+  const relayResponse = await fetch(LEGACY_SEND_RELAY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-hautlab-relay-signature": `sha256=${signature}`,
+    },
+    body: rawBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12000),
+  });
+
+  const relayText = await relayResponse.text();
+  let relayPayload: { messageId?: string; error?: string } = {};
+  if (relayText) {
     try {
-      payload = JSON.parse(text) as typeof payload;
+      relayPayload = JSON.parse(relayText) as typeof relayPayload;
     } catch {
-      payload = {};
+      relayPayload = {};
     }
   }
-
-  if (!response.ok) {
-    console.error("[whatsapp-orchestrator] Meta send failed", {
-      status: response.status,
-      code: payload.error?.code ?? null,
-      type: payload.error?.type ?? null,
+  if (!relayResponse.ok) {
+    console.error("[whatsapp-orchestrator] relay send failed", {
+      status: relayResponse.status,
+      error: relayPayload.error ?? null,
     });
-    throw new Error(`whatsapp_send_failed:${response.status}`);
+    throw new Error(`whatsapp_relay_failed:${relayResponse.status}`);
   }
-  return payload.messages?.[0]?.id ?? null;
+  return relayPayload.messageId ?? null;
 }
 
 async function triggerEscalation(input: {
