@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CreateOrganization } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { BadgeDollarSign, Bot, CalendarDays, Clock3, FileText, Users } from "lucide-react";
+import { BadgeDollarSign, Bot, CalendarDays, Clock3, FileText, TrendingUp, Users } from "lucide-react";
 import { getAttendanceAccess } from "@/lib/attendance-access";
 import { isClerkConfigured } from "@/lib/auth-config";
 
@@ -11,6 +11,7 @@ const modules = [
   { title: "Usuarios internos", description: "Invita y administra al personal autorizado.", href: "/admin/usuarios", icon: Users, status: "Disponible" },
   { title: "Agenda y anticipos", description: "Disponibilidad, confirmación de cita y control de pagos.", href: "/admin/configuracion", icon: CalendarDays, status: "Siguiente fase" },
   { title: "Asistente HAUTLAB", description: "Base de conocimiento, uso y preguntas frecuentes.", href: "/admin/configuracion", icon: Bot, status: "En producción" },
+  { title: "Growth OS", description: "Embudo, atribución y revenue desde marketing hasta cita confirmada.", href: "/admin/growth", icon: TrendingUp, status: "En producción" },
   { title: "Sales Brain", description: "Precio objetivo, última concesión, piso interno y estrategia de cierre por caso.", href: "/admin/ventas", icon: BadgeDollarSign, status: "En producción" },
   { title: "Motor editorial", description: "Borradores médicos con revisión antes de publicar.", href: "/admin/configuracion", icon: FileText, status: "Pendiente" }
 ];

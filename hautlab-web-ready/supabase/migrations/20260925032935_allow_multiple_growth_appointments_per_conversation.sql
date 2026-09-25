@@ -1,0 +1,2 @@
+alter table public.growth_conversion_events
+  drop constraint if exists growth_conversion_events_event_name_conversation_id_key;
