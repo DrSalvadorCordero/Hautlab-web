@@ -237,6 +237,7 @@ function buildConversationInput(input: {
     "concessionStage describe lo que HAUTLAB ya hizo antes en el historial: none si aún no presentó un precio integral; package_presented si ya presentó un primer valor integral; final_presented si ya comunicó que era la última/mejor condición disponible. No avances de etapa por tu cuenta.",
     "conversationSummary debe ser una síntesis factual muy breve del estado actual de la conversación, útil para continuidad humana; no incluyas diagnósticos inferidos.",
     "Si la intención es booking, normaliza la preferencia vigente: bookingDate en YYYY-MM-DD si puede resolverse con certeza, bookingTime en HH:mm solo si hay hora exacta, y bookingDaypart para mañana/tarde/noche. bookingConfirmedChoice solo puede ser true cuando el paciente acepta de forma explícita un horario exacto previamente ofrecido por HAUTLAB; una preferencia inicial nunca cuenta como confirmación.",
+    "En fechas de agenda, bookingDate es la fuente canónica. Si mencionas día de la semana y fecha en reply, ambos deben corresponder exactamente a bookingDate. No cambies una fecha ya aceptada por inferencia conversacional; si el historial contiene fechas incompatibles, pide aclaración en vez de inventar o alternar entre fechas.",
   );
 
   return sections.join("\n\n");
@@ -311,6 +312,31 @@ function compressPricingServices(services: ModelDecision["pricingServices"]) {
       | "hyaluronic_acid_one_syringe",
     quantity,
   }));
+}
+
+function applyBookingDateReplyGuardrail<T extends ModelDecision>(decision: T): T {
+  if (decision.intent !== "booking" || !decision.bookingDate || !decision.reply) {
+    return decision;
+  }
+
+  const match = decision.bookingDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return decision;
+
+  const value = new Date(`${decision.bookingDate}T12:00:00Z`);
+  if (!Number.isFinite(value.getTime())) return decision;
+
+  const weekday = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Merida",
+    weekday: "long",
+  }).format(value);
+  const canonicalShort = `${weekday} ${match[3]}/${match[2]}`;
+
+  const reply = decision.reply.replace(
+    /\b(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)\s+\d{1,2}[\/-]\d{1,2}\b/giu,
+    canonicalShort,
+  );
+
+  return reply === decision.reply ? decision : { ...decision, reply };
 }
 
 function applySalesPricingGuardrail(decision: ModelDecision): GuardedDecision {
@@ -759,8 +785,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const decision = applySalesPricingGuardrail(
-      applyHardGuardrails(parsedDecision.data, message),
+    const decision = applyBookingDateReplyGuardrail(
+      applySalesPricingGuardrail(
+        applyHardGuardrails(parsedDecision.data, message),
+      ),
     );
 
     return NextResponse.json(
