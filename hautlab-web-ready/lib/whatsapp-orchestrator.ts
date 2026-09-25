@@ -403,7 +403,7 @@ async function recordConfirmedAppointmentConversion(input: {
   const attribution = rows[0]?.first_attribution ?? null;
 
   await supabaseRequest(
-    "growth_conversion_events?on_conflict=event_name,conversation_id",
+    "growth_conversion_events?on_conflict=event_name,nimbo_schedule_id",
     {
       method: "POST",
       headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
