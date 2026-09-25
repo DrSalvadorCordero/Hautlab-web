@@ -287,6 +287,25 @@ async function updateConversation(
   );
 }
 
+async function markAutomationFailure(metaMessageId: string) {
+  const rows = await supabaseRequest<Array<{ conversation_id: string }>>(
+    `wa_messages?meta_message_id=eq.${encodeURIComponent(metaMessageId)}&direction=eq.inbound&select=conversation_id&limit=1`,
+  );
+  const conversationId = rows[0]?.conversation_id;
+  if (!conversationId) return;
+
+  await updateConversation(conversationId, {
+    stage: "human_review",
+    priority: "high",
+    next_action: "human_review",
+    human_review_reason: "automation_delivery_failure",
+    handoff_status: "required",
+    bot_paused: true,
+    bot_paused_at: new Date().toISOString(),
+    bot_paused_by: "system",
+  });
+}
+
 async function storeDraft(input: {
   conversationId: string;
   body: string;
@@ -1749,6 +1768,17 @@ export async function processWhatsAppWebhook(payload: unknown, origin: string) {
             message: error instanceof Error ? error.message : "unknown_error",
             type: message.type,
           });
+          try {
+            await markAutomationFailure(message.id);
+          } catch (recoveryError) {
+            console.error("[whatsapp-orchestrator] failure recovery failed", {
+              message:
+                recoveryError instanceof Error
+                  ? recoveryError.message
+                  : "unknown_recovery_error",
+              type: message.type,
+            });
+          }
         }
       }
     }
