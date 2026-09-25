@@ -8,6 +8,7 @@
 - Mérida location page: https://www.hautlabmx.com/merida
 - Clinical dermatology in Mérida: https://www.hautlabmx.com/merida/dermatologia
 - Medical aesthetics in Mérida: https://www.hautlabmx.com/merida/medicina-estetica
+- HAUTLAB Journal: https://www.hautlabmx.com/journal
 - Publications: https://www.hautlabmx.com/publicaciones
 - Doctor Instagram: https://www.instagram.com/dr.salvadorcordero
 - HAUTLAB Instagram: https://www.instagram.com/hautlabmx
@@ -29,7 +30,7 @@
 ## Clinical dermatology pages
 - Acne: https://www.hautlabmx.com/procedimientos/acne
 - Acne scars: https://www.hautlabmx.com/procedimientos/cicatrices-acne
-- Rosacea: https://www.hautlabmx.com/procedimientos/rosacea
+- Rosacea — canonical page for evaluation, differential diagnosis, symptoms, risks, treatment context and FAQs in Mérida: https://www.hautlabmx.com/procedimientos/rosacea
 - Melasma: https://www.hautlabmx.com/procedimientos/melasma
 - Alopecia and hair loss: https://www.hautlabmx.com/procedimientos/alopecia
 - Warts: https://www.hautlabmx.com/procedimientos/verrugas
