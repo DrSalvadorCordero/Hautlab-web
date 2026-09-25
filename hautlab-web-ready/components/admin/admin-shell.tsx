@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { BadgeDollarSign, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, Settings, Sparkles, Users } from "lucide-react";
+import { BadgeDollarSign, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
 
 const baseNavigation = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, managerOnly: false },
