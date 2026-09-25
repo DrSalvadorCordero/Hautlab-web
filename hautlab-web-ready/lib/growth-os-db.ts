@@ -1,6 +1,8 @@
 import "server-only";
 
-import type { GrowthOsSnapshot } from "@/lib/growth-os-types";\n\nexport class GrowthOsDatabaseError extends Error {
+import type { GrowthOsSnapshot } from "@/lib/growth-os-types";
+
+export class GrowthOsDatabaseError extends Error {
   constructor(message: string, public status = 500) {
     super(message);
     this.name = "GrowthOsDatabaseError";
