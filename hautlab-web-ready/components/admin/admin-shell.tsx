@@ -10,6 +10,7 @@ const baseNavigation = [
   { href: "/admin/personal", label: "Personal", icon: BriefcaseBusiness, managerOnly: true },
   { href: "/admin/facturacion", label: "Facturación", icon: FileText, managerOnly: true },
   { href: "/admin/whatsapp", label: "WhatsApp IA", icon: Bot, managerOnly: true },
+  { href: "/admin/growth", label: "Growth OS", icon: TrendingUp, managerOnly: true },
   { href: "/admin/ventas", label: "Sales Brain", icon: BadgeDollarSign, managerOnly: true },
   { href: "/admin/cabina", label: "Cabina", icon: Sparkles, managerOnly: true },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users, managerOnly: true },
