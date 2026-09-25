@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CreateOrganization } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { BadgeDollarSign, Bot, CalendarDays, Clock3, FileText, Users } from "lucide-react";
+import { BadgeDollarSign, Bot, CalendarDays, Clock3, FileText, TrendingUp, Users } from "lucide-react";
 import { getAttendanceAccess } from "@/lib/attendance-access";
 import { isClerkConfigured } from "@/lib/auth-config";
 
