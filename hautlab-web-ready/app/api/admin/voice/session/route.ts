@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         session: {
-          type: "live",
           model: "gpt-live-1",
           instructions: buildVoiceReceptionInstructions(),
           audio: {
@@ -76,8 +75,17 @@ export async function POST(request: NextRequest) {
 
     const text = await response.text();
     if (!response.ok) {
+      let providerError: { error?: { type?: string; code?: string; param?: string } } = {};
+      try {
+        providerError = JSON.parse(text) as typeof providerError;
+      } catch {
+        providerError = {};
+      }
       console.error("[hautlab-voice] live session creation failed", {
         status: response.status,
+        type: providerError.error?.type ?? null,
+        code: providerError.error?.code ?? null,
+        param: providerError.error?.param ?? null,
       });
       return json({ error: "live_session_failed" }, { status: response.status });
     }
