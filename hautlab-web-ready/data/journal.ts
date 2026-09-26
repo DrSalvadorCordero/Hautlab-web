@@ -9,6 +9,15 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "por-que-vuelve-melasma",
+    title: "¿Por qué vuelve el melasma? Recurrencia, fotoprotección y mantenimiento",
+    description:
+      "El melasma puede mejorar y reaparecer. Una guía clínica sobre recurrencia, luz visible, fotoprotección, mantenimiento y el papel real de los procedimientos.",
+    category: "Dermatología clínica",
+    preparedAt: "2026-09-25",
+    readingTime: "9 min"
+  },
+  {
     slug: "relleno-vs-bioestimulador",
     title: "Relleno vs bioestimulador: qué cambia y cuándo tiene sentido cada uno",
     description:
