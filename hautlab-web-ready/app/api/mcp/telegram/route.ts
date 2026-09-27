@@ -22,6 +22,7 @@ import {
   sendTelegramMessage,
   telegramConfigured,
 } from "@/lib/telegram";
+import { getTelegramSecret } from "@/lib/telegram-secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,16 +72,13 @@ function bridgeKey(request: NextRequest) {
   );
 }
 
-function expectedBridgeKey() {
-  return (
-    process.env.TELEGRAM_MCP_KEY?.trim() ||
-    process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ||
-    ""
-  );
+async function expectedBridgeKey() {
+  const dedicated = await getTelegramSecret("mcp_key", { allowMissing: true });
+  return dedicated || process.env.HAUTLAB_INTERNAL_API_KEY?.trim() || "";
 }
 
-function validBridgeKey(request: NextRequest) {
-  const expected = expectedBridgeKey();
+async function validBridgeKey(request: NextRequest) {
+  const expected = await expectedBridgeKey();
   return Boolean(expected) && safeSecretEqual(bridgeKey(request), expected);
 }
 
@@ -281,7 +279,8 @@ async function callTool(name: string, args: any) {
   switch (name) {
     case "telegram_connection_status": {
       const links = await listTelegramOperatorLinks().catch(() => []);
-      const [bot, webhook] = telegramConfigured()
+      const configured = await telegramConfigured();
+      const [bot, webhook] = configured
         ? await Promise.all([
             getTelegramBotIdentity().catch(() => null),
             getTelegramWebhookInfo().catch(() => null),
@@ -289,7 +288,7 @@ async function callTool(name: string, args: any) {
         : [null, null];
 
       return textContent({
-        telegram_configured: telegramConfigured(),
+        telegram_configured: configured,
         database_configured: telegramDatabaseConfigured(),
         bot: bot
           ? {
@@ -503,7 +502,7 @@ async function handleRpc(request: RpcRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!validBridgeKey(request)) {
+  if (!(await validBridgeKey(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -528,7 +527,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!validBridgeKey(request)) {
+  if (!(await validBridgeKey(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -538,7 +537,7 @@ export async function GET(request: NextRequest) {
       server: SERVER_NAME,
       version: SERVER_VERSION,
       transport: "streamable-http",
-      telegram_configured: telegramConfigured(),
+      telegram_configured: await telegramConfigured(),
       database_configured: telegramDatabaseConfigured(),
     },
     { headers: { "Cache-Control": "no-store" } },
@@ -546,7 +545,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!validBridgeKey(request)) {
+  if (!(await validBridgeKey(request))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   return new NextResponse(null, { status: 204 });
