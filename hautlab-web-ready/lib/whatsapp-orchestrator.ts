@@ -127,14 +127,21 @@ type IncomingMessage = {
   };
 };
 
+type HumanMessageEcho = IncomingMessage & {
+  to?: string;
+  timestamp?: string;
+};
+
 type WebhookValue = {
   contacts?: Array<{ profile?: { name?: string }; wa_id?: string }>;
   messages?: IncomingMessage[];
+  message_echoes?: HumanMessageEcho[];
 };
 
 type WebhookPayload = {
   entry?: Array<{
     changes?: Array<{
+      field?: string;
       value?: WebhookValue;
     }>;
   }>;
@@ -149,6 +156,12 @@ function getSupabaseConfig() {
     process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
   )?.trim();
   return url && key ? { url, key } : null;
+}
+
+function normalizePhone(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const digits = value.replace(/\D/g, "");
+  return /^[1-9][0-9]{9,14}$/.test(digits) ? digits : null;
 }
 
 async function supabaseRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -287,6 +300,24 @@ async function updateConversation(
   );
 }
 
+async function currentAutomationMode(
+  conversationId: string,
+): Promise<AiMode> {
+  const rows = await supabaseRequest<
+    Array<{ ai_mode: "inherit" | AiMode; bot_paused: boolean }>
+  >(
+    `wa_conversations?id=eq.${encodeURIComponent(conversationId)}&select=ai_mode,bot_paused&limit=1`,
+  );
+  const conversation = rows[0];
+  if (!conversation || conversation.bot_paused) return "off";
+
+  const settings = await getSettings();
+  if (settings.emergency_stop) return "off";
+  return conversation.ai_mode === "inherit"
+    ? settings.global_mode
+    : conversation.ai_mode;
+}
+
 async function storeDraft(input: {
   conversationId: string;
   body: string;
@@ -349,6 +380,70 @@ function extractText(message: IncomingMessage): string | null {
     );
   }
   return null;
+}
+
+function echoSentAt(timestamp: string | undefined, fallback: string) {
+  if (!timestamp) return fallback;
+  const unixSeconds = Number(timestamp);
+  if (!Number.isFinite(unixSeconds) || unixSeconds <= 0) return fallback;
+  const parsed = new Date(unixSeconds * 1000);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed.toISOString();
+}
+
+async function processHumanMessageEcho(message: HumanMessageEcho) {
+  const patientPhone = normalizePhone(message.to);
+  const metaMessageId =
+    typeof message.id === "string" ? message.id.trim() : "";
+  if (!patientPhone || !metaMessageId) return;
+
+  const now = new Date().toISOString();
+  const sentAt = echoSentAt(message.timestamp, now);
+
+  // Pause first. This makes a WhatsApp Business App reply take ownership before
+  // we do any secondary bookkeeping, so an AI response already being prepared
+  // sees bot_paused on its final pre-send check.
+  const conversations = await supabaseRequest<Array<{ id: string }>>(
+    "wa_conversations?on_conflict=phone&select=id",
+    {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+      body: JSON.stringify({
+        phone: patientPhone,
+        bot_paused: true,
+        bot_paused_at: now,
+        bot_paused_by: "whatsapp_business_app",
+        paused_reason: "manual_reply",
+        last_team_message_at: sentAt,
+        last_message_at: sentAt,
+        updated_at: now,
+      }),
+    },
+  );
+  const conversationId = conversations[0]?.id;
+  if (!conversationId) throw new Error("human_echo_conversation_upsert_failed");
+
+  const body =
+    extractText(message) ??
+    `[${message.type || "mensaje"} enviado desde WhatsApp Business]`;
+
+  await supabaseRequest(
+    "wa_messages?on_conflict=meta_message_id&select=id",
+    {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        meta_message_id: metaMessageId,
+        direction: "outbound",
+        sender_type: "human",
+        body,
+        message_type: message.type || "unknown",
+        status: "sent",
+        approved_by: "whatsapp_business_app",
+        sent_at: sentAt,
+      }),
+    },
+  );
 }
 
 type AttributionTouchpoint = {
@@ -1278,13 +1373,16 @@ async function deliverNimboFlow(input: {
 }) {
   if (!input.result.handled) return false;
 
-  if (input.mode === "supervised") {
+  const currentMode = await currentAutomationMode(input.conversation.id);
+  if (currentMode === "off" || currentMode === "manual") return true;
+
+  if (currentMode === "supervised") {
     await storeDraft({
       conversationId: input.conversation.id,
       body: input.result.reply,
       proposedBy: "nimbo-scheduler",
     });
-  } else if (input.mode === "automatic") {
+  } else if (currentMode === "automatic") {
     const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply);
     await storeSentMessage({
       conversationId: input.conversation.id,
@@ -1520,9 +1618,8 @@ async function processTextMessage(input: {
     if (!isLatest) return;
   }
 
-  const settings = await getSettings();
-  const mode = effectiveMode(conversation, settings);
-  if (mode === "off" || mode === "manual" || conversation.bot_paused) return;
+  const mode = await currentAutomationMode(conversation.id);
+  if (mode === "off" || mode === "manual") return;
 
   // Media and unsupported message types are never interpreted autonomously.
   if (!text) {
@@ -1541,6 +1638,8 @@ async function processTextMessage(input: {
         reasonCode: "media_requires_human_review",
       },
     });
+    const currentMode = await currentAutomationMode(conversation.id);
+    if (currentMode === "off" || currentMode === "manual") return;
     const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement);
     await storeSentMessage({
       conversationId: conversation.id,
@@ -1579,6 +1678,9 @@ async function processTextMessage(input: {
     city: conversation.city,
     conversationId: conversation.id,
   });
+
+  const postTriageMode = await currentAutomationMode(conversation.id);
+  if (postTriageMode === "off" || postTriageMode === "manual") return;
 
   const nimboBooking = await handleNimboBooking({
     conversation,
@@ -1701,6 +1803,8 @@ async function processTextMessage(input: {
   });
 
   if (decision.action === "escalate") {
+    const currentMode = await currentAutomationMode(conversation.id);
+    if (currentMode === "off" || currentMode === "manual") return;
     const operator: OperatorKey = decision.operator === "karen" ? "karen" : "doctor";
     if (decision.reply) {
       const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply);
@@ -1722,7 +1826,8 @@ async function processTextMessage(input: {
 
   if (!decision.reply) return;
 
-  if (mode === "supervised") {
+  const finalMode = await currentAutomationMode(conversation.id);
+  if (finalMode === "supervised") {
     await storeDraft({
       conversationId: conversation.id,
       body: decision.reply,
@@ -1731,7 +1836,7 @@ async function processTextMessage(input: {
     return;
   }
 
-  if (mode === "automatic") {
+  if (finalMode === "automatic") {
     const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply);
     await storeSentMessage({
       conversationId: conversation.id,
@@ -1753,8 +1858,22 @@ export async function processWhatsAppWebhook(payload: unknown, origin: string) {
     for (const change of entry.changes ?? []) {
       const value = change.value;
       if (!value) continue;
-      const profileName = value.contacts?.[0]?.profile?.name;
 
+      if (change.field === "smb_message_echoes") {
+        for (const echo of value.message_echoes ?? []) {
+          try {
+            await processHumanMessageEcho(echo);
+          } catch (error) {
+            // Never log message text, patient phone numbers, or message IDs.
+            console.error("[whatsapp-orchestrator] human echo processing failed", {
+              message: error instanceof Error ? error.message : "unknown_error",
+              type: echo.type,
+            });
+          }
+        }
+      }
+
+      const profileName = value.contacts?.[0]?.profile?.name;
       for (const message of value.messages ?? []) {
         try {
           await processTextMessage({ origin, message, profileName });
