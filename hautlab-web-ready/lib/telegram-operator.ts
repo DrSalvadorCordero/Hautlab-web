@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import {
   cancelOperatorDigestJobs,
   cancelTelegramJob,
@@ -16,6 +17,42 @@ import {
 import { getNimboConfig } from "@/lib/server/nimbo";
 
 const TIME_ZONE = "America/Merida";
+const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
+const RELAY_SECRET_KEY = "relay_hmac_secret";
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = (
+    process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
+  )?.trim();
+  return url && key ? { url, key } : null;
+}
+
+async function getRelaySecret() {
+  const config = getSupabaseConfig();
+  if (!config) return "";
+
+  const response = await fetch(
+    `${config.url}/rest/v1/wa_internal_config?key=eq.${encodeURIComponent(
+      RELAY_SECRET_KEY,
+    )}&select=secret_value&limit=1`,
+    {
+      headers: {
+        apikey: config.key,
+        Authorization: `Bearer ${config.key}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+    },
+  );
+  if (!response.ok) return "";
+
+  const rows = (await response.json().catch(() => [])) as Array<{
+    secret_value?: string;
+  }>;
+  return rows[0]?.secret_value?.trim() || "";
+}
 
 function localParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -224,45 +261,98 @@ export async function getTelegramPatientSearchText(query: string) {
 }
 
 async function sendWhatsAppText(toRaw: string, body: string) {
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim() ?? "";
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ?? "";
-  const graphVersion = process.env.META_GRAPH_VERSION?.trim() || "v23.0";
-  if (!accessToken || !phoneNumberId) throw new Error("whatsapp_not_configured");
-
   const to = toRaw.replace(/\D/g, "");
   if (!/^[1-9][0-9]{9,14}$/.test(to)) throw new Error("invalid_patient_phone");
 
-  const response = await fetch(
-    `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body, preview_url: false },
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(15_000),
-    },
-  );
+  const accessToken =
+    process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
+    process.env.WHATSAPP_TOKEN?.trim() ||
+    "";
+  const phoneNumberId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+    process.env.PHONE_NUMBER_ID?.trim() ||
+    "";
+  const graphVersion = process.env.META_GRAPH_VERSION?.trim() || "v25.0";
 
-  const payload = (await response.json().catch(() => ({}))) as {
-    messages?: Array<{ id?: string }>;
-    error?: { code?: unknown };
-  };
-  if (!response.ok) {
-    console.error("[telegram-command] WhatsApp send failed", {
-      status: response.status,
-      code: payload.error?.code ?? null,
-    });
-    throw new Error(`whatsapp_send_${response.status}`);
+  if (accessToken && phoneNumberId) {
+    const response = await fetch(
+      `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "text",
+          text: { body, preview_url: false },
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      },
+    );
+
+    const payload = (await response.json().catch(() => ({}))) as {
+      messages?: Array<{ id?: string }>;
+      error?: { code?: unknown; type?: string };
+    };
+    if (!response.ok) {
+      console.error("[telegram-command] Meta WhatsApp send failed", {
+        status: response.status,
+        code: payload.error?.code ?? null,
+        type: payload.error?.type ?? null,
+      });
+      throw new Error(`whatsapp_send_${response.status}`);
+    }
+    return payload.messages?.[0]?.id ?? null;
   }
-  return payload.messages?.[0]?.id ?? null;
+
+  const relaySecret = await getRelaySecret();
+  if (!relaySecret) throw new Error("whatsapp_send_not_configured");
+
+  const rawBody = JSON.stringify({
+    to,
+    message: {
+      type: "text",
+      text: { body, preview_url: false },
+    },
+  });
+  const signature = createHmac("sha256", relaySecret)
+    .update(rawBody, "utf8")
+    .digest("hex");
+
+  const relayResponse = await fetch(LEGACY_SEND_RELAY_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-hautlab-relay-signature": `sha256=${signature}`,
+    },
+    body: rawBody,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
+  });
+
+  const relayText = await relayResponse.text();
+  let relayPayload: { messageId?: string; error?: string } = {};
+  if (relayText) {
+    try {
+      relayPayload = JSON.parse(relayText) as typeof relayPayload;
+    } catch {
+      relayPayload = {};
+    }
+  }
+
+  if (!relayResponse.ok) {
+    console.error("[telegram-command] WhatsApp relay send failed", {
+      status: relayResponse.status,
+      error: relayPayload.error ?? null,
+    });
+    throw new Error(`whatsapp_relay_${relayResponse.status}`);
+  }
+
+  return relayPayload.messageId ?? null;
 }
 
 function dateKeyAfterDays(days: number) {
@@ -357,14 +447,17 @@ function parseRef(value: string) {
 }
 
 export async function getTelegramStatusText(operatorKey?: TelegramOperatorKey) {
-  const [nimbo, jobs] = await Promise.all([
+  const [nimbo, jobs, relaySecret] = await Promise.all([
     getNimboConfig().catch(() => null),
     listTelegramJobs(operatorKey, 50).catch(() => []),
+    getRelaySecret().catch(() => ""),
   ]);
   const whatsappReady = Boolean(
-    process.env.WHATSAPP_ACCESS_TOKEN?.trim() &&
-      process.env.WHATSAPP_PHONE_NUMBER_ID?.trim(),
-  );
+    (process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
+      process.env.WHATSAPP_TOKEN?.trim()) &&
+      (process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ||
+        process.env.PHONE_NUMBER_ID?.trim()),
+  ) || Boolean(relaySecret);
   return [
     "HAUTLAB · ESTADO",
     "Telegram: activo",
