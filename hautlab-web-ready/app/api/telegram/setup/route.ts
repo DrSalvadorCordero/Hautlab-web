@@ -27,13 +27,10 @@ async function authorized(request: NextRequest) {
   return safeSecretEqual(bearer || direct, expected);
 }
 
-function webhookUrl(request: NextRequest) {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    request.nextUrl.origin;
-  const url = new URL("/api/telegram/webhook", base);
-  if (url.protocol !== "https:") throw new Error("telegram_webhook_requires_https");
-  return url.toString();
+function webhookUrl(_request: NextRequest) {
+  // Telegram does not follow redirects for webhook delivery. Use the canonical
+  // production host directly so /api/telegram/webhook never returns 308.
+  return "https://www.hautlabmx.com/api/telegram/webhook";
 }
 
 function noStore(value: unknown, status = 200) {
