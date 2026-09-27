@@ -8,13 +8,14 @@ import {
 } from "@/lib/telegram-db";
 import { getTelegramTodaySummaryText } from "@/lib/telegram-operator";
 import { safeSecretEqual, sendTelegramMessage } from "@/lib/telegram";
+import { getTelegramSecret } from "@/lib/telegram-secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function cronSecret() {
-  return process.env.CRON_SECRET?.trim() ?? "";
+async function cronSecret() {
+  return getTelegramSecret("cron_key", { allowMissing: true });
 }
 
 function authorized(request: NextRequest, expected: string) {
@@ -60,10 +61,8 @@ async function executeJob(job: TelegramJob) {
 }
 
 export async function GET(request: NextRequest) {
-  const expected = cronSecret();
+  const expected = await cronSecret();
 
-  // Vercel may register the cron before production secrets are added.
-  // Stay inert (and avoid noisy 401s) until CRON_SECRET exists.
   if (!expected) {
     return NextResponse.json(
       { ok: true, enabled: false },

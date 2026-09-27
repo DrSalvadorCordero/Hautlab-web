@@ -1,28 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  deleteTelegramWebhook,
   getTelegramBotIdentity,
   getTelegramWebhookInfo,
   safeSecretEqual,
   setTelegramCommands,
   setTelegramWebhook,
-  deleteTelegramWebhook,
   telegramConfigured,
 } from "@/lib/telegram";
 import { telegramDatabaseConfigured } from "@/lib/telegram-db";
+import { getTelegramSecret } from "@/lib/telegram-secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function setupKey() {
-  return (
-    process.env.TELEGRAM_SETUP_KEY?.trim() ||
-    process.env.HAUTLAB_INTERNAL_API_KEY?.trim() ||
-    ""
-  );
+async function setupKey() {
+  const dedicated = await getTelegramSecret("setup_key", { allowMissing: true });
+  return dedicated || process.env.HAUTLAB_INTERNAL_API_KEY?.trim() || "";
 }
 
-function authorized(request: NextRequest) {
-  const expected = setupKey();
+async function authorized(request: NextRequest) {
+  const expected = await setupKey();
   if (!expected) return false;
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   const direct = request.headers.get("x-hautlab-setup-key");
@@ -46,17 +44,20 @@ function noStore(value: unknown, status = 200) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!authorized(request)) return noStore({ error: "unauthorized" }, 401);
+  if (!(await authorized(request))) {
+    return noStore({ error: "unauthorized" }, 401);
+  }
 
-  const bot = telegramConfigured()
+  const configured = await telegramConfigured();
+  const bot = configured
     ? await getTelegramBotIdentity().catch(() => null)
     : null;
-  const webhook = telegramConfigured()
+  const webhook = configured
     ? await getTelegramWebhookInfo().catch(() => null)
     : null;
 
   return noStore({
-    configured: telegramConfigured(),
+    configured,
     database_configured: telegramDatabaseConfigured(),
     bot: bot
       ? {
@@ -77,8 +78,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!authorized(request)) return noStore({ error: "unauthorized" }, 401);
-  if (!telegramConfigured()) {
+  if (!(await authorized(request))) {
+    return noStore({ error: "unauthorized" }, 401);
+  }
+  if (!(await telegramConfigured())) {
     return noStore({ error: "telegram_not_configured" }, 503);
   }
 
@@ -112,8 +115,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!authorized(request)) return noStore({ error: "unauthorized" }, 401);
-  if (!telegramConfigured()) {
+  if (!(await authorized(request))) {
+    return noStore({ error: "unauthorized" }, 401);
+  }
+  if (!(await telegramConfigured())) {
     return noStore({ error: "telegram_not_configured" }, 503);
   }
 

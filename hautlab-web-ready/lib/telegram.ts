@@ -1,4 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
+import {
+  getTelegramSecret,
+  hasTelegramSecret,
+} from "@/lib/telegram-secrets";
 
 export type TelegramBotIdentity = {
   id: number;
@@ -14,19 +18,22 @@ type TelegramApiResponse<T> = {
   error_code?: number;
 };
 
-function botToken() {
-  return process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "";
+async function botToken() {
+  return getTelegramSecret("bot_token");
 }
 
-export function telegramWebhookSecret() {
-  return process.env.TELEGRAM_WEBHOOK_SECRET?.trim() ?? "";
+export async function telegramWebhookSecret() {
+  return getTelegramSecret("webhook_secret", { allowMissing: true });
 }
 
-export function telegramConfigured() {
-  return Boolean(botToken());
+export async function telegramConfigured() {
+  return hasTelegramSecret("bot_token");
 }
 
-export function safeSecretEqual(candidate: string | null | undefined, expected: string | null | undefined) {
+export function safeSecretEqual(
+  candidate: string | null | undefined,
+  expected: string | null | undefined,
+) {
   if (!candidate || !expected) return false;
   const a = Buffer.from(candidate);
   const b = Buffer.from(expected);
@@ -38,7 +45,7 @@ async function telegramApi<T>(
   body?: Record<string, unknown>,
   timeoutMs = 15_000,
 ): Promise<T> {
-  const token = botToken();
+  const token = await botToken();
   if (!token) throw new Error("telegram_not_configured");
 
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -105,7 +112,7 @@ export async function setTelegramCommands() {
 }
 
 export async function setTelegramWebhook(webhookUrl: string) {
-  const secret = telegramWebhookSecret();
+  const secret = await telegramWebhookSecret();
   if (!secret) throw new Error("telegram_webhook_secret_not_configured");
 
   const url = new URL(webhookUrl);

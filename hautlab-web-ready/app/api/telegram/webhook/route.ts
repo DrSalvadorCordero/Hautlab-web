@@ -14,6 +14,7 @@ import {
   sendTelegramMessage,
   telegramWebhookSecret,
 } from "@/lib/telegram";
+import { getTelegramSecret } from "@/lib/telegram-secrets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,12 +47,13 @@ function ok() {
   );
 }
 
-function pairingSecret(operatorKey: TelegramOperatorKey) {
-  const specific =
+async function pairingSecret(operatorKey: TelegramOperatorKey) {
+  return getTelegramSecret(
     operatorKey === "doctor"
-      ? process.env.TELEGRAM_PAIRING_SECRET_DOCTOR?.trim()
-      : process.env.TELEGRAM_PAIRING_SECRET_KAREN?.trim();
-  return specific || process.env.TELEGRAM_PAIRING_SECRET?.trim() || "";
+      ? "pairing_secret_doctor"
+      : "pairing_secret_karen",
+    { allowMissing: true },
+  );
 }
 
 function parsePairCommand(text: string) {
@@ -86,7 +88,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const expectedSecret = telegramWebhookSecret();
+  const expectedSecret = await telegramWebhookSecret();
   const providedSecret = request.headers.get("x-telegram-bot-api-secret-token");
 
   if (!expectedSecret || !safeSecretEqual(providedSecret, expectedSecret)) {
@@ -165,7 +167,7 @@ export async function POST(request: NextRequest) {
         return ok();
       }
 
-      const expectedPairingSecret = pairingSecret(pair.operatorKey);
+      const expectedPairingSecret = await pairingSecret(pair.operatorKey);
       if (
         !expectedPairingSecret ||
         !safeSecretEqual(pair.secret, expectedPairingSecret)
