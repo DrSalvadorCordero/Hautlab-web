@@ -13,10 +13,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function authorized(request: NextRequest) {
-  const expected = process.env.CRON_SECRET?.trim() ?? "";
+function cronSecret() {
+  return process.env.CRON_SECRET?.trim() ?? "";
+}
+
+function authorized(request: NextRequest, expected: string) {
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return Boolean(expected) && safeSecretEqual(bearer, expected);
+  return safeSecretEqual(bearer, expected);
 }
 
 function nextRecurringRun(job: TelegramJob) {
@@ -57,7 +60,18 @@ async function executeJob(job: TelegramJob) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!authorized(request)) {
+  const expected = cronSecret();
+
+  // Vercel may register the cron before production secrets are added.
+  // Stay inert (and avoid noisy 401s) until CRON_SECRET exists.
+  if (!expected) {
+    return NextResponse.json(
+      { ok: true, enabled: false },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  if (!authorized(request, expected)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -71,6 +85,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         ok: true,
+        enabled: true,
         due: due.length,
         sent: results.filter((item) => item.status === "sent").length,
         failed: results.filter((item) => item.status === "failed").length,
