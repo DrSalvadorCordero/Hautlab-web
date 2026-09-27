@@ -1859,15 +1859,17 @@ export async function processWhatsAppWebhook(payload: unknown, origin: string) {
       const value = change.value;
       if (!value) continue;
 
-      for (const echo of value.message_echoes ?? []) {
-        try {
-          await processHumanMessageEcho(echo);
-        } catch (error) {
-          // Never log message text, patient phone numbers, or message IDs.
-          console.error("[whatsapp-orchestrator] human echo processing failed", {
-            message: error instanceof Error ? error.message : "unknown_error",
-            type: echo.type,
-          });
+      if (change.field === "smb_message_echoes") {
+        for (const echo of value.message_echoes ?? []) {
+          try {
+            await processHumanMessageEcho(echo);
+          } catch (error) {
+            // Never log message text, patient phone numbers, or message IDs.
+            console.error("[whatsapp-orchestrator] human echo processing failed", {
+              message: error instanceof Error ? error.message : "unknown_error",
+              type: echo.type,
+            });
+          }
         }
       }
 
