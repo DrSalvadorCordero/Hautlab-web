@@ -1,7 +1,7 @@
 import {
   buildNimboAppointmentPayload,
   extractNimboPatientCandidates,
-  findUniqueNimboScheduleIdByTimes,
+  findNimboScheduleIdsByTimes,
   resolveNimboPatientByBirthDate,
   verifyNimboSchedulePayload,
 } from "./nimbo-contract";
@@ -1132,26 +1132,33 @@ async function reconcileExistingNimboSchedule(
   config: NimboIntegrationConfig,
   input: { personId: number; startsAt: string; endsAt: string },
 ) {
+  let payload: unknown;
   try {
-    const payload = await nimboFetch(
+    payload = await nimboFetch(
       config,
       `people/${input.personId}/consultation_schedules`,
     );
-    const scheduleId = findUniqueNimboScheduleIdByTimes(payload, {
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-    });
-    if (!scheduleId) return null;
-    console.info("nimbo_schedule_reconcile", { result: "candidate_found" });
-    return verifyNimboScheduleById(config, {
-      scheduleId,
-      personId: input.personId,
-      startsAt: input.startsAt,
-      endsAt: input.endsAt,
-    });
   } catch {
     return null;
   }
+
+  const scheduleIds = findNimboScheduleIdsByTimes(payload, {
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+  });
+  if (scheduleIds.length === 0) return null;
+  if (scheduleIds.length > 1) {
+    console.info("nimbo_schedule_reconcile", { result: "ambiguous" });
+    throw new NimboApiError("nimbo_schedule_reconciliation_ambiguous", 409);
+  }
+
+  console.info("nimbo_schedule_reconcile", { result: "candidate_found" });
+  return verifyNimboScheduleById(config, {
+    scheduleId: scheduleIds[0],
+    personId: input.personId,
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+  });
 }
 
 export async function createNimboSchedule(input: {
