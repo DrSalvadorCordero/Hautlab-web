@@ -106,6 +106,30 @@ test("duplicate reconciliation only accepts one exact schedule", () => {
   );
 });
 
+test("duplicate reconciliation refuses multiple exact matches", () => {
+  const payload = {
+    consultation_schedules: [
+      {
+        id: 70,
+        starts_at: "2027-02-10T09:00:00-06:00",
+        ends_at: "2027-02-10T09:30:00-06:00",
+      },
+      {
+        id: 72,
+        starts_at: "2027-02-10T15:00:00Z",
+        ends_at: "2027-02-10T15:30:00Z",
+      },
+    ],
+  };
+  assert.equal(
+    findUniqueNimboScheduleIdByTimes(payload, {
+      startsAt: "2027-02-10T15:00:00Z",
+      endsAt: "2027-02-10T15:30:00Z",
+    }),
+    null,
+  );
+});
+
 test("appointment payload makes reminder/payment behavior explicit", () => {
   const body = buildNimboAppointmentPayload({
     cause: "Valoración",
