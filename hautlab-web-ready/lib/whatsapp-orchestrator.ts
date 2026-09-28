@@ -1001,7 +1001,8 @@ async function finalizeBookingIntake(input: {
 
     if (
       message.includes("schedule_verification_failed") ||
-      message.includes("schedule_creation_unverified")
+      message.includes("schedule_creation_unverified") ||
+      message.includes("schedule_reconciliation_ambiguous")
     ) {
       await updateConversation(input.conversation.id, {
         appointment_status: "pending_confirmation",
