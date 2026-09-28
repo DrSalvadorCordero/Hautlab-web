@@ -2,11 +2,12 @@ import { createHmac } from "node:crypto";
 import {
   createNimboPatient,
   createNimboSchedule,
-  findNimboPatientByPhone,
+  findNimboPatientByPhoneAndBirthDate,
   getNimboAvailability,
   getNimboConfig,
   isNimboReadyForAutobooking,
   updateNimboPatientDemographics,
+  verifyNimboPatientIdentity,
 } from "@/lib/server/nimbo";
 
 type AiMode = "off" | "manual" | "supervised" | "automatic";
@@ -883,11 +884,20 @@ async function finalizeBookingIntake(input: {
   try {
     let patient =
       input.conversation.nimbo_person_id
-        ? { id: input.conversation.nimbo_person_id, fullName: input.fullName }
-        : await findNimboPatientByPhone(input.whatsapp);
+        ? await verifyNimboPatientIdentity(input.conversation.nimbo_person_id, {
+            phone: input.whatsapp,
+            birthDate: input.birthDate,
+          })
+        : await findNimboPatientByPhoneAndBirthDate(
+            input.whatsapp,
+            input.birthDate,
+          );
 
     if (!patient && input.whatsapp !== input.conversation.phone) {
-      patient = await findNimboPatientByPhone(input.conversation.phone);
+      patient = await findNimboPatientByPhoneAndBirthDate(
+        input.conversation.phone,
+        input.birthDate,
+      );
     }
 
     if (!patient) {
@@ -971,6 +981,40 @@ async function finalizeBookingIntake(input: {
         handled: true,
         reply:
           "Ese horario acaba de dejar de estar disponible. ¿Qué otro horario te funciona?",
+      };
+    }
+
+    if (/patient_identity_(ambiguous|review_required|mismatch|unverified)/.test(message)) {
+      await updateConversation(input.conversation.id, {
+        appointment_status: "pending_confirmation",
+        next_action: "human_review",
+        human_review_reason: "nimbo_identity_review_required",
+      });
+      return {
+        handled: true,
+        reply:
+          "Encontré un registro que necesita validación antes de modificarlo. El equipo revisará tus datos y finalizará la cita.",
+        escalate: "karen",
+        reasonCode: "nimbo_identity_review_required",
+      };
+    }
+
+    if (
+      message.includes("schedule_verification_failed") ||
+      message.includes("schedule_creation_unverified") ||
+      message.includes("schedule_reconciliation_ambiguous")
+    ) {
+      await updateConversation(input.conversation.id, {
+        appointment_status: "pending_confirmation",
+        next_action: "human_review",
+        human_review_reason: "nimbo_schedule_reconciliation_required",
+      });
+      return {
+        handled: true,
+        reply:
+          "La solicitud de cita quedó pendiente de verificación. El equipo confirmará el horario antes de considerarlo reservado.",
+        escalate: "karen",
+        reasonCode: "nimbo_schedule_reconciliation_required",
       };
     }
 
