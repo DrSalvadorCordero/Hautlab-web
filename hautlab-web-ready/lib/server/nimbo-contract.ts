@@ -167,11 +167,11 @@ export function verifyNimboSchedulePayload(
   };
 }
 
-export function findUniqueNimboScheduleIdByTimes(
+export function findNimboScheduleIdsByTimes(
   payload: unknown,
   expected: { startsAt: string; endsAt: string },
 ) {
-  const matches = rowsFromPayload(payload, [
+  return rowsFromPayload(payload, [
     "consultation_schedules",
     "schedules",
     "appointments",
@@ -193,7 +193,13 @@ export function findUniqueNimboScheduleIdByTimes(
       return id;
     })
     .filter((id): id is number => id !== null);
+}
 
+export function findUniqueNimboScheduleIdByTimes(
+  payload: unknown,
+  expected: { startsAt: string; endsAt: string },
+) {
+  const matches = findNimboScheduleIdsByTimes(payload, expected);
   return matches.length === 1 ? matches[0] : null;
 }
 
