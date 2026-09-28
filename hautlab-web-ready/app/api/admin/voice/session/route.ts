@@ -36,12 +36,12 @@ export async function POST(request: NextRequest) {
   let sdp = "";
   try {
     const body = (await request.json()) as { sdp?: unknown };
-    if (typeof body.sdp === "string") sdp = body.sdp.trim();
+    if (typeof body.sdp === "string") sdp = body.sdp;
   } catch {
     return json({ error: "invalid_json" }, { status: 400 });
   }
 
-  if (!sdp || Buffer.byteLength(sdp, "utf8") > MAX_BODY_BYTES) {
+  if (!sdp.trim() || Buffer.byteLength(sdp, "utf8") > MAX_BODY_BYTES) {
     return json({ error: "invalid_sdp" }, { status: 400 });
   }
 
