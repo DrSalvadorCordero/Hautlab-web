@@ -1,3 +1,11 @@
+import {
+  buildNimboAppointmentPayload,
+  extractNimboPatientCandidates,
+  findUniqueNimboScheduleIdByTimes,
+  resolveNimboPatientByBirthDate,
+  verifyNimboSchedulePayload,
+} from "./nimbo-contract";
+
 type JsonRecord = Record<string, unknown>;
 
 export type NimboIntegrationConfig = {
@@ -848,47 +856,101 @@ function phoneCandidates(phone: string) {
   return [...values];
 }
 
-function patientArray(payload: unknown) {
-  if (Array.isArray(payload)) return payload;
-  const root = asRecord(payload);
-  for (const key of ["people", "persons", "accounts", "data"]) {
-    if (Array.isArray(root?.[key])) return root![key] as unknown[];
-  }
-  return [];
-}
-
-export async function findNimboPatientByPhone(
+export async function findNimboPatientByPhoneAndBirthDate(
   phone: string,
+  birthDate: string,
 ): Promise<NimboPatient | null> {
   const config = await getNimboConfig();
   if (!config.enabled || !config.doctor_account_id) return null;
 
   for (const candidate of phoneCandidates(phone)) {
-    const params = new URLSearchParams({ telephone2: candidate });
+    const exactParams = new URLSearchParams({
+      telephone2: candidate,
+      born_at: birthDate,
+    });
+
     try {
-      const payload = await nimboFetch(
+      const exactPayload = await nimboFetch(
         config,
-        `accounts/${config.doctor_account_id}/people?${params.toString()}`,
+        `accounts/${config.doctor_account_id}/people?${exactParams.toString()}`,
       );
-      for (const item of patientArray(payload)) {
-        const row = asRecord(item);
-        const id = asFiniteNumber(row?.id);
-        if (!id) continue;
+      const resolution = resolveNimboPatientByBirthDate(exactPayload, birthDate);
+
+      if (resolution.status === "ambiguous") {
+        console.info("nimbo_patient_match", { result: "ambiguous_phone_dob" });
+        throw new NimboApiError("nimbo_patient_identity_ambiguous");
+      }
+
+      if (resolution.status === "matched") {
+        console.info("nimbo_patient_match", { result: "phone_dob" });
         return {
-          id,
-          fullName:
-            cleanString(row?.full_name, 180) ??
-            ([cleanString(row?.first_name, 80), cleanString(row?.last_name, 100)]
-              .filter(Boolean)
-              .join(" ") ||
-              null),
+          id: resolution.patient.id,
+          fullName: resolution.patient.fullName,
         };
       }
-    } catch {
+
+      const phoneOnlyParams = new URLSearchParams({ telephone2: candidate });
+      const phoneOnlyPayload = await nimboFetch(
+        config,
+        `accounts/${config.doctor_account_id}/people?${phoneOnlyParams.toString()}`,
+      );
+      if (extractNimboPatientCandidates(phoneOnlyPayload).length > 0) {
+        console.info("nimbo_patient_match", { result: "phone_conflict" });
+        throw new NimboApiError("nimbo_patient_identity_review_required");
+      }
+    } catch (error) {
+      if (
+        error instanceof NimboApiError &&
+        /identity_(ambiguous|review_required)/.test(error.message)
+      ) {
+        throw error;
+      }
       // Try the next normalized phone representation.
     }
   }
+
+  console.info("nimbo_patient_match", { result: "none" });
   return null;
+}
+
+export async function verifyNimboPatientIdentity(
+  personId: number,
+  input: { phone: string; birthDate: string },
+): Promise<NimboPatient> {
+  const config = await getNimboConfig();
+  if (!config.enabled || !config.doctor_account_id) {
+    throw new NimboApiError("nimbo_booking_not_ready");
+  }
+
+  const payload = await nimboFetch(config, `people/${personId}`);
+  const root = asRecord(payload);
+  const person = asRecord(root?.person) ?? root;
+  if (!person) throw new NimboApiError("nimbo_patient_identity_unverified");
+
+  const id = asFiniteNumber(person.id) ?? personId;
+  const bornAt = cleanString(person.born_at, 20);
+  const telephone2 = cleanString(person.telephone2, 40);
+  const allowedPhones = new Set(phoneCandidates(input.phone));
+
+  if (bornAt !== input.birthDate) {
+    console.info("nimbo_patient_match", { result: "linked_dob_mismatch" });
+    throw new NimboApiError("nimbo_patient_identity_mismatch");
+  }
+  if (telephone2 && !allowedPhones.has(telephone2.replace(/\D/g, ""))) {
+    console.info("nimbo_patient_match", { result: "linked_phone_mismatch" });
+    throw new NimboApiError("nimbo_patient_identity_mismatch");
+  }
+
+  console.info("nimbo_patient_match", { result: "linked_verified" });
+  return {
+    id,
+    fullName:
+      cleanString(person.full_name, 180) ??
+      ([cleanString(person.first_name, 80), cleanString(person.last_name, 100)]
+        .filter(Boolean)
+        .join(" ") ||
+        null),
+  };
 }
 
 
@@ -1026,6 +1088,72 @@ function addMinutes(iso: string, minutes: number) {
   return new Date(date.getTime() + minutes * 60_000).toISOString();
 }
 
+async function verifyNimboScheduleById(
+  config: NimboIntegrationConfig,
+  input: {
+    scheduleId: number;
+    personId: number;
+    startsAt: string;
+    endsAt: string;
+  },
+): Promise<NimboCreatedSchedule> {
+  const payload = await nimboFetch(
+    config,
+    `consultation_schedules/${input.scheduleId}`,
+  );
+  const verification = verifyNimboSchedulePayload(payload, {
+    scheduleId: input.scheduleId,
+    personId: input.personId,
+    accountId: config.doctor_account_id!,
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+  });
+
+  if (!verification.ok) {
+    console.info("nimbo_schedule_verify", {
+      result: "mismatch",
+      reason: verification.reason,
+    });
+    throw new NimboApiError(
+      `nimbo_schedule_verification_failed:${verification.reason}`,
+      409,
+    );
+  }
+
+  console.info("nimbo_schedule_verify", { result: "verified" });
+  return {
+    id: verification.schedule.id,
+    startsAt: verification.schedule.startsAt,
+    endsAt: verification.schedule.endsAt,
+  };
+}
+
+async function reconcileExistingNimboSchedule(
+  config: NimboIntegrationConfig,
+  input: { personId: number; startsAt: string; endsAt: string },
+) {
+  try {
+    const payload = await nimboFetch(
+      config,
+      `people/${input.personId}/consultation_schedules`,
+    );
+    const scheduleId = findUniqueNimboScheduleIdByTimes(payload, {
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+    });
+    if (!scheduleId) return null;
+    console.info("nimbo_schedule_reconcile", { result: "candidate_found" });
+    return verifyNimboScheduleById(config, {
+      scheduleId,
+      personId: input.personId,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function createNimboSchedule(input: {
   personId: number;
   startsAt: string;
@@ -1044,7 +1172,10 @@ export async function createNimboSchedule(input: {
   const availability = await getNimboAvailability({ from: date, to: date });
   const exact = availability
     .flatMap((day) => day.slots)
-    .some((slot) => new Date(slot.startsAt).getTime() === new Date(input.startsAt).getTime());
+    .some(
+      (slot) =>
+        new Date(slot.startsAt).getTime() === new Date(input.startsAt).getTime(),
+    );
   if (!exact) throw new NimboApiError("nimbo_slot_no_longer_available", 409);
 
   const endsAt = addMinutes(
@@ -1052,32 +1183,77 @@ export async function createNimboSchedule(input: {
     config.consultation_duration_minutes,
   );
 
-  const payload = await nimboFetch(config, "consultation_schedules", {
-    method: "POST",
-    body: JSON.stringify({
-      consultation_schedule: {
-        cause: input.cause.trim().slice(0, 220) || "Cita HAUTLAB",
-        starts_at: input.startsAt,
-        ends_at: endsAt,
-        reminder: true,
-        person_id: String(input.personId),
-        account_id: String(config.doctor_account_id),
-      },
-    }),
+  const existing = await reconcileExistingNimboSchedule(config, {
+    personId: input.personId,
+    startsAt: input.startsAt,
+    endsAt,
   });
+  if (existing) {
+    console.info("nimbo_schedule_create", {
+      result: "reconciled_existing",
+      reminderOwner: "nimbo",
+    });
+    return existing;
+  }
+
+  const body = buildNimboAppointmentPayload({
+    cause: input.cause,
+    startsAt: input.startsAt,
+    endsAt,
+    personId: input.personId,
+    accountId: config.doctor_account_id,
+    // Preserve current reminder ownership until HAUTLAB has a proven reminder
+    // subsystem. Payment-link side effects are explicitly disabled.
+    reminderOwner: "nimbo",
+  });
+
+  let payload: unknown;
+  try {
+    payload = await nimboFetch(config, "consultation_schedules", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    const recovered = await reconcileExistingNimboSchedule(config, {
+      personId: input.personId,
+      startsAt: input.startsAt,
+      endsAt,
+    });
+    if (recovered) {
+      console.info("nimbo_schedule_create", {
+        result: "reconciled_after_create_error",
+        reminderOwner: "nimbo",
+      });
+      return recovered;
+    }
+    throw error;
+  }
 
   const root = asRecord(payload);
   const schedule = asRecord(root?.consultation_schedule) ?? root;
   const id = asFiniteNumber(schedule?.id);
-  const startsAt = cleanString(schedule?.starts_at, 80) ?? input.startsAt;
-  const responseEndsAt = cleanString(schedule?.ends_at, 80) ?? endsAt;
-  if (!id) throw new NimboApiError("nimbo_schedule_creation_unverified");
+  if (!id) {
+    const recovered = await reconcileExistingNimboSchedule(config, {
+      personId: input.personId,
+      startsAt: input.startsAt,
+      endsAt,
+    });
+    if (recovered) return recovered;
+    throw new NimboApiError("nimbo_schedule_creation_unverified");
+  }
 
-  return {
-    id,
-    startsAt,
-    endsAt: responseEndsAt,
-  } satisfies NimboCreatedSchedule;
+  const verified = await verifyNimboScheduleById(config, {
+    scheduleId: id,
+    personId: input.personId,
+    startsAt: input.startsAt,
+    endsAt,
+  });
+
+  console.info("nimbo_schedule_create", {
+    result: "created_verified",
+    reminderOwner: "nimbo",
+  });
+  return verified;
 }
 
 export function isNimboReadyForAutobooking(config: NimboIntegrationConfig) {
