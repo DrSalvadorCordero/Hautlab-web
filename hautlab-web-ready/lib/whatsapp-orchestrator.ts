@@ -126,6 +126,29 @@ type IncomingMessage = {
     button_reply?: { title?: string };
     list_reply?: { title?: string };
   };
+  referral?: {
+    source_url?: string;
+    source_id?: string;
+    source_type?: string;
+    headline?: string;
+    body?: string;
+    media_type?: string;
+    image_url?: string;
+    video_url?: string;
+    thumbnail_url?: string;
+    ctwa_clid?: string;
+    welcome_message?: { text?: string };
+  };
+  errors?: Array<{
+    code?: string | number;
+    title?: string;
+    message?: string;
+    error_data?: { details?: string };
+  }>;
+  unsupported?: {
+    raw_type?: string;
+    type?: string;
+  };
 };
 
 type HumanMessageEcho = IncomingMessage & {
@@ -381,6 +404,75 @@ function extractText(message: IncomingMessage): string | null {
     );
   }
   return null;
+}
+
+function safeInboundMetadataValue(value: unknown, maxLength = 512) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : null;
+}
+
+function getMetaReferralSnapshot(message: IncomingMessage) {
+  const referral = message.referral;
+  if (!referral || typeof referral !== "object") return null;
+
+  const sourceType = safeInboundMetadataValue(referral.source_type, 80);
+  const snapshot = {
+    source: "meta",
+    medium: sourceType === "ad" ? "click_to_whatsapp" : "whatsapp_referral",
+    source_type: sourceType,
+    source_id: safeInboundMetadataValue(referral.source_id, 160),
+    source_url: safeInboundMetadataValue(referral.source_url, 1024),
+    headline: safeInboundMetadataValue(referral.headline, 240),
+    body: safeInboundMetadataValue(referral.body, 500),
+    media_type: safeInboundMetadataValue(referral.media_type, 80),
+    ctwa_clid: safeInboundMetadataValue(referral.ctwa_clid, 512),
+    welcome_message: safeInboundMetadataValue(
+      referral.welcome_message?.text,
+      500,
+    ),
+  };
+
+  return Object.values(snapshot).some((value) => value != null)
+    ? snapshot
+    : null;
+}
+
+function isHumanReviewMediaType(type: string) {
+  return ["image", "video", "document", "audio", "voice"].includes(type);
+}
+
+function mediaAcknowledgement(type: string) {
+  if (type === "image") {
+    return "Recibí la imagen. Para revisarla correctamente, voy a pasar la conversación con el Dr. Salvador.";
+  }
+  if (type === "video") {
+    return "Recibí el video. Para revisarlo correctamente, voy a pasar la conversación con el Dr. Salvador.";
+  }
+  if (type === "document") {
+    return "Recibí el documento. Para revisarlo correctamente, voy a pasar la conversación con el Dr. Salvador.";
+  }
+  return "Recibí el audio. Para revisarlo correctamente, voy a pasar la conversación con el Dr. Salvador.";
+}
+
+function unsupportedRecoveryReply(hasReferral: boolean) {
+  return hasReferral
+    ? "¡Hola! Claro. Vi que vienes desde un anuncio de HAUTLAB. ¿Sobre qué tratamiento te gustaría información?"
+    : "¡Hola! Claro. ¿Sobre qué tratamiento te gustaría información?";
+}
+
+async function waitForUnsupportedBurstToSettle(
+  conversationId: string,
+  metaMessageId: string,
+) {
+  const configured = Number(
+    process.env.WHATSAPP_UNSUPPORTED_BURST_WINDOW_MS ?? "4500",
+  );
+  const delay = Number.isFinite(configured)
+    ? Math.max(2500, Math.min(7000, Math.round(configured)))
+    : 4500;
+  await new Promise((resolve) => setTimeout(resolve, delay));
+  return isLatestInboundMessage(conversationId, metaMessageId);
 }
 
 function echoSentAt(timestamp: string | undefined, fallback: string) {
@@ -1647,14 +1739,33 @@ async function processTextMessage(input: {
   });
   if (!isNew) return;
 
-  if (attributionCode) {
+  const referralSnapshot = getMetaReferralSnapshot(input.message);
+  if (referralSnapshot) {
+    const now = new Date().toISOString();
+    await updateConversation(conversation.id, {
+      ...(conversation.first_attribution
+        ? {}
+        : { first_attribution: referralSnapshot, first_attributed_at: now }),
+      last_attribution: referralSnapshot,
+      last_attributed_at: now,
+    });
+  } else if (attributionCode) {
     await attachAttribution(conversation, attributionCode);
   }
 
   // Patients often send one thought as several WhatsApp bubbles. Wait briefly
   // and let only the newest inbound bubble trigger a response, so the bot
   // answers the complete thought instead of replying two or three times.
-  if (text) {
+  // Coexistence/Click-to-WhatsApp can emit more than one unreadable
+  // "unsupported" event for the first contact, so use a slightly wider window
+  // there to avoid sending the recovery prompt twice.
+  if (input.message.type === "unsupported") {
+    const isLatest = await waitForUnsupportedBurstToSettle(
+      conversation.id,
+      input.message.id,
+    );
+    if (!isLatest) return;
+  } else if (text) {
     const isLatest = await waitForMessageBurstToSettle(
       conversation.id,
       input.message.id,
@@ -1665,10 +1776,72 @@ async function processTextMessage(input: {
   const mode = await currentAutomationMode(conversation.id);
   if (mode === "off" || mode === "manual") return;
 
-  // Media and unsupported message types are never interpreted autonomously.
-  if (!text) {
-    const acknowledgement =
-      "Recibí el archivo. Para revisarlo correctamente, voy a pasar la conversación con el Dr. Salvador.";
+  // "unsupported" is a transport limitation, not a clinical/media signal.
+  // In WhatsApp coexistence and Click-to-WhatsApp flows Meta may withhold the
+  // first message body. Recover the lead without pretending a file was sent.
+  if (!text && input.message.type === "unsupported") {
+    console.warn("[whatsapp-orchestrator] unsupported inbound message", {
+      hasReferral: Boolean(referralSnapshot),
+      errorCodes: (input.message.errors ?? [])
+        .map((item) => item.code)
+        .filter((item): item is string | number => item != null)
+        .slice(0, 4),
+      unsupportedType:
+        input.message.unsupported?.type ??
+        input.message.unsupported?.raw_type ??
+        null,
+    });
+
+    // A previous recovery prompt already owns the next turn. This also
+    // protects against delayed duplicate unsupported events.
+    if (conversation.next_action === "await_readable_message") return;
+
+    const reply = unsupportedRecoveryReply(Boolean(referralSnapshot));
+    await updateConversation(conversation.id, {
+      last_intent: "information",
+      next_action: "await_readable_message",
+      clinical_risk: false,
+      priority: "normal",
+      human_review_reason: null,
+      last_ai_analysis: {
+        intent: "information",
+        action: "clarify",
+        operator: "none",
+        reasonCode: "unsupported_message_recovery",
+      },
+    });
+
+    const currentMode = await currentAutomationMode(conversation.id);
+    if (currentMode === "off" || currentMode === "manual") return;
+
+    if (currentMode === "supervised") {
+      await storeDraft({
+        conversationId: conversation.id,
+        body: reply,
+        proposedBy: "unsupported-message-recovery",
+      });
+      return;
+    }
+
+    if (currentMode === "automatic") {
+      const metaMessageId = await sendWhatsAppText(input.message.from, reply);
+      await storeSentMessage({
+        conversationId: conversation.id,
+        body: reply,
+        metaMessageId,
+        senderType: "system",
+        proposedBy: "unsupported-message-recovery",
+      });
+      await updateConversation(conversation.id, {
+        last_team_message_at: new Date().toISOString(),
+      });
+    }
+    return;
+  }
+
+  // Only actual media that cannot be inspected autonomously is escalated.
+  if (!text && isHumanReviewMediaType(input.message.type)) {
+    const acknowledgement = mediaAcknowledgement(input.message.type);
     await updateConversation(conversation.id, {
       last_intent: "clinical",
       next_action: "escalate",
@@ -1698,6 +1871,10 @@ async function processTextMessage(input: {
     });
     return;
   }
+
+  // Stickers, reactions, locations, contacts and unknown textless event types
+  // do not justify a clinical escalation or an invented acknowledgement.
+  if (!text) return;
 
   const pendingNimbo = await handlePendingBookingIntake({
     conversation,
