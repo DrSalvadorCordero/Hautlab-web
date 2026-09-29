@@ -1,9 +1,11 @@
 import {
   buildNimboAppointmentPayload,
   extractNimboPatientCandidates,
+  extractNimboScheduleSnapshot,
   findNimboScheduleIdsByTimes,
   resolveNimboPatientByBirthDate,
   verifyNimboSchedulePayload,
+  type NimboScheduleSnapshot,
 } from "./nimbo-contract";
 
 type JsonRecord = Record<string, unknown>;
@@ -25,6 +27,9 @@ export type NimboIntegrationConfig = {
   last_connected_at: string | null;
   last_verified_at: string | null;
   last_error: string | null;
+  last_schedule_sync_at: string | null;
+  last_schedule_sync_status: string | null;
+  last_schedule_sync_error: string | null;
   updated_at: string;
 };
 
@@ -621,6 +626,56 @@ async function nimboFetch(
 ) {
   const accessToken = await refreshAccessToken(config);
   return rawNimboFetch(config.base_url!, path, accessToken, init);
+}
+
+
+export async function getNimboScheduleSnapshot(
+  scheduleId: number,
+): Promise<
+  | { status: "found"; snapshot: NimboScheduleSnapshot }
+  | { status: "missing" }
+> {
+  const config = await getNimboConfig();
+  if (!config.enabled || !config.base_url || !config.doctor_account_id) {
+    throw new NimboApiError("nimbo_booking_not_ready");
+  }
+  if (!Number.isInteger(scheduleId) || scheduleId <= 0) {
+    throw new NimboApiError("nimbo_invalid_schedule_id");
+  }
+
+  let payload: unknown;
+  try {
+    payload = await nimboFetch(config, `consultation_schedules/${scheduleId}`);
+  } catch (error) {
+    if (error instanceof NimboApiError && error.status === 404) {
+      return { status: "missing" };
+    }
+    throw error;
+  }
+
+  const snapshot = extractNimboScheduleSnapshot(payload);
+  if (!snapshot) {
+    throw new NimboApiError("nimbo_schedule_snapshot_invalid", 409);
+  }
+  if (snapshot.id !== scheduleId) {
+    throw new NimboApiError("nimbo_schedule_snapshot_id_mismatch", 409);
+  }
+  if (snapshot.accountId !== config.doctor_account_id) {
+    throw new NimboApiError("nimbo_schedule_snapshot_account_mismatch", 409);
+  }
+
+  return { status: "found", snapshot };
+}
+
+export async function recordNimboScheduleSyncState(input: {
+  status: "ok" | "partial" | "error";
+  error?: string | null;
+}) {
+  return patchNimboConfig({
+    last_schedule_sync_at: new Date().toISOString(),
+    last_schedule_sync_status: input.status,
+    last_schedule_sync_error: input.error?.slice(0, 240) ?? null,
+  });
 }
 
 export async function verifyNimboConnection() {
