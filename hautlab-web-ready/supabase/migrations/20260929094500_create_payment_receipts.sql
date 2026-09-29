@@ -132,9 +132,11 @@ begin
            else p_mp_payment_id
          end,
          status = case
-           when payment_orders.status in ('refunded', 'charged_back')
-             and p_status not in ('refunded', 'charged_back')
-             then payment_orders.status
+           when payment_orders.status = 'charged_back'
+             then 'charged_back'
+           when payment_orders.status = 'refunded'
+             and p_status <> 'charged_back'
+             then 'refunded'
            when payment_orders.status = 'approved'
              and p_status in ('pending', 'authorized', 'in_process', 'in_mediation', 'rejected')
              then payment_orders.status
@@ -150,17 +152,13 @@ begin
            when p_webhook_event_id is not null then now()
            else payment_orders.last_webhook_at
          end,
-         paid_at = coalesce(
-           payment_orders.paid_at,
-           p_paid_at,
-           case when p_status = 'approved' then now() else null end
-         )
+         paid_at = coalesce(payment_orders.paid_at, p_paid_at)
    where id = p_order_id
      and test_mode = not p_live_mode
   returning *;
 
 end;
-$;
+$$;
 
 revoke all on function public.hautlab_payment_apply_status(
   uuid, text, text, text, boolean, text, text, text, timestamptz, text
@@ -318,7 +316,7 @@ begin
         source_order_id = coalesce(excluded.source_order_id, public.payment_receipts.source_order_id),
         payment_status = excluded.payment_status,
         receipt_status = excluded.receipt_status,
-        paid_at = least(public.payment_receipts.paid_at, excluded.paid_at),
+        paid_at = coalesce(public.payment_receipts.paid_at, excluded.paid_at),
         payment_method_id = coalesce(excluded.payment_method_id, public.payment_receipts.payment_method_id),
         payment_type_id = coalesce(excluded.payment_type_id, public.payment_receipts.payment_type_id),
         installments = coalesce(excluded.installments, public.payment_receipts.installments),
