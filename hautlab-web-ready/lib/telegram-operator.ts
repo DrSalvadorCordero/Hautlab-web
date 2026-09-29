@@ -154,6 +154,7 @@ function hasHumanOperationalPending(row: TelegramConversation) {
   return (
     row.clinical_risk ||
     row.risk_level === "urgent" ||
+    row.bot_paused ||
     row.handoff_status === "pending" ||
     row.handoff_status === "assigned" ||
     Boolean(row.assigned_to)
@@ -163,7 +164,7 @@ function hasHumanOperationalPending(row: TelegramConversation) {
 function operationalLabel(row: TelegramConversation) {
   if (row.clinical_risk || row.risk_level === "urgent") return "revisión clínica";
   if (row.handoff_status === "pending") return "pendiente";
-  if (row.handoff_status === "assigned" || row.assigned_to) return "en atención";
+  if (row.bot_paused || row.handoff_status === "assigned" || row.assigned_to) return "en atención";
   if (isActiveBookingPending(row)) return "cita por confirmar";
   if (isReactivationCandidate(row)) return "reactivación comercial";
   if (row.appointment_status === "confirmed") return "cita confirmada";
