@@ -14,7 +14,7 @@ export type PaymentReceiptRow = {
   receipt_status: PaymentReceiptStatus;
   amount: number | string;
   currency: "MXN";
-  paid_at: string;
+  paid_at: string | null;
   payment_method_id: string | null;
   payment_type_id: string | null;
   installments: number | null;
