@@ -103,6 +103,7 @@ type OperationalStateRow = {
   clinical_risk: boolean;
   risk_level: string | null;
   assigned_to: string | null;
+  bot_paused: boolean;
   handoff_status: string | null;
   appointment_status: string | null;
   appointment_requested_at: string | null;
@@ -116,6 +117,7 @@ function deriveOperationalState(row: OperationalStateRow) {
   if (row.closed_at || row.outcome) return "closed" as const;
   if (row.clinical_risk || row.risk_level === "urgent") return "clinical_review" as const;
   if (
+    row.bot_paused ||
     row.handoff_status === "pending" ||
     row.handoff_status === "assigned" ||
     Boolean(row.assigned_to)
@@ -278,7 +280,7 @@ export async function GET(request: NextRequest) {
         outcome: string | null;
       }>
     >(
-      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=100",
+      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=500",
     );
 
     const effectiveSelected =
