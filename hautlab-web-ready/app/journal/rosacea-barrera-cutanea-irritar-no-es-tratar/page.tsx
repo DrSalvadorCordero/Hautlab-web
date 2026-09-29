@@ -117,8 +117,9 @@ export default function RosaceaBarrierJournalArticle() {
         description: article.description,
         inLanguage: "es-MX",
         dateCreated: article.preparedAt,
-        dateModified: article.preparedAt,
+        dateModified: "2026-09-29",
         author: { "@id": `${siteConfig.url}#clinic` },
+        reviewedBy: { "@id": `${siteConfig.url}#doctor` },
         publisher: { "@id": `${siteConfig.url}#clinic` },
         isPartOf: { "@id": `${siteConfig.url}#website` },
         breadcrumb: { "@id": `${pageUrl}#breadcrumb` }
@@ -160,7 +161,7 @@ export default function RosaceaBarrierJournalArticle() {
             </h1>
             <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">{article.description}</p>
             <p className="mt-8 text-xs leading-6 text-quiet">
-              Preparado: 29 de septiembre de 2026 · Revisión médica pendiente
+              Preparado: 29 de septiembre de 2026 · Revisado por Dr. Salvador Cordero
             </p>
           </div>
         </section>
@@ -327,9 +328,9 @@ export default function RosaceaBarrierJournalArticle() {
             </Card>
             <Card className="p-7 sm:p-8">
               <p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p>
-              <p className="mt-5 text-lg font-medium text-bone">Revisión médica pendiente</p>
+              <p className="mt-5 text-lg font-medium text-bone">Revisado por Dr. Salvador Cordero</p>
               <p className="mt-3 text-sm leading-7 text-muted">
-                Requiere revisión final del Dr. Salvador Cordero antes de publicación, especialmente en la distinción entre barrera alterada,
+                Revisión médica realizada por el Dr. Salvador Cordero el 29 de septiembre de 2026, incluyendo barrera alterada,
                 irritación por tratamiento, fenotipos de rosácea y señales de alarma ocular.
               </p>
               <p className="mt-5 text-xs leading-6 text-quiet">
