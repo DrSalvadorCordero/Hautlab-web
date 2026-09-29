@@ -15,6 +15,14 @@ export type NimboContractSchedule = {
   endsAt: string;
 };
 
+export type NimboScheduleLifecycle = "scheduled" | "completed" | "cancelled";
+
+export type NimboScheduleSnapshot = NimboContractSchedule & {
+  lifecycle: NimboScheduleLifecycle;
+  rawStatus: string | null;
+  cancelledAt: string | null;
+};
+
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonRecord)
@@ -115,6 +123,84 @@ function sameInstant(left: string | null, right: string) {
   return Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs === rightMs;
 }
 
+function truthyFlag(value: unknown) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function scheduleLifecycle(schedule: JsonRecord) {
+  const rawStatus = (
+    cleanString(schedule.status, 80) ??
+    cleanString(schedule.state, 80) ??
+    cleanString(schedule.status_name, 80) ??
+    cleanString(schedule.state_name, 80)
+  )?.toLowerCase() ?? null;
+  const cancelledAt =
+    cleanString(schedule.cancelled_at, 100) ??
+    cleanString(schedule.canceled_at, 100) ??
+    cleanString(schedule.deleted_at, 100);
+
+  const explicitlyCancelled =
+    Boolean(cancelledAt) ||
+    truthyFlag(schedule.cancelled) ||
+    truthyFlag(schedule.canceled) ||
+    truthyFlag(schedule.is_cancelled) ||
+    truthyFlag(schedule.is_canceled) ||
+    ["cancelled", "canceled", "deleted", "void", "voided"].includes(rawStatus ?? "");
+
+  if (explicitlyCancelled) {
+    return {
+      lifecycle: "cancelled" as const,
+      rawStatus,
+      cancelledAt,
+    };
+  }
+
+  if (
+    ["completed", "complete", "finished", "done", "attended"].includes(
+      rawStatus ?? "",
+    )
+  ) {
+    return {
+      lifecycle: "completed" as const,
+      rawStatus,
+      cancelledAt: null,
+    };
+  }
+
+  return {
+    lifecycle: "scheduled" as const,
+    rawStatus,
+    cancelledAt: null,
+  };
+}
+
+export function extractNimboScheduleSnapshot(
+  payload: unknown,
+): NimboScheduleSnapshot | null {
+  const schedule = nestedSchedule(payload);
+  if (!schedule) return null;
+
+  const id = asFiniteNumber(schedule.id);
+  const personId = schedulePersonId(schedule);
+  const accountId = scheduleAccountId(schedule);
+  const startsAt = cleanString(schedule.starts_at, 100);
+  const endsAt = cleanString(schedule.ends_at, 100);
+
+  if (!id || !personId || !accountId || !startsAt || !endsAt) return null;
+  if (!Number.isFinite(Date.parse(startsAt)) || !Number.isFinite(Date.parse(endsAt))) {
+    return null;
+  }
+
+  return {
+    id,
+    personId,
+    accountId,
+    startsAt,
+    endsAt,
+    ...scheduleLifecycle(schedule),
+  };
+}
+
 export function verifyNimboSchedulePayload(
   payload: unknown,
   expected: {
@@ -136,33 +222,27 @@ export function verifyNimboSchedulePayload(
         | "starts_at_mismatch"
         | "ends_at_mismatch";
     } {
-  const schedule = nestedSchedule(payload);
+  const schedule = extractNimboScheduleSnapshot(payload);
   if (!schedule) return { ok: false, reason: "invalid_payload" };
 
-  const id = asFiniteNumber(schedule.id);
-  const personId = schedulePersonId(schedule);
-  const accountId = scheduleAccountId(schedule);
-  const startsAt = cleanString(schedule.starts_at, 100);
-  const endsAt = cleanString(schedule.ends_at, 100);
-
-  if (id !== expected.scheduleId) return { ok: false, reason: "id_mismatch" };
-  if (personId !== expected.personId) return { ok: false, reason: "person_mismatch" };
-  if (accountId !== expected.accountId) return { ok: false, reason: "account_mismatch" };
-  if (!sameInstant(startsAt, expected.startsAt)) {
+  if (schedule.id !== expected.scheduleId) return { ok: false, reason: "id_mismatch" };
+  if (schedule.personId !== expected.personId) return { ok: false, reason: "person_mismatch" };
+  if (schedule.accountId !== expected.accountId) return { ok: false, reason: "account_mismatch" };
+  if (!sameInstant(schedule.startsAt, expected.startsAt)) {
     return { ok: false, reason: "starts_at_mismatch" };
   }
-  if (!sameInstant(endsAt, expected.endsAt)) {
+  if (!sameInstant(schedule.endsAt, expected.endsAt)) {
     return { ok: false, reason: "ends_at_mismatch" };
   }
 
   return {
     ok: true,
     schedule: {
-      id,
-      personId,
-      accountId,
-      startsAt: startsAt!,
-      endsAt: endsAt!,
+      id: schedule.id,
+      personId: schedule.personId,
+      accountId: schedule.accountId,
+      startsAt: schedule.startsAt,
+      endsAt: schedule.endsAt,
     },
   };
 }

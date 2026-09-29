@@ -20,6 +20,7 @@ import {
   isOperationalPendingState,
 } from "@/lib/operational-state";
 import { getNimboConfig } from "@/lib/server/nimbo";
+import { syncKnownNimboSchedules } from "@/lib/server/nimbo-sync";
 
 const TIME_ZONE = "America/Merida";
 const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
@@ -133,7 +134,11 @@ function operationalLabel(row: TelegramConversation) {
   if (state === "human_pending") return "en atención";
   if (state === "booking_pending") return "cita por confirmar";
   if (state === "reactivation") return "reactivación comercial";
-  if (state === "scheduled") return "cita confirmada";
+  if (state === "scheduled") {
+    return row.nimbo_sync_status === "error"
+      ? "cita registrada · sync pendiente"
+      : "cita confirmada";
+  }
   if (state === "closed") return "cerrada";
   return row.stage?.replace(/_/g, " ") || "seguimiento";
 }
@@ -166,7 +171,12 @@ function mergeConversationRows(
   return Array.from(byId.values());
 }
 
-export async function getTelegramTodaySummaryText() {
+export async function getTelegramTodaySummaryText(options?: {
+  syncNimbo?: boolean;
+}) {
+  if (options?.syncNimbo !== false) {
+    await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
+  }
   const [recentRows, operationalRows] = await Promise.all([
     listRecentTelegramConversations(500),
     listTelegramOperationalConversations(),
@@ -178,6 +188,8 @@ export async function getTelegramTodaySummaryText() {
     .filter(
       (row) =>
         row.appointment_status === "confirmed" &&
+        row.nimbo_sync_status !== "missing" &&
+        row.nimbo_sync_status !== "conflict" &&
         row.appointment_datetime &&
         localDateKey(row.appointment_datetime) === today,
     )
@@ -258,10 +270,13 @@ export async function getTelegramPendingText() {
 }
 
 export async function getTelegramAgendaText() {
+  await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
   const rows = (await listRecentTelegramConversations(500))
     .filter(
       (row) =>
         row.appointment_status === "confirmed" &&
+        row.nimbo_sync_status !== "missing" &&
+        row.nimbo_sync_status !== "conflict" &&
         isToday(row.appointment_datetime),
     )
     .sort(
@@ -499,6 +514,11 @@ export async function getTelegramStatusText(operatorKey?: TelegramOperatorKey) {
     "Telegram: activo",
     `WhatsApp: ${whatsappReady ? "configurado" : "requiere configuración"}`,
     `Nimbo: ${nimbo?.enabled ? "conectado" : "no conectado"}`,
+    `Agenda sync: ${
+      nimbo?.last_schedule_sync_at
+        ? `${nimbo.last_schedule_sync_status ?? "desconocido"} · ${formatLocalDateTime(nimbo.last_schedule_sync_at)}`
+        : "sin ejecución"
+    }`,
     `Jobs activos: ${jobs.length}`,
   ].join("\n");
 }
