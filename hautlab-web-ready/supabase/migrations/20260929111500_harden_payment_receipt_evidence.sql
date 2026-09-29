@@ -243,41 +243,19 @@ end;
 $$;
 
 -- Safe catch-up only from terminal rows that already carry provider identity.
-insert into public.payment_receipts (
-  source_provider, source_reference, source_payment_id, source_order_id,
-  payment_status, receipt_status, amount, currency, paid_at,
-  payment_method_id, payment_type_id, live_mode, test_mode
-)
-select
-  'mercado_pago', external_reference, mp_payment_id, preference_id,
-  status,
-  case when status = 'refunded' then 'refunded'
-       when status = 'charged_back' then 'charged_back'
-       else 'issued' end,
-  amount, currency, paid_at,
-  payment_method_id, payment_type_id, live_mode, test_mode
-from public.payment_orders
-where status in ('approved', 'refunded', 'charged_back')
-  and mp_payment_id is not null
-  and btrim(mp_payment_id) <> ''
-on conflict (source_provider, source_reference) do nothing;
+-- Re-use the trigger projection rather than duplicating receipt/item creation
+-- here, so catch-up and live updates share exactly the same invariants.
+update public.payment_orders
+   set updated_at = updated_at
+ where status in ('approved', 'refunded', 'charged_back')
+   and mp_payment_id is not null
+   and btrim(mp_payment_id) <> '';
 
-insert into public.payment_receipts (
-  source_provider, source_reference, source_payment_id, source_order_id,
-  payment_status, receipt_status, amount, currency, paid_at,
-  payment_method_id, payment_type_id, installments, live_mode, test_mode
-)
-select
-  'mercado_pago_point', external_reference,
-  coalesce(payment_reference_id, transaction_id), mp_order_id,
-  status,
-  case when status = 'refunded' then 'refunded' else 'issued' end,
-  amount, currency, paid_at,
-  payment_method_id, payment_method_type, installments, live_mode, test_mode
-from public.mp_point_orders
-where status in ('processed', 'refunded')
-  and coalesce(payment_reference_id, transaction_id) is not null
-  and btrim(coalesce(payment_reference_id, transaction_id)) <> ''
-  and mp_order_id is not null
-  and live_mode is not null
-on conflict (source_provider, source_reference) do nothing;
+update public.mp_point_orders
+   set updated_at = updated_at
+ where status in ('processed', 'refunded')
+   and coalesce(payment_reference_id, transaction_id) is not null
+   and btrim(coalesce(payment_reference_id, transaction_id)) <> ''
+   and mp_order_id is not null
+   and btrim(mp_order_id) <> ''
+   and live_mode is not null;
