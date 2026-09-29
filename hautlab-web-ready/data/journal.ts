@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "rosacea-barrera-cutanea-irritar-no-es-tratar",
+    title: "Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor",
+    description:
+      "Ardor, tirantez y sensibilidad no siempre significan que hace falta añadir otro activo. Qué papel tiene la barrera cutánea en rosácea, cuándo simplificar y qué síntomas requieren otra evaluación.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-09-29",
+    readingTime: "9 min"
+  },
+  {
     slug: "toxina-movimiento-sin-borrar-expresion",
     title: "Toxina botulínica: tratar movimiento sin borrar expresión",
     description:
