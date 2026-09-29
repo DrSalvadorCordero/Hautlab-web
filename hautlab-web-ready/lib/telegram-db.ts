@@ -251,6 +251,22 @@ export async function listRecentTelegramConversations(limit = 400) {
   );
 }
 
+export async function listTelegramOperationalConversations() {
+  const rows: TelegramConversation[] = [];
+  const pageSize = 500;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await supabaseJson<TelegramConversation[]>(
+      `wa_conversations?select=${conversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))&order=last_message_at.desc.nullslast&limit=${pageSize}&offset=${offset}`,
+    );
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    if (offset >= 20_000) throw new Error("operational_queue_too_large");
+  }
+
+  return rows;
+}
+
 export async function getTelegramConversationByRef(ref: number) {
   const rows = await supabaseJson<TelegramConversation[]>(
     `wa_conversations?handoff_ref=eq.${Math.trunc(ref)}&select=${conversationSelect}&limit=1`,
