@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "invalid_payload" }, { status: 400 });
   }
 
-  const canApply = Boolean(access.isOwner || access.organizationRole === "org:admin");
-  if (parsed.data.apply && !canApply) {
-    return noStoreJson({ error: "forbidden" }, { status: 403 });
+  if (parsed.data.apply && !access.isOwner) {
+    return noStoreJson({ error: "owner_required" }, { status: 403 });
   }
 
   try {
