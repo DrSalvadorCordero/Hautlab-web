@@ -537,7 +537,10 @@ export async function POST(request: NextRequest) {
   }
 
   const model = process.env.HAUTLAB_ROUTER_MODEL?.trim() || "gpt-5-mini";
-  const { message, city, conversationId } = parsedInput.data;
+  const { message, conversationId } = parsedInput.data;
+  // HAUTLAB currently operates only in Mérida. Keep accepting the legacy city
+  // field from callers, but normalize every live conversation to the active sede.
+  const city = "merida" as const;
 
   try {
     const [promptSettings, history, assistantContext] = await Promise.all([
