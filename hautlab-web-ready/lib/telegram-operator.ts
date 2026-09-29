@@ -171,8 +171,12 @@ function mergeConversationRows(
   return Array.from(byId.values());
 }
 
-export async function getTelegramTodaySummaryText() {
-  await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
+export async function getTelegramTodaySummaryText(options?: {
+  syncNimbo?: boolean;
+}) {
+  if (options?.syncNimbo !== false) {
+    await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
+  }
   const [recentRows, operationalRows] = await Promise.all([
     listRecentTelegramConversations(500),
     listTelegramOperationalConversations(),
