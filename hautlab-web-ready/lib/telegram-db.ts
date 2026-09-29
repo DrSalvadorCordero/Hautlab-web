@@ -254,14 +254,23 @@ export async function listRecentTelegramConversations(limit = 400) {
 export async function listTelegramOperationalConversations() {
   const rows: TelegramConversation[] = [];
   const pageSize = 500;
+  let cursor: string | null = null;
 
-  for (let offset = 0; ; offset += pageSize) {
+  for (;;) {
+    const cursorFilter = cursor
+      ? `&id=gt.${encodeURIComponent(cursor)}`
+      : "";
     const page = await supabaseJson<TelegramConversation[]>(
-      `wa_conversations?select=${conversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))&order=last_message_at.desc.nullslast&limit=${pageSize}&offset=${offset}`,
+      `wa_conversations?select=${conversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))${cursorFilter}&order=id.asc&limit=${pageSize}`,
     );
     rows.push(...page);
     if (page.length < pageSize) break;
-    if (offset >= 20_000) throw new Error("operational_queue_too_large");
+
+    const nextCursor = page.at(-1)?.id ?? null;
+    if (!nextCursor || nextCursor === cursor) {
+      throw new Error("operational_queue_cursor_invalid");
+    }
+    cursor = nextCursor;
   }
 
   return rows;
