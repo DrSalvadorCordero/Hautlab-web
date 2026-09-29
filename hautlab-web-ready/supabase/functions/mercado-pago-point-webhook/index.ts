@@ -305,12 +305,28 @@ async function reconcileOrder(resourceId: string, liveMode: boolean, webhookEven
 
   const payment = firstPayment(providerOrder);
   const amount = payment?.amount === undefined ? Number.NaN : Number(payment.amount);
+  const paymentMethod = asRecord(payment?.payment_method);
+  const reference = asRecord(payment?.reference);
+  const transactionId =
+    payment?.id === undefined || payment?.id === null
+      ? null
+      : String(payment.id).trim() || null;
+  const paymentReferenceId =
+    reference?.id === undefined || reference?.id === null
+      ? null
+      : String(reference.id).trim() || null;
+  const isTerminal = status === "processed" || status === "refunded";
+
+  if (isTerminal && !Number.isFinite(amount)) {
+    throw new PointWebhookError("point_payment_amount_missing", 409);
+  }
   if (Number.isFinite(amount) && Math.abs(Number(localOrder.amount) - amount) >= 0.005) {
     throw new PointWebhookError("point_amount_mismatch", 409);
   }
+  if (isTerminal && !transactionId && !paymentReferenceId) {
+    throw new PointWebhookError("point_payment_identity_missing", 409);
+  }
 
-  const paymentMethod = asRecord(payment?.payment_method);
-  const reference = asRecord(payment?.reference);
   const query = new URLSearchParams({ id: `eq.${localOrder.id}` });
   await databaseRequest(`mp_point_orders?${query}`, {
     method: "PATCH",
@@ -319,8 +335,8 @@ async function reconcileOrder(resourceId: string, liveMode: boolean, webhookEven
       mp_order_id: String(providerOrder.id),
       status,
       status_detail: typeof providerOrder.status_detail === "string" ? providerOrder.status_detail : null,
-      transaction_id: typeof payment?.id === "string" ? payment.id : null,
-      payment_reference_id: reference?.id === undefined ? null : String(reference.id),
+      transaction_id: transactionId,
+      payment_reference_id: paymentReferenceId,
       payment_method_type: typeof paymentMethod?.type === "string" ? paymentMethod.type : null,
       payment_method_id: typeof paymentMethod?.id === "string" ? paymentMethod.id : null,
       installments: typeof paymentMethod?.installments === "number" ? paymentMethod.installments : null,
