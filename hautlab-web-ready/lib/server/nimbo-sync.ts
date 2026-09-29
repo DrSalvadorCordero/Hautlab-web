@@ -12,6 +12,7 @@ type NimboLinkedConversation = {
   appointment_datetime: string | null;
   nimbo_schedule_ends_at: string | null;
   human_review_reason: string | null;
+  next_action: string | null;
   handoff_status: string | null;
   assigned_to: string | null;
   bot_paused: boolean;
@@ -89,6 +90,16 @@ function ownSyncReview(reason: string | null) {
   return Boolean(reason?.startsWith("nimbo_schedule_"));
 }
 
+function reviewPatch(row: NimboLinkedConversation, reason: string) {
+  const hasUnrelatedReview =
+    Boolean(row.human_review_reason) && !ownSyncReview(row.human_review_reason);
+  if (hasUnrelatedReview) return {};
+
+  return {
+    ...reviewPatch(row, reason),
+  };
+}
+
 async function patchConversation(
   row: NimboLinkedConversation,
   body: Record<string, unknown>,
@@ -116,7 +127,7 @@ function clearRecoveredReview(row: NimboLinkedConversation) {
   }
   return {
     human_review_reason: null,
-    next_action: null,
+    ...(row.next_action === "human_review" ? { next_action: null } : {}),
     ...(row.handoff_status === "pending" ? { handoff_status: "resolved" } : {}),
   };
 }
@@ -181,9 +192,7 @@ async function syncOne(row: NimboLinkedConversation) {
       nimbo_last_synced_at: now,
       nimbo_sync_status: "cancelled",
       nimbo_sync_error: null,
-      human_review_reason: "nimbo_schedule_cancelled_external",
-      next_action: "human_review",
-      handoff_status: "pending",
+      ...reviewPatch(row, "nimbo_schedule_cancelled_external"),
     });
     return "cancelled" as const;
   }
@@ -229,7 +238,7 @@ export async function syncKnownNimboSchedules(input?: {
   const recentFloor = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   const rows = await supabaseJson<NimboLinkedConversation[]>(
-    `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})&order=appointment_datetime.asc.nullsfirst&limit=${fetchLimit}`,
+    `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,next_action,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})&order=appointment_datetime.asc.nullsfirst&limit=${fetchLimit}`,
   );
 
   const due = rows.filter((row) => {
