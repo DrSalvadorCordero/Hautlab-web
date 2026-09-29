@@ -240,10 +240,11 @@ export async function syncKnownNimboSchedules(input?: {
   let cursor: string | null = null;
 
   while (due.length < limit) {
-    const cursorFilter = cursor
+    const cursorFilter: string = cursor
       ? `&id=gt.${encodeURIComponent(cursor)}`
       : "";
-    const page = await supabaseJson<NimboLinkedConversation[]>(
+    const page: NimboLinkedConversation[] =
+      await supabaseJson<NimboLinkedConversation[]>(
       `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,next_action,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})${cursorFilter}&order=id.asc&limit=${pageSize}`,
     );
 
