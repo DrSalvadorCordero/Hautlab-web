@@ -23,7 +23,7 @@ Editorial axes: **Piel / Proporción / Expresión / Fundamentos**.
 | Published in main | Piel | Cicatrices de acné: por qué no todas se tratan igual | Scar morphology before device |
 | Published in main | Proporción | Más volumen no es más armonía | Overcorrection and planning |
 | Published in main | Expresión | Toxina botulínica: tratar movimiento sin borrar expresión | Dynamic assessment |
-| Draft — medical review pending | Piel | Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor | Barrier, irritation and ocular red flags |
+| Approved for publication | Piel | Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor | Barrier, irritation and ocular red flags |
 
 ## Next priority topics
 
