@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildNimboAppointmentPayload,
+  extractNimboScheduleSnapshot,
   findUniqueNimboScheduleIdByTimes,
   resolveNimboPatientByBirthDate,
   verifyNimboSchedulePayload,
@@ -147,4 +148,37 @@ test("appointment payload makes reminder/payment behavior explicit", () => {
     share_payment_link: false,
     send_payment_link: false,
   });
+});
+
+
+test("external schedule snapshot detects explicit cancellation without inferring from time", () => {
+  const snapshot = extractNimboScheduleSnapshot({
+    consultation_schedule: {
+      id: 90,
+      person_id: 2001,
+      account_id: 1001,
+      starts_at: "2027-02-10T09:00:00-06:00",
+      ends_at: "2027-02-10T09:30:00-06:00",
+      status: "cancelled",
+    },
+  });
+
+  assert.equal(snapshot?.lifecycle, "cancelled");
+  assert.equal(snapshot?.id, 90);
+});
+
+test("external schedule snapshot preserves changed instants as scheduled", () => {
+  const snapshot = extractNimboScheduleSnapshot({
+    consultation_schedule: {
+      id: 91,
+      person: { id: 2001 },
+      account: { id: 1001 },
+      starts_at: "2027-02-10T10:00:00-06:00",
+      ends_at: "2027-02-10T10:30:00-06:00",
+      state: "confirmed",
+    },
+  });
+
+  assert.equal(snapshot?.lifecycle, "scheduled");
+  assert.equal(snapshot?.startsAt, "2027-02-10T10:00:00-06:00");
 });
