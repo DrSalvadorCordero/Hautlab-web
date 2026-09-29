@@ -81,6 +81,24 @@ async function supabaseJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
+async function supabaseCount(path: string) {
+  const config = getSupabaseConfig();
+  if (!config) throw new Error("supabase_not_configured");
+
+  const response = await fetch(`${config.url}/rest/v1/${path}`, {
+    method: "HEAD",
+    headers: supabaseHeaders(config.key, "count=exact"),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error(`supabase_${response.status}`);
+
+  const contentRange = response.headers.get("content-range") ?? "";
+  const total = Number(contentRange.split("/")[1]);
+  if (!Number.isFinite(total)) throw new Error("supabase_count_unavailable");
+  return total;
+}
+
 function noStoreJson(value: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers);
   headers.set("Cache-Control", "no-store");
@@ -130,14 +148,23 @@ const inboxConversationSelect =
 async function listOperationalInboxConversations() {
   const rows: InboxConversationRow[] = [];
   const pageSize = 500;
+  let cursor: string | null = null;
 
-  for (let offset = 0; ; offset += pageSize) {
+  for (;;) {
+    const cursorFilter = cursor
+      ? `&id=gt.${encodeURIComponent(cursor)}`
+      : "";
     const page = await supabaseJson<InboxConversationRow[]>(
-      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))&order=last_message_at.desc.nullslast&limit=${pageSize}&offset=${offset}`,
+      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))${cursorFilter}&order=id.asc&limit=${pageSize}`,
     );
     rows.push(...page);
     if (page.length < pageSize) break;
-    if (offset >= 20_000) throw new Error("operational_queue_too_large");
+
+    const nextCursor = page.at(-1)?.id ?? null;
+    if (!nextCursor || nextCursor === cursor) {
+      throw new Error("operational_queue_cursor_invalid");
+    }
+    cursor = nextCursor;
   }
 
   return rows;
@@ -251,11 +278,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [recentConversations, operationalConversations] = await Promise.all([
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      recentConversations,
+      operationalConversations,
+      totalConversationCount,
+      todayConversationCount,
+    ] = await Promise.all([
       supabaseJson<InboxConversationRow[]>(
         `wa_conversations?select=${inboxConversationSelect}&order=last_message_at.desc.nullslast&limit=100`,
       ),
       listOperationalInboxConversations(),
+      supabaseCount("wa_conversations?select=id"),
+      supabaseCount(
+        `wa_conversations?select=id&last_message_at=gte.${encodeURIComponent(
+          today.toISOString(),
+        )}&last_message_at=lte.${encodeURIComponent(now.toISOString())}`,
+      ),
     ]);
 
     const conversationsById = new Map<string, InboxConversationRow>();
@@ -297,15 +339,9 @@ export async function GET(request: NextRequest) {
       ...row,
       operational_state: deriveConversationOperationalState(row),
     }));
-    const now = Date.now();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const stats = {
-      total: conversationsWithState.length,
-      today: conversationsWithState.filter((row) => {
-        const value = row.last_message_at ? Date.parse(row.last_message_at) : 0;
-        return value >= today.getTime() && value <= now;
-      }).length,
+      total: totalConversationCount,
+      today: todayConversationCount,
       clinicalRisk: conversationsWithState.filter(
         (row) => row.operational_state === "clinical_review",
       ).length,
