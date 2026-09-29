@@ -340,7 +340,7 @@ export function WhatsAppLiveInbox() {
                       </div>
                       <p className="mt-1 truncate text-xs text-muted">{item.treatment || item.last_intent || item.stage || "Conversación"}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        {item.clinical_risk ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("risk")}`}>Riesgo clínico</span> : null}
+                        {item.operational_state === "clinical_review" ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("risk")}`}>Riesgo clínico</span> : null}
                         {item.operational_state === "reactivation" ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("neutral")}`}>Reactivar</span> : null}
                         {item.bot_paused || item.assigned_to ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("human")}`}>Humano</span> : <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("ai")}`}>IA activa</span>}
                       </div>
@@ -360,7 +360,7 @@ export function WhatsAppLiveInbox() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg font-medium text-bone">{selected.profile_name || "Paciente"}</h3>
-                      {selected.clinical_risk ? <ShieldAlert className="h-4 w-4 text-red-300" /> : null}
+                      {selected.operational_state === "clinical_review" ? <ShieldAlert className="h-4 w-4 text-red-300" /> : null}
                     </div>
                     <p className="mt-1 text-xs text-muted">{selected.phone}{selected.city ? ` · ${selected.city}` : ""}{selected.stage ? ` · ${selected.stage}` : ""}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
