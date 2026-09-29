@@ -222,20 +222,21 @@ export async function syncKnownNimboSchedules(input?: {
   limit?: number;
   staleAfterMinutes?: number;
 }): Promise<NimboSyncSummary> {
-  const limit = Math.max(1, Math.min(100, Math.trunc(input?.limit ?? 50)));
+  const limit = Math.max(1, Math.min(30, Math.trunc(input?.limit ?? 9)));
+  const fetchLimit = Math.max(100, limit * 4);
   const staleMs =
     Math.max(1, Math.min(60, input?.staleAfterMinutes ?? 4)) * 60_000;
   const recentFloor = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
   const rows = await supabaseJson<NimboLinkedConversation[]>(
-    `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})&order=appointment_datetime.asc.nullsfirst&limit=${limit}`,
+    `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})&order=appointment_datetime.asc.nullsfirst&limit=${fetchLimit}`,
   );
 
   const due = rows.filter((row) => {
     if (!row.nimbo_last_synced_at) return true;
     const syncedAt = Date.parse(row.nimbo_last_synced_at);
     return !Number.isFinite(syncedAt) || Date.now() - syncedAt >= staleMs;
-  });
+  }).slice(0, limit);
 
   const summary: NimboSyncSummary = {
     scanned: due.length,
@@ -248,15 +249,18 @@ export async function syncKnownNimboSchedules(input?: {
     errors: 0,
   };
 
-  for (const row of due) {
-    const result = await syncOne(row);
-    if (result === "synced") summary.synced += 1;
-    if (result === "changed") summary.changed += 1;
-    if (result === "cancelled") summary.cancelled += 1;
-    if (result === "completed") summary.completed += 1;
-    if (result === "missing") summary.missing += 1;
-    if (result === "conflict") summary.conflicts += 1;
-    if (result === "error") summary.errors += 1;
+  const concurrency = 3;
+  for (let index = 0; index < due.length; index += concurrency) {
+    const results = await Promise.all(due.slice(index, index + concurrency).map(syncOne));
+    for (const result of results) {
+      if (result === "synced") summary.synced += 1;
+      if (result === "changed") summary.changed += 1;
+      if (result === "cancelled") summary.cancelled += 1;
+      if (result === "completed") summary.completed += 1;
+      if (result === "missing") summary.missing += 1;
+      if (result === "conflict") summary.conflicts += 1;
+      if (result === "error") summary.errors += 1;
+    }
   }
 
   const reviewCount = summary.missing + summary.conflicts;
