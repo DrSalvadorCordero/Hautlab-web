@@ -1893,12 +1893,63 @@ async function processTextMessage(input: {
     return;
   }
 
-  const decision = await callTriage({
-    origin: input.origin,
-    message: text,
-    city: conversation.city,
-    conversationId: conversation.id,
-  });
+  let decision: TriageDecision;
+  try {
+    decision = await callTriage({
+      origin: input.origin,
+      message: text,
+      city: conversation.city,
+      conversationId: conversation.id,
+    });
+  } catch (error) {
+    // A transient AI failure must not turn into a silent patient conversation.
+    // Route the conversation to a human and only acknowledge after the
+    // escalation endpoint has accepted the handoff.
+    console.error("[whatsapp-orchestrator] triage unavailable", {
+      reason: error instanceof Error ? error.message : "unknown_error",
+    });
+
+    const fallbackMode = await currentAutomationMode(conversation.id);
+    if (fallbackMode === "off" || fallbackMode === "manual") return;
+
+    await updateConversation(conversation.id, {
+      stage: "human_review",
+      next_action: "human_review",
+      priority: "high",
+      human_review_reason: "triage_unavailable",
+    });
+
+    try {
+      await triggerEscalation({
+        origin: input.origin,
+        conversationId: conversation.id,
+        operator: "karen",
+      });
+    } catch (escalationError) {
+      console.error("[whatsapp-orchestrator] triage fallback escalation failed", {
+        reason:
+          escalationError instanceof Error
+            ? escalationError.message
+            : "unknown_error",
+      });
+      return;
+    }
+
+    const fallbackReply =
+      "No pude procesar tu mensaje automáticamente. Ya pasé la conversación con Karen para que la revise.";
+    const metaMessageId = await sendWhatsAppText(input.message.from, fallbackReply);
+    await storeSentMessage({
+      conversationId: conversation.id,
+      body: fallbackReply,
+      metaMessageId,
+      senderType: "system",
+      proposedBy: "triage-fallback",
+    });
+    await updateConversation(conversation.id, {
+      last_team_message_at: new Date().toISOString(),
+    });
+    return;
+  }
 
   const postTriageMode = await currentAutomationMode(conversation.id);
   if (postTriageMode === "off" || postTriageMode === "manual") return;
