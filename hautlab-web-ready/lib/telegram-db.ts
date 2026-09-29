@@ -50,6 +50,9 @@ export type TelegramConversation = {
   appointment_status: string | null;
   appointment_requested_at: string | null;
   appointment_datetime: string | null;
+  nimbo_schedule_id: number | null;
+  nimbo_sync_status: string | null;
+  nimbo_last_synced_at: string | null;
   closed_at: string | null;
   outcome: string | null;
   created_at: string;
@@ -242,7 +245,7 @@ export async function finishTelegramAudit(
 }
 
 const conversationSelect =
-  "id,handoff_ref,phone,profile_name,treatment,stage,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,handoff_status,bot_paused,last_message_at,last_patient_message_at,appointment_status,appointment_requested_at,appointment_datetime,closed_at,outcome,created_at";
+  "id,handoff_ref,phone,profile_name,treatment,stage,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,handoff_status,bot_paused,last_message_at,last_patient_message_at,appointment_status,appointment_requested_at,appointment_datetime,nimbo_schedule_id,nimbo_sync_status,nimbo_last_synced_at,closed_at,outcome,created_at";
 
 export async function listRecentTelegramConversations(limit = 400) {
   const safeLimit = Math.max(1, Math.min(500, Math.trunc(limit)));
