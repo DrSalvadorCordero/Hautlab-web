@@ -96,7 +96,9 @@ function reviewPatch(row: NimboLinkedConversation, reason: string) {
   if (hasUnrelatedReview) return {};
 
   return {
-    ...reviewPatch(row, reason),
+    human_review_reason: reason,
+    next_action: "human_review",
+    handoff_status: "pending",
   };
 }
 
@@ -142,9 +144,7 @@ async function markReview(
     nimbo_last_synced_at: now,
     nimbo_sync_status: status,
     nimbo_sync_error: reason,
-    human_review_reason: reason,
-    next_action: "human_review",
-    handoff_status: "pending",
+    ...reviewPatch(row, reason),
   });
 }
 
