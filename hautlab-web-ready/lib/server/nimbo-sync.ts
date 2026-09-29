@@ -222,7 +222,7 @@ export async function syncKnownNimboSchedules(input?: {
   limit?: number;
   staleAfterMinutes?: number;
 }): Promise<NimboSyncSummary> {
-  const limit = Math.max(1, Math.min(30, Math.trunc(input?.limit ?? 9)));
+  const limit = Math.max(1, Math.min(30, Math.trunc(input?.limit ?? 6)));
   const fetchLimit = Math.max(100, limit * 4);
   const staleMs =
     Math.max(1, Math.min(60, input?.staleAfterMinutes ?? 4)) * 60_000;
