@@ -182,82 +182,117 @@ type MercadoPagoSearchPayment = {
 
 async function searchMercadoPagoPaymentsByReference(
   order: PaymentOrderRow,
-): Promise<MercadoPagoRecoveryCandidate[]> {
+): Promise<{ candidates: MercadoPagoRecoveryCandidate[]; truncated: boolean }> {
   const mode: PaymentMode = order.test_mode ? "test" : "production";
   const accessToken = await getPaymentSecret(modeSecretName(mode, "access_token"));
-  const query = new URLSearchParams({
-    external_reference: order.external_reference,
-    sort: "date_last_updated",
-    criteria: "desc",
-    limit: "20",
-    offset: "0",
-  });
-  const response = await fetch(
-    `https://api.mercadopago.com/v1/payments/search?${query}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    },
-  );
-
-  const payload = (await response.json().catch(() => null)) as
-    | { results?: MercadoPagoSearchPayment[] }
-    | null;
-  if (!response.ok) {
-    throw new MercadoPagoIntegrationError(
-      "Mercado Pago payment search failed",
-      "payment_search_failed",
-      response.status >= 500 ? 503 : 409,
-    );
-  }
-
   const config = await getPaymentProviderConfig();
   const expectedOwnerId =
     mode === "production" ? config.production_owner_id : config.test_owner_id;
   const expectedLiveMode = mode === "production";
+
+  const pageSize = 50;
+  const maxPages = 10;
+  let offset = 0;
+  let total: number | null = null;
+  let exhausted = false;
   const deduplicated = new Map<string, MercadoPagoRecoveryCandidate>();
 
-  for (const payment of Array.isArray(payload?.results) ? payload.results : []) {
-    const paymentId = String(payment.id ?? "");
-    const status = payment.status as PaymentOrderStatus | null | undefined;
-    const amount = payment.transaction_amount;
+  for (let page = 0; page < maxPages; page += 1) {
+    const query = new URLSearchParams({
+      external_reference: order.external_reference,
+      sort: "date_last_updated",
+      criteria: "desc",
+      limit: String(pageSize),
+      offset: String(offset),
+    });
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/search?${query}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(8000),
+      },
+    );
 
-    if (!/^\d{1,30}$/.test(paymentId)) continue;
-    if (payment.external_reference !== order.external_reference) continue;
-    if (!status || !supportedPaymentStatuses.has(status)) continue;
-    if (typeof amount !== "number" || !paymentAmountMatches(order, amount)) continue;
-    if (payment.currency_id !== order.currency) continue;
-    if (payment.live_mode !== expectedLiveMode) continue;
-    if (
-      expectedOwnerId !== null &&
-      typeof expectedOwnerId === "number" &&
-      Number(payment.collector_id) !== expectedOwnerId
-    ) {
-      continue;
+    const payload = (await response.json().catch(() => null)) as
+      | {
+          results?: MercadoPagoSearchPayment[];
+          paging?: { total?: number | null; limit?: number | null; offset?: number | null };
+        }
+      | null;
+    if (!response.ok) {
+      throw new MercadoPagoIntegrationError(
+        "Mercado Pago payment search failed",
+        "payment_search_failed",
+        response.status >= 500 ? 503 : 409,
+      );
     }
 
-    deduplicated.set(paymentId, {
-      paymentId,
-      status,
-      statusDetail: payment.status_detail ?? null,
-      amount,
-      currency: payment.currency_id,
-      liveMode: payment.live_mode,
-      dateLastUpdated: payment.date_last_updated ?? null,
-    });
+    const results = Array.isArray(payload?.results) ? payload.results : [];
+    const reportedTotal = Number(payload?.paging?.total);
+    if (Number.isFinite(reportedTotal) && reportedTotal >= 0) {
+      total = reportedTotal;
+    }
+
+    for (const payment of results) {
+      const paymentId = String(payment.id ?? "");
+      const status = payment.status as PaymentOrderStatus | null | undefined;
+      const amount = payment.transaction_amount;
+
+      if (!/^\d{1,30}$/.test(paymentId)) continue;
+      if (payment.external_reference !== order.external_reference) continue;
+      if (!status || !supportedPaymentStatuses.has(status)) continue;
+      if (typeof amount !== "number" || !paymentAmountMatches(order, amount)) continue;
+      if (payment.currency_id !== order.currency) continue;
+      if (payment.live_mode !== expectedLiveMode) continue;
+      if (
+        expectedOwnerId !== null &&
+        typeof expectedOwnerId === "number" &&
+        Number(payment.collector_id) !== expectedOwnerId
+      ) {
+        continue;
+      }
+
+      deduplicated.set(paymentId, {
+        paymentId,
+        status,
+        statusDetail: payment.status_detail ?? null,
+        amount,
+        currency: payment.currency_id,
+        liveMode: payment.live_mode,
+        dateLastUpdated: payment.date_last_updated ?? null,
+      });
+    }
+
+    offset += results.length;
+    if (
+      results.length === 0 ||
+      results.length < pageSize ||
+      (total !== null && offset >= total)
+    ) {
+      exhausted = true;
+      break;
+    }
   }
 
-  return Array.from(deduplicated.values());
+  const truncated = !exhausted && (total === null || offset < total);
+  return {
+    candidates: Array.from(deduplicated.values()),
+    truncated,
+  };
 }
 
 export async function inspectMercadoPagoOrderRecovery(
   order: PaymentOrderRow,
 ): Promise<MercadoPagoRecoveryInspection> {
-  const candidates = await searchMercadoPagoPaymentsByReference(order);
+  const search = await searchMercadoPagoPaymentsByReference(order);
+  const candidates = search.candidates;
+  if (search.truncated) {
+    return { state: "ambiguous", selectedPaymentId: null, candidates };
+  }
   if (candidates.length === 0) {
     if (order.mp_payment_id) {
       return {
