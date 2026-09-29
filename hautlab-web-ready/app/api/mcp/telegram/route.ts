@@ -9,6 +9,7 @@ import {
   type TelegramOperatorKey,
 } from "@/lib/telegram-db";
 import {
+  getTelegramBusinessSnapshotText,
   getTelegramPatientSearchText,
   getTelegramPendingText,
   getTelegramStatusText,
@@ -28,7 +29,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SERVER_NAME = "HAUTLAB Telegram MCP";
-const SERVER_VERSION = "1.0.0";
+const SERVER_VERSION = "1.1.0";
 const MCP_PROTOCOL = "2025-06-18";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
@@ -126,6 +127,18 @@ const tools = [
     inputSchema: {
       type: "object",
       properties: {},
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "telegram_business_snapshot",
+    description:
+      "Return HAUTLAB Growth OS business metrics for a selected window: leads, response, booking funnel, attribution coverage and recorded revenue. Read-only.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        days: { type: "integer", minimum: 1, maximum: 365 },
+      },
       additionalProperties: false,
     },
   },
@@ -319,6 +332,14 @@ async function callTool(name: string, args: any) {
 
     case "telegram_today_summary":
       return textContent(await getTelegramTodaySummaryText());
+
+    case "telegram_business_snapshot": {
+      const days = Math.max(
+        1,
+        Math.min(365, Math.trunc(Number(args?.days ?? 30))),
+      );
+      return textContent(await getTelegramBusinessSnapshotText(days));
+    }
 
     case "telegram_pending_summary":
       return textContent(await getTelegramPendingText());

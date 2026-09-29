@@ -4,6 +4,7 @@ import {
   cancelTelegramJob,
   closeTelegramConversation,
   createTelegramJob,
+  getGrowthOsSnapshot,
   getTelegramConversationByRef,
   listRecentTelegramConversations,
   listTelegramOperationalConversations,
@@ -110,6 +111,19 @@ function formatLocalTime(value: string | null) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function formatMxn(value: number) {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(value) ? value : 0);
+}
+
+function percent(numerator: number, denominator: number) {
+  if (!denominator) return "0%";
+  return `${((numerator / denominator) * 100).toFixed(1)}%`;
 }
 
 function cleanPatientName(row: TelegramConversation) {
@@ -489,6 +503,7 @@ function helpText() {
     "/jobs — recordatorios activos",
     "/cancelar <id> — cancelar recordatorio",
     "/estado — salud de integraciones",
+    "/negocio [días] — embudo, atribución e ingresos registrados",
   ].join("\n");
 }
 
@@ -523,6 +538,58 @@ export async function getTelegramStatusText(operatorKey?: TelegramOperatorKey) {
   ].join("\n");
 }
 
+export async function getTelegramBusinessSnapshotText(days = 30) {
+  const safeDays = Math.max(1, Math.min(365, Math.trunc(days || 30)));
+  const snapshot = await getGrowthOsSnapshot(safeDays);
+  const attributionCoverage = percent(snapshot.attributedLeads, snapshot.leads);
+  const responseRate = percent(snapshot.responded, snapshot.leads);
+  const bookingRequestRate = percent(snapshot.appointmentRequested, snapshot.leads);
+  const confirmedRate = percent(snapshot.appointmentConfirmed, snapshot.leads);
+
+  const coverageWarnings: string[] = [];
+  if (snapshot.leads > 0 && snapshot.attributedLeads / snapshot.leads < 0.5) {
+    coverageWarnings.push(
+      `atribución incompleta (${snapshot.attributedLeads}/${snapshot.leads} leads)`,
+    );
+  }
+  if (snapshot.appointmentRequested > 0 && snapshot.appointmentConfirmed === 0) {
+    coverageWarnings.push(
+      "HAUTLAB no tiene citas confirmadas vinculadas; Nimbo puede tener citas fuera del flujo",
+    );
+  }
+  if (!snapshot.adSpendConnected) {
+    coverageWarnings.push("gasto publicitario no conectado");
+  }
+
+  const lines = [
+    `HAUTLAB · NEGOCIO · ${snapshot.days} DÍAS`,
+    `Leads: ${snapshot.leads} · respondidos ${snapshot.responded} (${responseRate})`,
+    `Solicitudes de cita: ${snapshot.appointmentRequested} (${bookingRequestRate})`,
+    `Citas confirmadas registradas: ${snapshot.appointmentConfirmed} (${confirmedRate})`,
+    `Atribución conocida: ${snapshot.attributedLeads}/${snapshot.leads} (${attributionCoverage})`,
+    `Ingresos registrados: ${formatMxn(snapshot.recordedRevenueMxn)}`,
+    `Ingresos ligados a conversación: ${formatMxn(snapshot.conversationAttributedRevenueMxn)}`,
+    `Ingresos con atribución de marketing: ${formatMxn(snapshot.marketingAttributedRevenueMxn)}`,
+  ];
+
+  if (coverageWarnings.length) {
+    lines.push("", "Cobertura de datos:");
+    lines.push(...coverageWarnings.map((warning) => `• ${warning}`));
+  }
+
+  if (snapshot.campaigns.length) {
+    lines.push("", "Campañas registradas:");
+    lines.push(
+      ...snapshot.campaigns.slice(0, 5).map(
+        (campaign) =>
+          `• ${campaign.campaign}: ${campaign.leads} leads · ${campaign.confirmed} confirmadas`,
+      ),
+    );
+  }
+
+  return lines.join("\n");
+}
+
 export async function handleTelegramOperatorText(
   operatorKey: TelegramOperatorKey,
   chatId: number,
@@ -540,6 +607,13 @@ export async function handleTelegramOperatorText(
   if (command === "pendientes") return getTelegramPendingText();
   if (command === "agenda") return getTelegramAgendaText();
   if (command === "estado") return getTelegramStatusText(operatorKey);
+  if (command === "negocio") {
+    const parsedDays = args ? Number(args) : 30;
+    if (!Number.isFinite(parsedDays) || parsedDays < 1 || parsedDays > 365) {
+      return "Uso: /negocio [días]  (1 a 365)";
+    }
+    return getTelegramBusinessSnapshotText(parsedDays);
+  }
 
   if (command === "paciente") {
     if (args.length < 2) return "Uso: /paciente <nombre>";
@@ -651,6 +725,9 @@ export async function handleTelegramOperatorText(
     if (/\bpendiente(s)?\b/.test(normalized)) return getTelegramPendingText();
     if (/\bagenda\b/.test(normalized)) return getTelegramAgendaText();
     if (/\b(estado|status)\b/.test(normalized)) return getTelegramStatusText(operatorKey);
+    if (/\b(negocio|embudo|ventas|growth)\b/.test(normalized)) {
+      return getTelegramBusinessSnapshotText(30);
+    }
     if (/\b(hoy|resumen)\b/.test(normalized)) return getTelegramTodaySummaryText();
     const patient = text.match(/^(?:paciente|buscar)\s+(.{2,100})$/i);
     if (patient) return getTelegramPatientSearchText(patient[1]);
