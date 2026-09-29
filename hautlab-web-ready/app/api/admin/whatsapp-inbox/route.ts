@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAccess } from "@/lib/admin-access";
+import { deriveConversationOperationalState } from "@/lib/operational-state";
 import {
   exceedsContentLength,
   isSameOriginRequest,
@@ -91,56 +92,55 @@ function normalizePhone(value: string) {
   return /^[1-9][0-9]{9,14}$/.test(digits) ? digits : null;
 }
 
-function bookingActiveWindowMs() {
-  const configured = Number(process.env.HAUTLAB_BOOKING_ACTIVE_HOURS ?? "72");
-  const hours = Number.isFinite(configured)
-    ? Math.max(12, Math.min(168, configured))
-    : 72;
-  return hours * 60 * 60 * 1000;
-}
-
-type OperationalStateRow = {
+type InboxConversationRow = {
+  id: string;
+  phone: string;
+  profile_name: string | null;
+  city: string | null;
+  treatment: string | null;
+  stage: string | null;
+  ai_mode: string;
+  assigned_to: string | null;
+  priority: string | null;
   clinical_risk: boolean;
   risk_level: string | null;
-  assigned_to: string | null;
-  bot_paused: boolean;
+  last_intent: string | null;
+  next_action: string | null;
+  human_review_reason: string | null;
+  conversation_summary: string | null;
+  patient_goal: string | null;
   handoff_status: string | null;
+  bot_paused: boolean;
+  last_message_at: string | null;
+  last_patient_message_at: string | null;
+  last_team_message_at: string | null;
   appointment_status: string | null;
   appointment_requested_at: string | null;
-  last_patient_message_at: string | null;
-  last_message_at: string | null;
   closed_at: string | null;
   outcome: string | null;
+  first_attribution: Record<string, unknown> | null;
+  last_attribution: Record<string, unknown> | null;
+  first_attributed_at: string | null;
+  last_attributed_at: string | null;
 };
 
-function deriveOperationalState(row: OperationalStateRow) {
-  if (row.closed_at || row.outcome) return "closed" as const;
-  if (row.clinical_risk || row.risk_level === "urgent") return "clinical_review" as const;
-  if (
-    row.bot_paused ||
-    row.handoff_status === "pending" ||
-    row.handoff_status === "assigned" ||
-    Boolean(row.assigned_to)
-  ) {
-    return "human_pending" as const;
-  }
-  if (
-    row.appointment_status === "collecting" ||
-    row.appointment_status === "pending_confirmation"
-  ) {
-    const reference = Date.parse(
-      row.last_patient_message_at ??
-        row.appointment_requested_at ??
-        row.last_message_at ??
-        "",
+const inboxConversationSelect =
+  "id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at";
+
+async function listOperationalInboxConversations() {
+  const rows: InboxConversationRow[] = [];
+  const pageSize = 500;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await supabaseJson<InboxConversationRow[]>(
+      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))&order=last_message_at.desc.nullslast&limit=${pageSize}&offset=${offset}`,
     );
-    if (Number.isFinite(reference) && Date.now() - reference <= bookingActiveWindowMs()) {
-      return "booking_pending" as const;
-    }
-    return "reactivation" as const;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    if (offset >= 20_000) throw new Error("operational_queue_too_large");
   }
-  if (row.appointment_status === "confirmed") return "scheduled" as const;
-  return "idle" as const;
+
+  return rows;
 }
 
 async function getRelaySecret() {
@@ -251,36 +251,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const conversations = await supabaseJson<
-      Array<{
-        id: string;
-        phone: string;
-        profile_name: string | null;
-        city: string | null;
-        treatment: string | null;
-        stage: string | null;
-        ai_mode: string;
-        assigned_to: string | null;
-        priority: string | null;
-        clinical_risk: boolean;
-        risk_level: string | null;
-        last_intent: string | null;
-        next_action: string | null;
-        human_review_reason: string | null;
-        conversation_summary: string | null;
-        patient_goal: string | null;
-        handoff_status: string | null;
-        bot_paused: boolean;
-        last_message_at: string | null;
-        last_patient_message_at: string | null;
-        last_team_message_at: string | null;
-        appointment_status: string | null;
-        appointment_requested_at: string | null;
-        closed_at: string | null;
-        outcome: string | null;
-      }>
-    >(
-      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=500",
+    const [recentConversations, operationalConversations] = await Promise.all([
+      supabaseJson<InboxConversationRow[]>(
+        `wa_conversations?select=${inboxConversationSelect}&order=last_message_at.desc.nullslast&limit=100`,
+      ),
+      listOperationalInboxConversations(),
+    ]);
+
+    const conversationsById = new Map<string, InboxConversationRow>();
+    for (const row of [...recentConversations, ...operationalConversations]) {
+      conversationsById.set(row.id, row);
+    }
+    const conversations = Array.from(conversationsById.values()).sort(
+      (a, b) =>
+        Date.parse(b.last_message_at ?? "") - Date.parse(a.last_message_at ?? ""),
     );
 
     const effectiveSelected =
@@ -311,7 +295,7 @@ export async function GET(request: NextRequest) {
 
     const conversationsWithState = conversations.map((row) => ({
       ...row,
-      operational_state: deriveOperationalState(row),
+      operational_state: deriveConversationOperationalState(row),
     }));
     const now = Date.now();
     const today = new Date();
