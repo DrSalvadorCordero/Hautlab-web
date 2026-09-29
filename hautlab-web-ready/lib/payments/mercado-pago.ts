@@ -257,16 +257,15 @@ async function searchMercadoPagoPaymentsByReference(
 export async function inspectMercadoPagoOrderRecovery(
   order: PaymentOrderRow,
 ): Promise<MercadoPagoRecoveryInspection> {
-  if (order.mp_payment_id) {
-    return {
-      state: "linked",
-      selectedPaymentId: order.mp_payment_id,
-      candidates: [],
-    };
-  }
-
   const candidates = await searchMercadoPagoPaymentsByReference(order);
   if (candidates.length === 0) {
+    if (order.mp_payment_id) {
+      return {
+        state: "linked",
+        selectedPaymentId: order.mp_payment_id,
+        candidates,
+      };
+    }
     return { state: "not_found", selectedPaymentId: null, candidates };
   }
 
@@ -339,6 +338,18 @@ export async function reconcileMercadoPagoPayment(input: {
   const order = await getPaymentOrder(reference);
   if (!order) {
     throw new MercadoPagoIntegrationError("Payment order was not found", "order_not_found", 404);
+  }
+
+  if (
+    order.mp_payment_id &&
+    order.mp_payment_id !== input.paymentId &&
+    ["approved", "refunded", "charged_back"].includes(order.status)
+  ) {
+    throw new MercadoPagoIntegrationError(
+      "Payment order is already settled with another payment",
+      "settled_payment_conflict",
+      409,
+    );
   }
 
   const liveMode = payment.live_mode === true;
