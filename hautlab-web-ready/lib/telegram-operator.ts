@@ -134,7 +134,11 @@ function operationalLabel(row: TelegramConversation) {
   if (state === "human_pending") return "en atención";
   if (state === "booking_pending") return "cita por confirmar";
   if (state === "reactivation") return "reactivación comercial";
-  if (state === "scheduled") return "cita confirmada";
+  if (state === "scheduled") {
+    return row.nimbo_sync_status === "error"
+      ? "cita registrada · sync pendiente"
+      : "cita confirmada";
+  }
   if (state === "closed") return "cerrada";
   return row.stage?.replace(/_/g, " ") || "seguimiento";
 }
@@ -180,6 +184,8 @@ export async function getTelegramTodaySummaryText() {
     .filter(
       (row) =>
         row.appointment_status === "confirmed" &&
+        row.nimbo_sync_status !== "missing" &&
+        row.nimbo_sync_status !== "conflict" &&
         row.appointment_datetime &&
         localDateKey(row.appointment_datetime) === today,
     )
@@ -265,6 +271,8 @@ export async function getTelegramAgendaText() {
     .filter(
       (row) =>
         row.appointment_status === "confirmed" &&
+        row.nimbo_sync_status !== "missing" &&
+        row.nimbo_sync_status !== "conflict" &&
         isToday(row.appointment_datetime),
     )
     .sort(
