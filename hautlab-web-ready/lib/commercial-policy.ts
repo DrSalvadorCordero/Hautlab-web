@@ -2,8 +2,8 @@ export const HAUTLAB_COMMERCIAL_POLICY = `
 PRECIOS ACTIVOS AUTORIZADOS
 - Rinomodelación, labios, ojeras, mentón/contorno mandibular y pómulos/tercio medio, cuando corresponden a la tarifa estándar: $5,500 MXN en modalidad preferencial de pago o $6,300 MXN hasta 6 meses sin intereses.
 - Consulta dermatológica: $1,300 MXN.
-- Toxina botulínica de tercio superior: $3,500 MXN, con dosis personalizada según valoración.
-- Comunica los importes como precio del procedimiento. Nunca presentes el precio como costo por jeringa, mililitro o unidad.
+- Toxina botulínica de tercio superior: $3,500 MXN, con dosis personalizada según valoración.\n- SKIN RESET: 01 sesión $2,900 MXN; 03 sesiones $7,500 MXN; 06 sesiones $13,800 MXN.
+- Comunica los importes como precio del procedimiento. Nunca presentes el precio como costo por jeringa, mililitro o unidad.\n- Ante una pregunta directa de precio, responde con la cifra autorizada disponible sin pedir primero valoración ni ofrecer “pasar la tarifa”. Presenta primero la opción preferencial o de entrada autorizada.\n- La sede operativa vigente es únicamente Mérida. No preguntes ciudad ni ofrezcas CDMX u otra sede.
 - Si el plan combina zonas, requiere otra cantidad de producto o el servicio no tiene precio aquí, el equipo debe confirmar la cotización.
 - Si la persona menciona una referencia de $4,900 MXN, no la confirmes ni la niegues. Indica que el equipo debe verificar esa referencia antes de confirmarla.
 - No inventes descuentos, promociones, marcas, cantidades adicionales, retoques, disponibilidad ni otros precios.
