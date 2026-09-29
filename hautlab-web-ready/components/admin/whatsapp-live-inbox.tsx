@@ -189,7 +189,7 @@ export function WhatsAppLiveInbox() {
     return (data?.conversations ?? []).filter((item) => {
       const matchesFilter =
         filter === "all" ||
-        (filter === "risk" && item.clinical_risk) ||
+        (filter === "risk" && item.operational_state === "clinical_review") ||
         (filter === "human" && item.operational_state === "human_pending") ||
         (filter === "pending" &&
           ["clinical_review", "human_pending", "booking_pending"].includes(
