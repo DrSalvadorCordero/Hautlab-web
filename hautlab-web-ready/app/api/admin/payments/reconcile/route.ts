@@ -62,6 +62,11 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ error: "invalid_payload" }, { status: 400 });
   }
 
+  const canApply = Boolean(access.isOwner || access.organizationRole === "org:admin");
+  if (parsed.data.apply && !canApply) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
+  }
+
   try {
     let order = await getPaymentOrder(parsed.data.reference);
     if (!order) {
