@@ -57,7 +57,7 @@ revoke all on table public.payment_receipts from anon, authenticated;
 revoke all on table public.payment_receipt_items from anon, authenticated;
 grant select, insert, update on table public.payment_receipts to service_role;
 grant select, insert, update on table public.payment_receipt_items to service_role;
-grant usage, select on all sequences in schema public to service_role;
+grant usage, select on sequence public.payment_receipts_receipt_number_seq to service_role;
 
 drop trigger if exists payment_receipts_set_updated_at on public.payment_receipts;
 create trigger payment_receipts_set_updated_at
