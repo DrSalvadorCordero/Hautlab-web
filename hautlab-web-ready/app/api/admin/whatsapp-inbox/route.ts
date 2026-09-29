@@ -91,6 +91,58 @@ function normalizePhone(value: string) {
   return /^[1-9][0-9]{9,14}$/.test(digits) ? digits : null;
 }
 
+function bookingActiveWindowMs() {
+  const configured = Number(process.env.HAUTLAB_BOOKING_ACTIVE_HOURS ?? "72");
+  const hours = Number.isFinite(configured)
+    ? Math.max(12, Math.min(168, configured))
+    : 72;
+  return hours * 60 * 60 * 1000;
+}
+
+type OperationalStateRow = {
+  clinical_risk: boolean;
+  risk_level: string | null;
+  assigned_to: string | null;
+  bot_paused: boolean;
+  handoff_status: string | null;
+  appointment_status: string | null;
+  appointment_requested_at: string | null;
+  last_patient_message_at: string | null;
+  last_message_at: string | null;
+  closed_at: string | null;
+  outcome: string | null;
+};
+
+function deriveOperationalState(row: OperationalStateRow) {
+  if (row.closed_at || row.outcome) return "closed" as const;
+  if (row.clinical_risk || row.risk_level === "urgent") return "clinical_review" as const;
+  if (
+    row.bot_paused ||
+    row.handoff_status === "pending" ||
+    row.handoff_status === "assigned" ||
+    Boolean(row.assigned_to)
+  ) {
+    return "human_pending" as const;
+  }
+  if (
+    row.appointment_status === "collecting" ||
+    row.appointment_status === "pending_confirmation"
+  ) {
+    const reference = Date.parse(
+      row.last_patient_message_at ??
+        row.appointment_requested_at ??
+        row.last_message_at ??
+        "",
+    );
+    if (Number.isFinite(reference) && Date.now() - reference <= bookingActiveWindowMs()) {
+      return "booking_pending" as const;
+    }
+    return "reactivation" as const;
+  }
+  if (row.appointment_status === "confirmed") return "scheduled" as const;
+  return "idle" as const;
+}
+
 async function getRelaySecret() {
   const rows = await supabaseJson<Array<{ secret_value?: string }>>(
     `wa_internal_config?key=eq.${encodeURIComponent(RELAY_SECRET_KEY)}&select=secret_value&limit=1`,
@@ -223,9 +275,12 @@ export async function GET(request: NextRequest) {
         last_patient_message_at: string | null;
         last_team_message_at: string | null;
         appointment_status: string | null;
+        appointment_requested_at: string | null;
+        closed_at: string | null;
+        outcome: string | null;
       }>
     >(
-      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=100",
+      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=500",
     );
 
     const effectiveSelected =
@@ -254,19 +309,32 @@ export async function GET(request: NextRequest) {
         )
       : [];
 
+    const conversationsWithState = conversations.map((row) => ({
+      ...row,
+      operational_state: deriveOperationalState(row),
+    }));
     const now = Date.now();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const stats = {
-      total: conversations.length,
-      today: conversations.filter((row) => {
+      total: conversationsWithState.length,
+      today: conversationsWithState.filter((row) => {
         const value = row.last_message_at ? Date.parse(row.last_message_at) : 0;
         return value >= today.getTime() && value <= now;
       }).length,
-      clinicalRisk: conversations.filter((row) => row.clinical_risk).length,
-      human: conversations.filter((row) => row.bot_paused || Boolean(row.assigned_to)).length,
-      pending: conversations.filter(
-        (row) => row.handoff_status === "pending" || row.handoff_status === "assigned",
+      clinicalRisk: conversationsWithState.filter(
+        (row) => row.operational_state === "clinical_review",
+      ).length,
+      human: conversationsWithState.filter(
+        (row) => row.operational_state === "human_pending",
+      ).length,
+      pending: conversationsWithState.filter((row) =>
+        ["clinical_review", "human_pending", "booking_pending"].includes(
+          row.operational_state,
+        ),
+      ).length,
+      reactivation: conversationsWithState.filter(
+        (row) => row.operational_state === "reactivation",
       ).length,
     };
 
@@ -274,7 +342,7 @@ export async function GET(request: NextRequest) {
       canEdit: Boolean(access.isOwner || access.organizationRole === "org:admin"),
       selectedId: effectiveSelected,
       stats,
-      conversations,
+      conversations: conversationsWithState,
       messages,
     });
   } catch (error) {

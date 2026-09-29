@@ -38,6 +38,14 @@ type Conversation = {
   last_patient_message_at: string | null;
   last_team_message_at: string | null;
   appointment_status: string | null;
+  operational_state:
+    | "clinical_review"
+    | "human_pending"
+    | "booking_pending"
+    | "reactivation"
+    | "scheduled"
+    | "closed"
+    | "idle";
   first_attribution: AttributionSnapshot | null;
   last_attribution: AttributionSnapshot | null;
   first_attributed_at: string | null;
@@ -79,12 +87,13 @@ type InboxPayload = {
     clinicalRisk: number;
     human: number;
     pending: number;
+    reactivation: number;
   };
   conversations: Conversation[];
   messages: Message[];
 };
 
-type Filter = "all" | "risk" | "human" | "pending";
+type Filter = "all" | "risk" | "human" | "pending" | "reactivation";
 
 function formatTime(value: string | null) {
   if (!value) return "—";
@@ -180,9 +189,13 @@ export function WhatsAppLiveInbox() {
     return (data?.conversations ?? []).filter((item) => {
       const matchesFilter =
         filter === "all" ||
-        (filter === "risk" && item.clinical_risk) ||
-        (filter === "human" && (item.bot_paused || Boolean(item.assigned_to))) ||
-        (filter === "pending" && (item.handoff_status === "pending" || item.handoff_status === "assigned"));
+        (filter === "risk" && item.operational_state === "clinical_review") ||
+        (filter === "human" && item.operational_state === "human_pending") ||
+        (filter === "pending" &&
+          ["clinical_review", "human_pending", "booking_pending"].includes(
+            item.operational_state,
+          )) ||
+        (filter === "reactivation" && item.operational_state === "reactivation");
       if (!matchesFilter) return false;
       if (!needle) return true;
       return [item.profile_name, item.phone, item.treatment, item.stage, item.last_intent]
@@ -244,7 +257,8 @@ export function WhatsAppLiveInbox() {
     { label: "Conversaciones hoy", value: data.stats.today, icon: MessageSquareText },
     { label: "Intervención humana", value: data.stats.human, icon: UserRoundCheck },
     { label: "Alertas clínicas", value: data.stats.clinicalRisk, icon: ShieldAlert },
-    { label: "Pases pendientes", value: data.stats.pending, icon: AlertTriangle },
+    { label: "Pendientes ahora", value: data.stats.pending, icon: AlertTriangle },
+    { label: "Reactivación", value: data.stats.reactivation, icon: RefreshCw },
   ];
 
   return (
@@ -262,7 +276,7 @@ export function WhatsAppLiveInbox() {
         </button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-[1.25rem] border border-line bg-white/[0.025] p-4">
             <div className="flex items-center justify-between gap-3">
@@ -295,6 +309,7 @@ export function WhatsAppLiveInbox() {
               ["risk", "Riesgo"],
               ["human", "Humano"],
               ["pending", "Pendientes"],
+              ["reactivation", "Reactivación"],
             ] as Array<[Filter, string]>).map(([key, label]) => (
               <button key={key} type="button" onClick={() => setFilter(key)} className={`rounded-full border px-3 py-1.5 text-xs transition ${filter === key ? "border-champagne/40 bg-champagne/[0.07] text-bone" : "border-line text-muted hover:text-bone"}`}>
                 {label}
@@ -326,6 +341,7 @@ export function WhatsAppLiveInbox() {
                       <p className="mt-1 truncate text-xs text-muted">{item.treatment || item.last_intent || item.stage || "Conversación"}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {item.clinical_risk ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("risk")}`}>Riesgo clínico</span> : null}
+                        {item.operational_state === "reactivation" ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("neutral")}`}>Reactivar</span> : null}
                         {item.bot_paused || item.assigned_to ? <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("human")}`}>Humano</span> : <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeClass("ai")}`}>IA activa</span>}
                       </div>
                     </div>

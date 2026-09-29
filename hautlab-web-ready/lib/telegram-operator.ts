@@ -110,11 +110,63 @@ function cleanPatientName(row: TelegramConversation) {
   return row.profile_name?.trim().slice(0, 80) || "Paciente";
 }
 
+function bookingActiveWindowMs() {
+  const configured = Number(process.env.HAUTLAB_BOOKING_ACTIVE_HOURS ?? "72");
+  const hours = Number.isFinite(configured)
+    ? Math.max(12, Math.min(168, configured))
+    : 72;
+  return hours * 60 * 60 * 1000;
+}
+
+function bookingReferenceAt(row: TelegramConversation) {
+  return (
+    row.last_patient_message_at ??
+    row.appointment_requested_at ??
+    row.last_message_at ??
+    row.created_at
+  );
+}
+
+function isOpenBookingPipeline(row: TelegramConversation) {
+  return (
+    !row.closed_at &&
+    !row.outcome &&
+    (row.appointment_status === "collecting" ||
+      row.appointment_status === "pending_confirmation")
+  );
+}
+
+function isActiveBookingPending(row: TelegramConversation) {
+  if (!isOpenBookingPipeline(row)) return false;
+  const reference = Date.parse(bookingReferenceAt(row));
+  if (!Number.isFinite(reference)) return false;
+  return Date.now() - reference <= bookingActiveWindowMs();
+}
+
+function isReactivationCandidate(row: TelegramConversation) {
+  if (!isOpenBookingPipeline(row)) return false;
+  const reference = Date.parse(bookingReferenceAt(row));
+  if (!Number.isFinite(reference)) return false;
+  return Date.now() - reference > bookingActiveWindowMs();
+}
+
+function hasHumanOperationalPending(row: TelegramConversation) {
+  return (
+    row.clinical_risk ||
+    row.risk_level === "urgent" ||
+    row.bot_paused ||
+    row.handoff_status === "pending" ||
+    row.handoff_status === "assigned" ||
+    Boolean(row.assigned_to)
+  );
+}
+
 function operationalLabel(row: TelegramConversation) {
   if (row.clinical_risk || row.risk_level === "urgent") return "revisión clínica";
   if (row.handoff_status === "pending") return "pendiente";
-  if (row.handoff_status === "assigned" || row.assigned_to) return "en atención";
-  if (row.appointment_status === "pending_confirmation") return "cita por confirmar";
+  if (row.bot_paused || row.handoff_status === "assigned" || row.assigned_to) return "en atención";
+  if (isActiveBookingPending(row)) return "cita por confirmar";
+  if (isReactivationCandidate(row)) return "reactivación comercial";
   if (row.appointment_status === "confirmed") return "cita confirmada";
   return row.stage?.replace(/_/g, " ") || "seguimiento";
 }
@@ -135,14 +187,7 @@ function isToday(value: string | null) {
 }
 
 function isPending(row: TelegramConversation) {
-  return (
-    row.clinical_risk ||
-    row.risk_level === "urgent" ||
-    row.handoff_status === "pending" ||
-    row.handoff_status === "assigned" ||
-    Boolean(row.assigned_to) ||
-    row.appointment_status === "pending_confirmation"
-  );
+  return hasHumanOperationalPending(row) || isActiveBookingPending(row);
 }
 
 export async function getTelegramTodaySummaryText() {
@@ -162,6 +207,7 @@ export async function getTelegramTodaySummaryText() {
         Date.parse(b.appointment_datetime ?? ""),
     );
   const pending = rows.filter(isPending);
+  const reactivation = rows.filter(isReactivationCandidate);
   const clinical = rows.filter(
     (row) => row.clinical_risk || row.risk_level === "urgent",
   );
@@ -171,6 +217,7 @@ export async function getTelegramTodaySummaryText() {
     `Nuevos contactos: ${newToday.length}`,
     `Citas confirmadas hoy: ${appointments.length}`,
     `Pendientes operativos: ${pending.length}`,
+    `Reactivación comercial: ${reactivation.length}`,
     `Revisión clínica: ${clinical.length}`,
   ];
 
@@ -188,7 +235,7 @@ export async function getTelegramTodaySummaryText() {
         (row.clinical_risk ? 8 : 0) +
         (row.risk_level === "urgent" ? 8 : 0) +
         (row.handoff_status === "pending" ? 4 : 0) +
-        (row.appointment_status === "pending_confirmation" ? 2 : 0);
+        (isActiveBookingPending(row) ? 2 : 0);
       return score(b) - score(a);
     })
     .slice(0, 5);
@@ -202,7 +249,8 @@ export async function getTelegramTodaySummaryText() {
 }
 
 export async function getTelegramPendingText() {
-  const rows = (await listRecentTelegramConversations(500))
+  const allRows = await listRecentTelegramConversations(500);
+  const rows = allRows
     .filter(isPending)
     .sort((a, b) => {
       const clinicalA = a.clinical_risk || a.risk_level === "urgent" ? 1 : 0;
@@ -211,12 +259,20 @@ export async function getTelegramPendingText() {
       return Date.parse(b.last_message_at ?? b.created_at) -
         Date.parse(a.last_message_at ?? a.created_at);
     });
+  const reactivation = allRows.filter(isReactivationCandidate);
 
-  if (!rows.length) return "No hay pendientes operativos en este momento.";
+  if (!rows.length) {
+    return reactivation.length
+      ? `No hay pendientes operativos en este momento. Reactivación comercial: ${reactivation.length}.`
+      : "No hay pendientes operativos en este momento.";
+  }
 
   const lines = [`PENDIENTES · ${rows.length}`];
   lines.push(...rows.slice(0, 15).map((row) => rowLine(row)));
   if (rows.length > 15) lines.push(`+${rows.length - 15} pendientes más`);
+  if (reactivation.length) {
+    lines.push("", `Reactivación comercial separada: ${reactivation.length} conversaciones antiguas.`);
+  }
   lines.push("", "Usa /paciente <nombre> o /tomar <ref>.");
   return lines.join("\n");
 }
