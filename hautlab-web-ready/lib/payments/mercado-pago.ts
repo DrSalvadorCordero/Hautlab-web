@@ -152,6 +152,175 @@ function paymentAmountMatches(order: PaymentOrderRow, amount: number | undefined
   return Math.abs(Number(order.amount) - amount) < 0.005;
 }
 
+export type MercadoPagoRecoveryCandidate = {
+  paymentId: string;
+  status: PaymentOrderStatus;
+  statusDetail: string | null;
+  amount: number;
+  currency: string;
+  liveMode: boolean;
+  dateLastUpdated: string | null;
+};
+
+export type MercadoPagoRecoveryInspection = {
+  state: "linked" | "ready" | "not_found" | "ambiguous";
+  selectedPaymentId: string | null;
+  candidates: MercadoPagoRecoveryCandidate[];
+};
+
+type MercadoPagoSearchPayment = {
+  id?: string | number | null;
+  external_reference?: string | null;
+  status?: string | null;
+  status_detail?: string | null;
+  transaction_amount?: number | null;
+  currency_id?: string | null;
+  live_mode?: boolean | null;
+  collector_id?: number | null;
+  date_last_updated?: string | null;
+};
+
+async function searchMercadoPagoPaymentsByReference(
+  order: PaymentOrderRow,
+): Promise<MercadoPagoRecoveryCandidate[]> {
+  const mode: PaymentMode = order.test_mode ? "test" : "production";
+  const accessToken = await getPaymentSecret(modeSecretName(mode, "access_token"));
+  const query = new URLSearchParams({
+    external_reference: order.external_reference,
+    sort: "date_last_updated",
+    criteria: "desc",
+    limit: "20",
+    offset: "0",
+  });
+  const response = await fetch(
+    `https://api.mercadopago.com/v1/payments/search?${query}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    },
+  );
+
+  const payload = (await response.json().catch(() => null)) as
+    | { results?: MercadoPagoSearchPayment[] }
+    | null;
+  if (!response.ok) {
+    throw new MercadoPagoIntegrationError(
+      "Mercado Pago payment search failed",
+      "payment_search_failed",
+      response.status >= 500 ? 503 : 409,
+    );
+  }
+
+  const config = await getPaymentProviderConfig();
+  const expectedOwnerId =
+    mode === "production" ? config.production_owner_id : config.test_owner_id;
+  const expectedLiveMode = mode === "production";
+  const deduplicated = new Map<string, MercadoPagoRecoveryCandidate>();
+
+  for (const payment of Array.isArray(payload?.results) ? payload.results : []) {
+    const paymentId = String(payment.id ?? "");
+    const status = payment.status as PaymentOrderStatus | null | undefined;
+    const amount = payment.transaction_amount;
+
+    if (!/^\d{1,30}$/.test(paymentId)) continue;
+    if (payment.external_reference !== order.external_reference) continue;
+    if (!status || !supportedPaymentStatuses.has(status)) continue;
+    if (typeof amount !== "number" || !paymentAmountMatches(order, amount)) continue;
+    if (payment.currency_id !== order.currency) continue;
+    if (payment.live_mode !== expectedLiveMode) continue;
+    if (
+      expectedOwnerId !== null &&
+      typeof expectedOwnerId === "number" &&
+      Number(payment.collector_id) !== expectedOwnerId
+    ) {
+      continue;
+    }
+
+    deduplicated.set(paymentId, {
+      paymentId,
+      status,
+      statusDetail: payment.status_detail ?? null,
+      amount,
+      currency: payment.currency_id,
+      liveMode: payment.live_mode,
+      dateLastUpdated: payment.date_last_updated ?? null,
+    });
+  }
+
+  return Array.from(deduplicated.values());
+}
+
+export async function inspectMercadoPagoOrderRecovery(
+  order: PaymentOrderRow,
+): Promise<MercadoPagoRecoveryInspection> {
+  const candidates = await searchMercadoPagoPaymentsByReference(order);
+  if (candidates.length === 0) {
+    if (order.mp_payment_id) {
+      return {
+        state: "linked",
+        selectedPaymentId: order.mp_payment_id,
+        candidates,
+      };
+    }
+    return { state: "not_found", selectedPaymentId: null, candidates };
+  }
+
+  const settledStatuses: PaymentOrderStatus[] = [
+    "approved",
+    "refunded",
+    "charged_back",
+  ];
+  const activeStatuses: PaymentOrderStatus[] = [
+    "pending",
+    "authorized",
+    "in_process",
+    "in_mediation",
+  ];
+  const settled = candidates.filter((candidate) =>
+    settledStatuses.includes(candidate.status),
+  );
+  const active = candidates.filter((candidate) =>
+    activeStatuses.includes(candidate.status),
+  );
+
+  // A single settled payment is safe to recover only when there is no second
+  // active attempt that could still settle and create a duplicate charge.
+  if (settled.length === 1 && active.length === 0) {
+    return {
+      state: "ready",
+      selectedPaymentId: settled[0].paymentId,
+      candidates,
+    };
+  }
+  if (settled.length > 1 || active.length > 1 || (settled.length && active.length)) {
+    return { state: "ambiguous", selectedPaymentId: null, candidates };
+  }
+  if (active.length === 1) {
+    return {
+      state: "ready",
+      selectedPaymentId: active[0].paymentId,
+      candidates,
+    };
+  }
+
+  const terminal = candidates.filter((candidate) =>
+    candidate.status === "rejected" || candidate.status === "cancelled",
+  );
+  if (terminal.length === 1) {
+    return {
+      state: "ready",
+      selectedPaymentId: terminal[0].paymentId,
+      candidates,
+    };
+  }
+
+  return { state: "ambiguous", selectedPaymentId: null, candidates };
+}
+
 export async function reconcileMercadoPagoPayment(input: {
   paymentId: string;
   mode: PaymentMode;
@@ -169,6 +338,18 @@ export async function reconcileMercadoPagoPayment(input: {
   const order = await getPaymentOrder(reference);
   if (!order) {
     throw new MercadoPagoIntegrationError("Payment order was not found", "order_not_found", 404);
+  }
+
+  if (
+    order.mp_payment_id &&
+    order.mp_payment_id !== input.paymentId &&
+    ["approved", "refunded", "charged_back"].includes(order.status)
+  ) {
+    throw new MercadoPagoIntegrationError(
+      "Payment order is already settled with another payment",
+      "settled_payment_conflict",
+      409,
+    );
   }
 
   const liveMode = payment.live_mode === true;

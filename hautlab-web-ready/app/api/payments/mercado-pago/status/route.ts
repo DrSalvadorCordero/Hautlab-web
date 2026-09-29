@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getPaymentOrder } from "@/lib/payments/payment-db";
 import { reconcileMercadoPagoPayment } from "@/lib/payments/mercado-pago";
+import {
+  getPaymentReceiptBySource,
+  publicPaymentReceipt,
+} from "@/lib/payments/receipt-db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,5 +62,13 @@ export async function GET(request: Request) {
     }
   }
 
-  return noStoreJson(publicOrder(order));
+  const receipt = await getPaymentReceiptBySource(
+    "mercado_pago",
+    order.external_reference,
+  );
+
+  return noStoreJson({
+    ...publicOrder(order),
+    receipt: receipt ? publicPaymentReceipt(receipt) : null,
+  });
 }
