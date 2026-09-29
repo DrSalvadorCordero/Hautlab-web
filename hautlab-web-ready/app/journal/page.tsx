@@ -10,12 +10,12 @@ const pageUrl = `${siteConfig.url}/journal`;
 export const metadata: Metadata = {
   title: "HAUTLAB Journal | Dermatología y medicina estética",
   description:
-    "Artículos médicos de HAUTLAB sobre dermatología clínica, medicina estética, inyectables, piel y tecnologías, con enfoque basado en evidencia y revisión médica.",
+    "Artículos médicos de HAUTLAB sobre piel, proporción, expresión, dermatología clínica y medicina estética, con enfoque basado en evidencia y revisión médica.",
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "HAUTLAB Journal | Dermatología y medicina estética",
     description:
-      "Criterio clínico, evidencia y decisiones explicadas sin lenguaje promocional.",
+      "Piel, proporción y expresión: criterio clínico, evidencia y decisiones explicadas sin lenguaje promocional.",
     url: pageUrl,
     siteName: "HAUTLAB",
     locale: "es_MX",
@@ -33,8 +33,16 @@ export default function JournalPage() {
             Medicina estética y dermatología, explicadas con criterio.
           </h1>
           <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">
-            Contenido educativo para entender qué puede aportar un tratamiento, qué no puede resolver, qué riesgos importa discutir y cuándo una valoración cambia la decisión.
+            Piel, proporción y expresión. Artículos para entender qué puede aportar un tratamiento,
+            qué no puede resolver, qué riesgos importa discutir y cuándo una valoración cambia la decisión.
           </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {["Piel", "Proporción", "Expresión", "Fundamentos"].map((axis) => (
+              <span key={axis} className="rounded-full border border-line bg-white/[0.025] px-4 py-2 text-xs uppercase tracking-[0.16em] text-muted">
+                {axis}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -45,6 +53,8 @@ export default function JournalPage() {
               <Link key={article.slug} href={`/journal/${article.slug}`} className="group">
                 <Card className="p-7 transition group-hover:-translate-y-1 group-hover:border-champagne/40 sm:p-9">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs uppercase tracking-[0.16em] text-champagne">
+                    <span>{article.axis}</span>
+                    <span aria-hidden="true">·</span>
                     <span>{article.category}</span>
                     <span aria-hidden="true">·</span>
                     <span>{article.readingTime}</span>
