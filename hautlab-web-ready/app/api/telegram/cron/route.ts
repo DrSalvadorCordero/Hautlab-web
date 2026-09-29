@@ -42,7 +42,7 @@ async function executeJob(job: TelegramJob) {
   try {
     const text =
       claimed.kind === "daily_digest"
-        ? await getTelegramTodaySummaryText()
+        ? await getTelegramTodaySummaryText({ syncNimbo: false })
         : claimed.message?.trim();
 
     if (!text) throw new Error("telegram_job_empty_message");
@@ -76,21 +76,28 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const nimboSync = await syncKnownNimboSchedules({
-      limit: 6,
-      staleAfterMinutes: 4,
-    }).catch((error) => {
-      console.error("[telegram-cron] Nimbo sync failed", {
-        reason: error instanceof Error ? error.message : "nimbo_sync_failed",
-      });
-      return null;
-    });
-
+    // Telegram delivery owns the cron deadline. Never spend the route budget on
+    // Nimbo reconciliation before due jobs have been claimed and processed.
     const due = await listDueTelegramJobs(25);
     const results = [];
     for (const job of due) {
       results.push(await executeJob(job));
     }
+
+    // Reconcile only on otherwise-idle cron ticks. A daily digest also renders
+    // from the current mirror instead of doing an inline Nimbo fetch, so a slow
+    // external API cannot delay scheduled Telegram delivery.
+    const nimboSync = due.length === 0
+      ? await syncKnownNimboSchedules({
+          limit: 3,
+          staleAfterMinutes: 4,
+        }).catch((error) => {
+          console.error("[telegram-cron] Nimbo sync failed", {
+            reason: error instanceof Error ? error.message : "nimbo_sync_failed",
+          });
+          return null;
+        })
+      : "deferred";
 
     return NextResponse.json(
       {
@@ -100,16 +107,19 @@ export async function GET(request: NextRequest) {
         sent: results.filter((item) => item.status === "sent").length,
         failed: results.filter((item) => item.status === "failed").length,
         skipped: results.filter((item) => item.status === "skipped").length,
-        nimboSync: nimboSync
-          ? {
-              scanned: nimboSync.scanned,
-              changed: nimboSync.changed,
-              cancelled: nimboSync.cancelled,
-              completed: nimboSync.completed,
-              review: nimboSync.missing + nimboSync.conflicts,
-              errors: nimboSync.errors,
-            }
-          : { status: "failed" },
+        nimboSync:
+          nimboSync === "deferred"
+            ? { status: "deferred_for_telegram_jobs" }
+            : nimboSync
+              ? {
+                  scanned: nimboSync.scanned,
+                  changed: nimboSync.changed,
+                  cancelled: nimboSync.cancelled,
+                  completed: nimboSync.completed,
+                  review: nimboSync.missing + nimboSync.conflicts,
+                  errors: nimboSync.errors,
+                }
+              : { status: "failed" },
       },
       { headers: { "Cache-Control": "no-store" } },
     );
