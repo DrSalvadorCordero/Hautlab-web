@@ -270,26 +270,53 @@ export async function inspectMercadoPagoOrderRecovery(
     return { state: "not_found", selectedPaymentId: null, candidates };
   }
 
-  const groups: PaymentOrderStatus[][] = [
-    ["approved", "refunded", "charged_back"],
-    ["pending", "authorized", "in_process", "in_mediation"],
-    ["rejected", "cancelled"],
+  const settledStatuses: PaymentOrderStatus[] = [
+    "approved",
+    "refunded",
+    "charged_back",
   ];
+  const activeStatuses: PaymentOrderStatus[] = [
+    "pending",
+    "authorized",
+    "in_process",
+    "in_mediation",
+  ];
+  const settled = candidates.filter((candidate) =>
+    settledStatuses.includes(candidate.status),
+  );
+  const active = candidates.filter((candidate) =>
+    activeStatuses.includes(candidate.status),
+  );
 
-  for (const statuses of groups) {
-    const matches = candidates.filter((candidate) =>
-      statuses.includes(candidate.status),
-    );
-    if (matches.length === 1) {
-      return {
-        state: "ready",
-        selectedPaymentId: matches[0].paymentId,
-        candidates,
-      };
-    }
-    if (matches.length > 1) {
-      return { state: "ambiguous", selectedPaymentId: null, candidates };
-    }
+  // A single settled payment is safe to recover only when there is no second
+  // active attempt that could still settle and create a duplicate charge.
+  if (settled.length === 1 && active.length === 0) {
+    return {
+      state: "ready",
+      selectedPaymentId: settled[0].paymentId,
+      candidates,
+    };
+  }
+  if (settled.length > 1 || active.length > 1 || (settled.length && active.length)) {
+    return { state: "ambiguous", selectedPaymentId: null, candidates };
+  }
+  if (active.length === 1) {
+    return {
+      state: "ready",
+      selectedPaymentId: active[0].paymentId,
+      candidates,
+    };
+  }
+
+  const terminal = candidates.filter((candidate) =>
+    candidate.status === "rejected" || candidate.status === "cancelled",
+  );
+  if (terminal.length === 1) {
+    return {
+      state: "ready",
+      selectedPaymentId: terminal[0].paymentId,
+      candidates,
+    };
   }
 
   return { state: "ambiguous", selectedPaymentId: null, candidates };
