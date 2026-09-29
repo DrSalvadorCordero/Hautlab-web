@@ -17,7 +17,7 @@ create table if not exists public.payment_receipts (
   ),
   amount numeric(12,2) not null check (amount > 0),
   currency text not null default 'MXN' check (currency = 'MXN'),
-  paid_at timestamptz not null,
+  paid_at timestamptz,
   payment_method_id text,
   payment_type_id text,
   installments integer check (installments is null or installments > 0),
@@ -88,6 +88,9 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_existing_status text;
+  v_existing_payment_id text;
 begin
   if p_status not in (
     'pending',
@@ -103,9 +106,31 @@ begin
     raise exception 'payment_status_not_allowed' using errcode = 'P0001';
   end if;
 
+  select status, mp_payment_id
+    into v_existing_status, v_existing_payment_id
+    from public.payment_orders
+   where id = p_order_id
+     and test_mode = not p_live_mode
+   for update;
+
+  if not found then
+    raise exception 'payment_order_not_found_or_mode_mismatch' using errcode = 'P0001';
+  end if;
+
+  if v_existing_payment_id is not null
+     and v_existing_payment_id <> p_mp_payment_id
+     and v_existing_status in ('approved', 'refunded', 'charged_back') then
+    raise exception 'payment_order_settled_with_different_payment' using errcode = 'P0001';
+  end if;
+
   return query
   update public.payment_orders
-     set mp_payment_id = p_mp_payment_id,
+     set mp_payment_id = case
+           when payment_orders.status in ('approved', 'refunded', 'charged_back')
+             and payment_orders.mp_payment_id is not null
+             then payment_orders.mp_payment_id
+           else p_mp_payment_id
+         end,
          status = case
            when payment_orders.status in ('refunded', 'charged_back')
              and p_status not in ('refunded', 'charged_back')
@@ -134,11 +159,8 @@ begin
      and test_mode = not p_live_mode
   returning *;
 
-  if not found then
-    raise exception 'payment_order_not_found_or_mode_mismatch' using errcode = 'P0001';
-  end if;
 end;
-$$;
+$;
 
 revoke all on function public.hautlab_payment_apply_status(
   uuid, text, text, text, boolean, text, text, text, timestamptz, text
@@ -189,7 +211,7 @@ begin
     v_receipt_status,
     new.amount,
     new.currency,
-    coalesce(new.paid_at, new.updated_at, now()),
+    new.paid_at,
     new.payment_method_id,
     new.payment_type_id,
     new.live_mode,
@@ -200,7 +222,7 @@ begin
         source_order_id = coalesce(excluded.source_order_id, public.payment_receipts.source_order_id),
         payment_status = excluded.payment_status,
         receipt_status = excluded.receipt_status,
-        paid_at = least(public.payment_receipts.paid_at, excluded.paid_at),
+        paid_at = coalesce(public.payment_receipts.paid_at, excluded.paid_at),
         payment_method_id = coalesce(excluded.payment_method_id, public.payment_receipts.payment_method_id),
         payment_type_id = coalesce(excluded.payment_type_id, public.payment_receipts.payment_type_id),
         live_mode = coalesce(excluded.live_mode, public.payment_receipts.live_mode),
@@ -284,7 +306,7 @@ begin
     v_receipt_status,
     new.amount,
     new.currency,
-    coalesce(new.paid_at, new.provider_updated_at, new.updated_at, now()),
+    new.paid_at,
     new.payment_method_id,
     new.payment_method_type,
     new.installments,
@@ -350,7 +372,7 @@ select
   case when status = 'refunded' then 'refunded'
        when status = 'charged_back' then 'charged_back'
        else 'issued' end,
-  amount, currency, coalesce(paid_at, updated_at),
+  amount, currency, paid_at,
   payment_method_id, payment_type_id, live_mode, test_mode
 from public.payment_orders
 where status in ('approved', 'refunded', 'charged_back')
@@ -379,7 +401,7 @@ select
   'mercado_pago_point', external_reference,
   coalesce(payment_reference_id, transaction_id), mp_order_id,
   status, case when status = 'refunded' then 'refunded' else 'issued' end,
-  amount, currency, coalesce(paid_at, provider_updated_at, updated_at),
+  amount, currency, paid_at,
   payment_method_id, payment_method_type, installments, live_mode, test_mode
 from public.mp_point_orders
 where status in ('processed', 'refunded')
