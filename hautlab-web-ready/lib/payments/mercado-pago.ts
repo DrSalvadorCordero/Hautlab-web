@@ -270,8 +270,7 @@ async function searchMercadoPagoPaymentsByReference(
     offset += results.length;
     if (
       results.length === 0 ||
-      results.length < pageSize ||
-      (total !== null && offset >= total)
+      (total !== null ? offset >= total : results.length < pageSize)
     ) {
       exhausted = true;
       break;
