@@ -18,30 +18,26 @@ Editorial axes: **Piel / Proporción / Expresión / Fundamentos**.
 | Status | Axis | Topic | Intent |
 | --- | --- | --- | --- |
 | Published in main | Fundamentos | Relleno vs bioestimulador | Compare mechanisms and indications |
-| Consolidated draft | Piel | Cuándo consultar por acné | Consultation threshold |
-| Consolidated draft | Piel | Por qué vuelve el melasma | Recurrence and maintenance |
-| New draft | Piel | Cicatrices de acné: por qué no todas se tratan igual | Scar morphology before device |
-| New draft | Proporción | Más volumen no es más armonía | Overcorrection and planning |
-| New draft | Expresión | Toxina botulínica: tratar movimiento sin borrar expresión | Dynamic assessment |
+| Published in main | Piel | Cuándo consultar por acné | Consultation threshold |
+| Published in main | Piel | Por qué vuelve el melasma | Recurrence and maintenance |
+| Published in main | Piel | Cicatrices de acné: por qué no todas se tratan igual | Scar morphology before device |
+| Published in main | Proporción | Más volumen no es más armonía | Overcorrection and planning |
+| Published in main | Expresión | Toxina botulínica: tratar movimiento sin borrar expresión | Dynamic assessment |
+| Draft — medical review pending | Piel | Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor | Barrier, irritation and ocular red flags |
 
 ## Next priority topics
 
 ### Piel
 
-1. **Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor**
-   - Intent: rosacea + sensitive skin + over-treatment.
-   - Must link to the existing rosacea clinical page, not compete with local treatment intent.
-   - Evidence needs: phenotype-based rosacea guidance, barrier dysfunction, ocular red flags.
-
-2. **Caída de cabello: cuándo es efluvio y cuándo conviene buscar otra causa**
+1. **Caída de cabello: cuándo es efluvio y cuándo conviene buscar otra causa**
    - Intent: sudden shedding vs patterned loss.
    - Scope: recognition and consultation threshold; no universal lab panel.
 
-3. **Dermatitis seborreica: por qué vuelve y qué significa realmente “controlarla”**
+2. **Dermatitis seborreica: por qué vuelve y qué significa realmente “controlarla”**
    - Intent: recurrence, scalp/face, maintenance.
    - Avoid: product-list article.
 
-4. **Barrera cutánea: cuándo una rutina “activa” se vuelve parte del problema**
+3. **Barrera cutánea: cuándo una rutina “activa” se vuelve parte del problema**
    - Intent: irritation, retinoids/acids/exfoliation, recovery.
    - Strong fit with HAUTLAB criterion: fewer interventions, better indication.
 
@@ -85,11 +81,11 @@ Editorial axes: **Piel / Proporción / Expresión / Fundamentos**.
 
 ## Publishing order after this batch
 
-1. Rosácea + barrera.
-2. Ácido hialurónico: reversible ≠ risk-free.
-3. Perfil facial as a system.
-4. Hair loss: shedding vs patterned loss.
-5. Lower-face dynamics.
+1. Ácido hialurónico: reversible ≠ risk-free.
+2. Perfil facial as a system.
+3. Hair loss: shedding vs patterned loss.
+4. Lower-face dynamics.
+5. Dermatitis seborreica recurrence and maintenance.
 
 ## Done criteria for every article
 
