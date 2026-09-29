@@ -60,7 +60,7 @@ export default function RosaceaVascularComparison() {
       <p className="mt-8 text-xs uppercase tracking-[0.22em] text-champagne">Comparativa clínica · {article.readingTime}</p>
       <h1 className="mt-5 font-serif text-[clamp(3rem,7vw,6rem)] leading-[.92] tracking-[-.06em] text-bone">{article.title}</h1>
       <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">{article.description}</p>
-      <p className="mt-8 text-xs leading-6 text-quiet">Preparado: 29 de septiembre de 2026 · Pendiente de revisión médica final por Dr. Salvador Cordero</p>
+      <p className="mt-8 text-xs leading-6 text-quiet">Preparado: 29 de septiembre de 2026 · Revisado por Dr. Salvador Cordero</p>
     </div></section>
 
     <section className="border-b border-line py-14 lg:py-20"><div className="mx-auto w-[min(920px,calc(100%-32px))]"><Card className="p-7 sm:p-9">
@@ -94,7 +94,7 @@ export default function RosaceaVascularComparison() {
 
     <section className="border-b border-line py-16 lg:py-20"><div className="mx-auto grid w-[min(1040px,calc(100%-32px))] gap-6 lg:grid-cols-[1.1fr_.9fr]">
       <Card className="p-7"><BookOpen className="h-5 w-5 text-champagne"/><p className="mt-5 text-xs uppercase tracking-[0.2em] text-champagne">Fuentes</p><ul className="mt-5 space-y-4 text-sm leading-7 text-muted">{references.map((r)=><li key={r.href}><a href={r.href} target="_blank" rel="noreferrer" className="transition hover:text-bone">{r.label}</a></li>)}</ul></Card>
-      <Card className="p-7"><p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p><p className="mt-5 text-lg font-medium text-bone">Pendiente de revisión médica final</p><p className="mt-3 text-sm leading-7 text-muted">Requiere aprobación del Dr. Salvador Cordero antes de publicación, especialmente en la interpretación de profundidad vascular, selección por fototipo y límites de cada dispositivo.</p><p className="mt-5 text-xs leading-6 text-quiet">Contenido educativo. No sustituye valoración médica ni constituye parámetros de tratamiento.</p></Card>
+      <Card className="p-7"><p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p><p className="mt-5 text-lg font-medium text-bone">Revisión médica aprobada</p><p className="mt-3 text-sm leading-7 text-muted">Revisión médica aprobada por el Dr. Salvador Cordero el 29 de septiembre de 2026, incluyendo interpretación de profundidad vascular, selección por fototipo y límites de cada dispositivo.</p><p className="mt-5 text-xs leading-6 text-quiet">Contenido educativo. No sustituye valoración médica ni constituye parámetros de tratamiento.</p></Card>
     </div></section>
 
     <section className="py-16 lg:py-24"><div className="mx-auto w-[min(920px,calc(100%-32px))] text-center">
