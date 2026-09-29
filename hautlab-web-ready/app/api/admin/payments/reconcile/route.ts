@@ -76,6 +76,9 @@ export async function POST(request: NextRequest) {
     const inspection = await inspectMercadoPagoOrderRecovery(order);
 
     if (parsed.data.apply) {
+      if (!access.owner) {
+        return noStoreJson({ error: "owner_required" }, { status: 403 });
+      }
       if (!inspection.selectedPaymentId) {
         return noStoreJson(
           {
