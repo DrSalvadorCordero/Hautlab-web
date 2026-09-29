@@ -58,6 +58,35 @@ export type TelegramConversation = {
   created_at: string;
 };
 
+export type GrowthOsSnapshot = {
+  days: number;
+  generatedAt: string;
+  adSpendConnected: boolean;
+  adSpendMxn: number | null;
+  roas: number | null;
+  touchpoints: number;
+  matchedTouchpoints: number;
+  leads: number;
+  responded: number;
+  appointmentRequested: number;
+  appointmentConfirmed: number;
+  attributedLeads: number;
+  pausedLeads: number;
+  conversionEvents: number;
+  pendingExports: number;
+  exportedEvents: number;
+  googleClickConversions: number;
+  metaClickConversions: number;
+  recordedRevenueMxn: number;
+  conversationAttributedRevenueMxn: number;
+  marketingAttributedRevenueMxn: number;
+  campaigns: Array<{
+    campaign: string;
+    leads: number;
+    confirmed: number;
+  }>;
+};
+
 type AuditStatus = "received" | "processed" | "rejected" | "failed" | "duplicate";
 
 function config() {
@@ -115,6 +144,14 @@ async function supabaseJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return payload as T;
+}
+
+export async function getGrowthOsSnapshot(days = 30) {
+  const safeDays = Math.max(1, Math.min(365, Math.trunc(days || 30)));
+  return supabaseJson<GrowthOsSnapshot>("rpc/growth_os_snapshot", {
+    method: "POST",
+    body: JSON.stringify({ p_days: safeDays }),
+  });
 }
 
 export async function getTelegramLinkByUser(
