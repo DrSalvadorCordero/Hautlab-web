@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const nimboSync = await syncKnownNimboSchedules({
-      limit: 9,
+      limit: 6,
       staleAfterMinutes: 4,
     }).catch((error) => {
       console.error("[telegram-cron] Nimbo sync failed", {
