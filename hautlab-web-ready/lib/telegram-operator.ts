@@ -172,7 +172,7 @@ function mergeConversationRows(
 }
 
 export async function getTelegramTodaySummaryText() {
-  await syncKnownNimboSchedules({ limit: 9, staleAfterMinutes: 2 }).catch(() => null);
+  await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
   const [recentRows, operationalRows] = await Promise.all([
     listRecentTelegramConversations(500),
     listTelegramOperationalConversations(),
@@ -266,7 +266,7 @@ export async function getTelegramPendingText() {
 }
 
 export async function getTelegramAgendaText() {
-  await syncKnownNimboSchedules({ limit: 9, staleAfterMinutes: 2 }).catch(() => null);
+  await syncKnownNimboSchedules({ limit: 6, staleAfterMinutes: 2 }).catch(() => null);
   const rows = (await listRecentTelegramConversations(500))
     .filter(
       (row) =>
