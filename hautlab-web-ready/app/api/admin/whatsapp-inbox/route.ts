@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAccess } from "@/lib/admin-access";
+import { deriveConversationOperationalState } from "@/lib/operational-state";
 import {
   exceedsContentLength,
   isSameOriginRequest,
@@ -80,6 +81,24 @@ async function supabaseJson<T>(path: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
+async function supabaseCount(path: string) {
+  const config = getSupabaseConfig();
+  if (!config) throw new Error("supabase_not_configured");
+
+  const response = await fetch(`${config.url}/rest/v1/${path}`, {
+    method: "HEAD",
+    headers: supabaseHeaders(config.key, "count=exact"),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error(`supabase_${response.status}`);
+
+  const contentRange = response.headers.get("content-range") ?? "";
+  const total = Number(contentRange.split("/")[1]);
+  if (!Number.isFinite(total)) throw new Error("supabase_count_unavailable");
+  return total;
+}
+
 function noStoreJson(value: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers);
   headers.set("Cache-Control", "no-store");
@@ -91,56 +110,64 @@ function normalizePhone(value: string) {
   return /^[1-9][0-9]{9,14}$/.test(digits) ? digits : null;
 }
 
-function bookingActiveWindowMs() {
-  const configured = Number(process.env.HAUTLAB_BOOKING_ACTIVE_HOURS ?? "72");
-  const hours = Number.isFinite(configured)
-    ? Math.max(12, Math.min(168, configured))
-    : 72;
-  return hours * 60 * 60 * 1000;
-}
-
-type OperationalStateRow = {
+type InboxConversationRow = {
+  id: string;
+  phone: string;
+  profile_name: string | null;
+  city: string | null;
+  treatment: string | null;
+  stage: string | null;
+  ai_mode: string;
+  assigned_to: string | null;
+  priority: string | null;
   clinical_risk: boolean;
   risk_level: string | null;
-  assigned_to: string | null;
-  bot_paused: boolean;
+  last_intent: string | null;
+  next_action: string | null;
+  human_review_reason: string | null;
+  conversation_summary: string | null;
+  patient_goal: string | null;
   handoff_status: string | null;
+  bot_paused: boolean;
+  last_message_at: string | null;
+  last_patient_message_at: string | null;
+  last_team_message_at: string | null;
   appointment_status: string | null;
   appointment_requested_at: string | null;
-  last_patient_message_at: string | null;
-  last_message_at: string | null;
   closed_at: string | null;
   outcome: string | null;
+  first_attribution: Record<string, unknown> | null;
+  last_attribution: Record<string, unknown> | null;
+  first_attributed_at: string | null;
+  last_attributed_at: string | null;
 };
 
-function deriveOperationalState(row: OperationalStateRow) {
-  if (row.closed_at || row.outcome) return "closed" as const;
-  if (row.clinical_risk || row.risk_level === "urgent") return "clinical_review" as const;
-  if (
-    row.bot_paused ||
-    row.handoff_status === "pending" ||
-    row.handoff_status === "assigned" ||
-    Boolean(row.assigned_to)
-  ) {
-    return "human_pending" as const;
-  }
-  if (
-    row.appointment_status === "collecting" ||
-    row.appointment_status === "pending_confirmation"
-  ) {
-    const reference = Date.parse(
-      row.last_patient_message_at ??
-        row.appointment_requested_at ??
-        row.last_message_at ??
-        "",
+const inboxConversationSelect =
+  "id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at";
+
+async function listOperationalInboxConversations() {
+  const rows: InboxConversationRow[] = [];
+  const pageSize = 500;
+  let cursor: string | null = null;
+
+  for (;;) {
+    const cursorFilter: string = cursor
+      ? `&id=gt.${encodeURIComponent(cursor)}`
+      : "";
+    const page: InboxConversationRow[] = await supabaseJson<InboxConversationRow[]>(
+      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))${cursorFilter}&order=id.asc&limit=${pageSize}`,
     );
-    if (Number.isFinite(reference) && Date.now() - reference <= bookingActiveWindowMs()) {
-      return "booking_pending" as const;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+
+    const nextCursor: string | null = page.at(-1)?.id ?? null;
+    if (!nextCursor || nextCursor === cursor) {
+      throw new Error("operational_queue_cursor_invalid");
     }
-    return "reactivation" as const;
+    cursor = nextCursor;
   }
-  if (row.appointment_status === "confirmed") return "scheduled" as const;
-  return "idle" as const;
+
+  return rows;
 }
 
 async function getRelaySecret() {
@@ -251,36 +278,35 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const conversations = await supabaseJson<
-      Array<{
-        id: string;
-        phone: string;
-        profile_name: string | null;
-        city: string | null;
-        treatment: string | null;
-        stage: string | null;
-        ai_mode: string;
-        assigned_to: string | null;
-        priority: string | null;
-        clinical_risk: boolean;
-        risk_level: string | null;
-        last_intent: string | null;
-        next_action: string | null;
-        human_review_reason: string | null;
-        conversation_summary: string | null;
-        patient_goal: string | null;
-        handoff_status: string | null;
-        bot_paused: boolean;
-        last_message_at: string | null;
-        last_patient_message_at: string | null;
-        last_team_message_at: string | null;
-        appointment_status: string | null;
-        appointment_requested_at: string | null;
-        closed_at: string | null;
-        outcome: string | null;
-      }>
-    >(
-      "wa_conversations?select=id,phone,profile_name,city,treatment,stage,ai_mode,assigned_to,priority,clinical_risk,risk_level,last_intent,next_action,human_review_reason,conversation_summary,patient_goal,handoff_status,bot_paused,last_message_at,last_patient_message_at,last_team_message_at,appointment_status,appointment_requested_at,closed_at,outcome,first_attribution,last_attribution,first_attributed_at,last_attributed_at&order=last_message_at.desc&limit=500",
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      recentConversations,
+      operationalConversations,
+      totalConversationCount,
+      todayConversationCount,
+    ] = await Promise.all([
+      supabaseJson<InboxConversationRow[]>(
+        `wa_conversations?select=${inboxConversationSelect}&order=last_message_at.desc.nullslast&limit=100`,
+      ),
+      listOperationalInboxConversations(),
+      supabaseCount("wa_conversations?select=id"),
+      supabaseCount(
+        `wa_conversations?select=id&last_message_at=gte.${encodeURIComponent(
+          today.toISOString(),
+        )}&last_message_at=lte.${encodeURIComponent(now.toISOString())}`,
+      ),
+    ]);
+
+    const conversationsById = new Map<string, InboxConversationRow>();
+    for (const row of [...recentConversations, ...operationalConversations]) {
+      conversationsById.set(row.id, row);
+    }
+    const conversations = Array.from(conversationsById.values()).sort(
+      (a, b) =>
+        Date.parse(b.last_message_at ?? "") - Date.parse(a.last_message_at ?? ""),
     );
 
     const effectiveSelected =
@@ -311,17 +337,11 @@ export async function GET(request: NextRequest) {
 
     const conversationsWithState = conversations.map((row) => ({
       ...row,
-      operational_state: deriveOperationalState(row),
+      operational_state: deriveConversationOperationalState(row),
     }));
-    const now = Date.now();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const stats = {
-      total: conversationsWithState.length,
-      today: conversationsWithState.filter((row) => {
-        const value = row.last_message_at ? Date.parse(row.last_message_at) : 0;
-        return value >= today.getTime() && value <= now;
-      }).length,
+      total: totalConversationCount,
+      today: todayConversationCount,
       clinicalRisk: conversationsWithState.filter(
         (row) => row.operational_state === "clinical_review",
       ).length,

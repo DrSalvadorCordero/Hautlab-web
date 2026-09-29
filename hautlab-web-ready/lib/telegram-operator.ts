@@ -6,6 +6,7 @@ import {
   createTelegramJob,
   getTelegramConversationByRef,
   listRecentTelegramConversations,
+  listTelegramOperationalConversations,
   listTelegramJobs,
   recordTelegramWhatsAppReply,
   resumeTelegramConversation,
@@ -14,6 +15,10 @@ import {
   type TelegramConversation,
   type TelegramOperatorKey,
 } from "@/lib/telegram-db";
+import {
+  deriveConversationOperationalState,
+  isOperationalPendingState,
+} from "@/lib/operational-state";
 import { getNimboConfig } from "@/lib/server/nimbo";
 
 const TIME_ZONE = "America/Merida";
@@ -110,64 +115,26 @@ function cleanPatientName(row: TelegramConversation) {
   return row.profile_name?.trim().slice(0, 80) || "Paciente";
 }
 
-function bookingActiveWindowMs() {
-  const configured = Number(process.env.HAUTLAB_BOOKING_ACTIVE_HOURS ?? "72");
-  const hours = Number.isFinite(configured)
-    ? Math.max(12, Math.min(168, configured))
-    : 72;
-  return hours * 60 * 60 * 1000;
-}
-
-function bookingReferenceAt(row: TelegramConversation) {
-  return (
-    row.last_patient_message_at ??
-    row.appointment_requested_at ??
-    row.last_message_at ??
-    row.created_at
-  );
-}
-
-function isOpenBookingPipeline(row: TelegramConversation) {
-  return (
-    !row.closed_at &&
-    !row.outcome &&
-    (row.appointment_status === "collecting" ||
-      row.appointment_status === "pending_confirmation")
-  );
+function operationalState(row: TelegramConversation) {
+  return deriveConversationOperationalState(row);
 }
 
 function isActiveBookingPending(row: TelegramConversation) {
-  if (!isOpenBookingPipeline(row)) return false;
-  const reference = Date.parse(bookingReferenceAt(row));
-  if (!Number.isFinite(reference)) return false;
-  return Date.now() - reference <= bookingActiveWindowMs();
+  return operationalState(row) === "booking_pending";
 }
 
 function isReactivationCandidate(row: TelegramConversation) {
-  if (!isOpenBookingPipeline(row)) return false;
-  const reference = Date.parse(bookingReferenceAt(row));
-  if (!Number.isFinite(reference)) return false;
-  return Date.now() - reference > bookingActiveWindowMs();
-}
-
-function hasHumanOperationalPending(row: TelegramConversation) {
-  return (
-    row.clinical_risk ||
-    row.risk_level === "urgent" ||
-    row.bot_paused ||
-    row.handoff_status === "pending" ||
-    row.handoff_status === "assigned" ||
-    Boolean(row.assigned_to)
-  );
+  return operationalState(row) === "reactivation";
 }
 
 function operationalLabel(row: TelegramConversation) {
-  if (row.clinical_risk || row.risk_level === "urgent") return "revisión clínica";
-  if (row.handoff_status === "pending") return "pendiente";
-  if (row.bot_paused || row.handoff_status === "assigned" || row.assigned_to) return "en atención";
-  if (isActiveBookingPending(row)) return "cita por confirmar";
-  if (isReactivationCandidate(row)) return "reactivación comercial";
-  if (row.appointment_status === "confirmed") return "cita confirmada";
+  const state = operationalState(row);
+  if (state === "clinical_review") return "revisión clínica";
+  if (state === "human_pending") return "en atención";
+  if (state === "booking_pending") return "cita por confirmar";
+  if (state === "reactivation") return "reactivación comercial";
+  if (state === "scheduled") return "cita confirmada";
+  if (state === "closed") return "cerrada";
   return row.stage?.replace(/_/g, " ") || "seguimiento";
 }
 
@@ -187,11 +154,24 @@ function isToday(value: string | null) {
 }
 
 function isPending(row: TelegramConversation) {
-  return hasHumanOperationalPending(row) || isActiveBookingPending(row);
+  return isOperationalPendingState(operationalState(row));
+}
+
+function mergeConversationRows(
+  recent: TelegramConversation[],
+  operational: TelegramConversation[],
+) {
+  const byId = new Map<string, TelegramConversation>();
+  for (const row of [...recent, ...operational]) byId.set(row.id, row);
+  return Array.from(byId.values());
 }
 
 export async function getTelegramTodaySummaryText() {
-  const rows = await listRecentTelegramConversations(500);
+  const [recentRows, operationalRows] = await Promise.all([
+    listRecentTelegramConversations(500),
+    listTelegramOperationalConversations(),
+  ]);
+  const rows = mergeConversationRows(recentRows, operationalRows);
   const today = todayKey();
   const newToday = rows.filter((row) => localDateKey(row.created_at) === today);
   const appointments = rows
@@ -209,7 +189,7 @@ export async function getTelegramTodaySummaryText() {
   const pending = rows.filter(isPending);
   const reactivation = rows.filter(isReactivationCandidate);
   const clinical = rows.filter(
-    (row) => row.clinical_risk || row.risk_level === "urgent",
+    (row) => operationalState(row) === "clinical_review",
   );
 
   const lines = [
@@ -249,7 +229,7 @@ export async function getTelegramTodaySummaryText() {
 }
 
 export async function getTelegramPendingText() {
-  const allRows = await listRecentTelegramConversations(500);
+  const allRows = await listTelegramOperationalConversations();
   const rows = allRows
     .filter(isPending)
     .sort((a, b) => {
