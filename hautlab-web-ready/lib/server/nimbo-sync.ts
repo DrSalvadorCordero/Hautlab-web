@@ -232,20 +232,37 @@ export async function syncKnownNimboSchedules(input?: {
   staleAfterMinutes?: number;
 }): Promise<NimboSyncSummary> {
   const limit = Math.max(1, Math.min(30, Math.trunc(input?.limit ?? 6)));
-  const fetchLimit = Math.max(100, limit * 4);
   const staleMs =
     Math.max(1, Math.min(60, input?.staleAfterMinutes ?? 4)) * 60_000;
   const recentFloor = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const pageSize = 200;
+  const due: NimboLinkedConversation[] = [];
+  let cursor: string | null = null;
 
-  const rows = await supabaseJson<NimboLinkedConversation[]>(
-    `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,next_action,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})&order=appointment_datetime.asc.nullsfirst&limit=${fetchLimit}`,
-  );
+  while (due.length < limit) {
+    const cursorFilter = cursor
+      ? `&id=gt.${encodeURIComponent(cursor)}`
+      : "";
+    const page = await supabaseJson<NimboLinkedConversation[]>(
+      `wa_conversations?select=id,nimbo_person_id,nimbo_schedule_id,nimbo_last_synced_at,appointment_status,appointment_datetime,nimbo_schedule_ends_at,human_review_reason,next_action,handoff_status,assigned_to,bot_paused&nimbo_schedule_id=not.is.null&appointment_status=in.(confirmed,pending_confirmation)&or=(appointment_datetime.is.null,appointment_datetime.gte.${encodeURIComponent(recentFloor)})${cursorFilter}&order=id.asc&limit=${pageSize}`,
+    );
 
-  const due = rows.filter((row) => {
-    if (!row.nimbo_last_synced_at) return true;
-    const syncedAt = Date.parse(row.nimbo_last_synced_at);
-    return !Number.isFinite(syncedAt) || Date.now() - syncedAt >= staleMs;
-  }).slice(0, limit);
+    for (const row of page) {
+      if (due.length >= limit) break;
+      if (!row.nimbo_last_synced_at) {
+        due.push(row);
+        continue;
+      }
+      const syncedAt = Date.parse(row.nimbo_last_synced_at);
+      if (!Number.isFinite(syncedAt) || Date.now() - syncedAt >= staleMs) {
+        due.push(row);
+      }
+    }
+
+    if (page.length < pageSize) break;
+    cursor = page[page.length - 1]?.id ?? null;
+    if (!cursor) break;
+  }
 
   const summary: NimboSyncSummary = {
     scanned: due.length,
