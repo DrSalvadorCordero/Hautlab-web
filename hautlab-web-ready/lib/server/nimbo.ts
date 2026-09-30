@@ -819,37 +819,85 @@ function slotLabel(startsAt: string, timeZone: string) {
   }).format(parsed);
 }
 
+function availabilityRows(payload: unknown) {
+  if (Array.isArray(payload)) return payload;
+  const root = asRecord(payload);
+  if (Array.isArray(root?.hours)) return root.hours;
+
+  const data = asRecord(root?.data);
+  if (Array.isArray(data?.hours)) return data.hours;
+  if (Array.isArray(root?.availability)) return root.availability;
+
+  return [] as unknown[];
+}
+
+function scheduleValue(value: unknown) {
+  const direct = cleanString(value, 160);
+  if (direct) return direct;
+
+  const row = asRecord(value);
+  if (!row) return null;
+
+  for (const key of [
+    "starts_at",
+    "startsAt",
+    "start",
+    "time",
+    "hour",
+    "schedule",
+    "label",
+  ]) {
+    const candidate = cleanString(row[key], 160);
+    if (candidate) return candidate;
+  }
+
+  return null;
+}
+
 function parseAvailability(
   payload: unknown,
   timeZone: string,
 ): NimboAvailabilityDay[] {
-  const root = asRecord(payload);
-  const hours = Array.isArray(root?.hours) ? root.hours : [];
+  const hours = availabilityRows(payload);
   const result: NimboAvailabilityDay[] = [];
 
   for (const item of hours) {
     const row = asRecord(item);
     const date = cleanString(row?.date, 20);
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+
     const schedules = Array.isArray(row?.schedules)
       ? row.schedules
-          .map((value) => cleanString(value, 120))
+          .map((value) => scheduleValue(value))
           .filter((value): value is string => Boolean(value))
       : [];
+
+    const seen = new Set<string>();
     const slots = schedules
       .map((schedule) => scheduleToIso(date, schedule, timeZone))
       .filter((value): value is string => Boolean(value))
+      .filter((startsAt) => {
+        if (seen.has(startsAt)) return false;
+        seen.add(startsAt);
+        return true;
+      })
       .map((startsAt) => ({
         startsAt,
         label: slotLabel(startsAt, timeZone),
       }));
+
     result.push({
       date,
       available: row?.available === true || slots.length > 0,
       slots,
     });
   }
+
   return result;
+}
+
+function availabilitySlotCount(days: NimboAvailabilityDay[]) {
+  return days.reduce((total, day) => total + day.slots.length, 0);
 }
 
 export async function getNimboAvailability(input: {
@@ -859,33 +907,54 @@ export async function getNimboAvailability(input: {
   const config = await getNimboConfig();
   if (!config.enabled || !config.base_url || !config.doctor_account_id) return [];
 
-  const params = new URLSearchParams({
+  const accountParams = new URLSearchParams({
     from: input.from,
     to: input.to,
     monthly: "false",
+    account: String(config.doctor_account_id),
   });
 
-  if (config.organization_slug) {
-    params.set("slug", config.organization_slug);
-    try {
-      const orgPayload = await nimboFetch(
-        config,
-        `calendar/available_hours_organization?${params.toString()}`,
-      );
-      const parsed = parseAvailability(orgPayload, config.timezone);
-      if (parsed.some((day) => day.slots.length > 0)) return parsed;
-    } catch {
-      // Personal-calendar fallback below.
-    }
-    params.delete("slug");
-  }
+  try {
+    const accountPayload = await nimboFetch(
+      config,
+      `calendar/available_hours?${accountParams.toString()}`,
+    );
+    const parsed = parseAvailability(accountPayload, config.timezone);
+    console.info("nimbo_availability_source", {
+      source: "doctor_account",
+      from: input.from,
+      to: input.to,
+      days: parsed.length,
+      slots: availabilitySlotCount(parsed),
+    });
+    // A successful doctor-account response is authoritative, including zero
+    // availability. Do not replace a genuinely empty physician calendar with
+    // organization-wide availability.
+    return parsed;
+  } catch (accountError) {
+    if (!config.organization_slug) throw accountError;
 
-  params.set("account", String(config.doctor_account_id));
-  const payload = await nimboFetch(
-    config,
-    `calendar/available_hours?${params.toString()}`,
-  );
-  return parseAvailability(payload, config.timezone);
+    const organizationParams = new URLSearchParams({
+      from: input.from,
+      to: input.to,
+      monthly: "false",
+      slug: config.organization_slug,
+    });
+
+    const orgPayload = await nimboFetch(
+      config,
+      `calendar/available_hours_organization?${organizationParams.toString()}`,
+    );
+    const parsed = parseAvailability(orgPayload, config.timezone);
+    console.info("nimbo_availability_source", {
+      source: "organization_fallback",
+      from: input.from,
+      to: input.to,
+      days: parsed.length,
+      slots: availabilitySlotCount(parsed),
+    });
+    return parsed;
+  }
 }
 
 function phoneCandidates(phone: string) {
