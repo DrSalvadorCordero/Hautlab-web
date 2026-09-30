@@ -689,6 +689,21 @@ function addDays(date: string, days: number) {
   return value.toISOString().slice(0, 10);
 }
 
+function dateInTimezone(timeZone: string, value = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+  return year && month && day
+    ? `${year}-${month}-${day}`
+    : value.toISOString().slice(0, 10);
+}
+
 function localClock(startsAt: string, timeZone: string) {
   const date = new Date(startsAt);
   if (Number.isNaN(date.getTime())) return null;
@@ -744,6 +759,47 @@ function isSlotForDaypart(
   if (daypart === "morning") return hour >= 7 && hour < 12;
   if (daypart === "afternoon") return hour >= 12 && hour < 18;
   return hour >= 18 && hour <= 22;
+}
+
+function requestedClockRelation(text: string) {
+  const normalized = text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (/\b(despues de|a partir de|desde|mas tarde de)\b/.test(normalized)) {
+    return "at_or_after" as const;
+  }
+  if (/\b(antes de|hasta)\b/.test(normalized)) {
+    return "at_or_before" as const;
+  }
+  return "none" as const;
+}
+
+function slotMatchesBookingPreference(input: {
+  startsAt: string;
+  timeZone: string;
+  decision: TriageDecision;
+  text: string;
+  minLeadMinutes: number;
+}) {
+  if (!isBeyondMinimumLead(input.startsAt, input.minLeadMinutes)) return false;
+
+  const requestedTime = input.decision.bookingTime;
+  const relation = requestedTime ? requestedClockRelation(input.text) : "none";
+  if (requestedTime && relation !== "none") {
+    const clock = localClock(input.startsAt, input.timeZone);
+    if (!clock) return false;
+    return relation === "at_or_after"
+      ? clock >= requestedTime
+      : clock <= requestedTime;
+  }
+
+  return isSlotForDaypart(
+    input.startsAt,
+    input.timeZone,
+    input.decision.bookingDaypart,
+  );
 }
 
 function offeredSlotStarts(value: unknown) {
@@ -1344,7 +1400,7 @@ async function handleNimboBooking(input: {
   text: string;
   mode: AiMode;
 }): Promise<NimboFlowResult> {
-  if (input.decision.intent !== "booking" || !input.decision.bookingDate) {
+  if (input.decision.intent !== "booking") {
     return { handled: false };
   }
 
@@ -1360,29 +1416,39 @@ async function handleNimboBooking(input: {
   if (!config) return { handled: false };
 
   const bookingDate = input.decision.bookingDate;
+  const searchFrom = bookingDate ?? dateInTimezone(config.timezone);
   let days;
   try {
     days = await getNimboAvailability({
-      from: bookingDate,
-      to: addDays(bookingDate, 7),
+      from: searchFrom,
+      to: addDays(searchFrom, 7),
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      "nimbo_availability_lookup_failed",
+      error instanceof Error ? error.message : "unknown_error",
+    );
     return { handled: false };
   }
 
-  const requestedDay = days.find((day) => day.date === bookingDate);
-  const allRequestedSlots = requestedDay?.slots ?? [];
-  let eligible = allRequestedSlots.filter(
-    (slot) =>
-      isSlotForDaypart(
-        slot.startsAt,
-        config.timezone,
-        input.decision.bookingDaypart,
-      ) &&
-      isBeyondMinimumLead(
-        slot.startsAt,
-        config.booking_min_lead_minutes,
-      ),
+  const matchesPreference = (startsAt: string) =>
+    slotMatchesBookingPreference({
+      startsAt,
+      timeZone: config.timezone,
+      decision: input.decision,
+      text: input.text,
+      minLeadMinutes: config.booking_min_lead_minutes,
+    });
+
+  const requestedDay = bookingDate
+    ? days.find((day) => day.date === bookingDate)
+    : null;
+  const candidateSlots = bookingDate
+    ? requestedDay?.slots ?? []
+    : days.flatMap((day) => day.slots);
+
+  let eligible = candidateSlots.filter((slot) =>
+    matchesPreference(slot.startsAt),
   );
 
   if (input.decision.bookingTime) {
@@ -1427,8 +1493,20 @@ async function handleNimboBooking(input: {
       nimbo_last_offered_slots: options,
       nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
       next_action: "select_nimbo_slot",
-      appointment_date_preference: bookingDate,
+      ...(bookingDate ? { appointment_date_preference: bookingDate } : {}),
     });
+
+    if (!bookingDate) {
+      return {
+        handled: true,
+        reply:
+          "Los próximos horarios disponibles que coinciden con lo que buscas son " +
+          options
+            .map((slot) => formatAppointmentLabel(slot.startsAt, config.timezone))
+            .join(", ") +
+          ". ¿Cuál prefieres?",
+      };
+    }
 
     if (
       input.decision.bookingTime &&
@@ -1455,18 +1533,22 @@ async function handleNimboBooking(input: {
     };
   }
 
+  if (!bookingDate) {
+    return {
+      handled: true,
+      reply:
+        "No me aparecen horarios que coincidan con esa preferencia en los próximos 7 días. ¿Te funciona otra franja u otro día?",
+    };
+  }
+
   const nextDay = days.find(
     (day) =>
       day.date > bookingDate &&
-      day.slots.some((slot) =>
-        isBeyondMinimumLead(slot.startsAt, config.booking_min_lead_minutes),
-      ),
+      day.slots.some((slot) => matchesPreference(slot.startsAt)),
   );
   if (nextDay) {
     const options = nextDay.slots
-      .filter((slot) =>
-        isBeyondMinimumLead(slot.startsAt, config.booking_min_lead_minutes),
-      )
+      .filter((slot) => matchesPreference(slot.startsAt))
       .slice(0, 3);
     await updateConversation(input.conversation.id, {
       nimbo_last_offered_slots: options,
@@ -1476,11 +1558,11 @@ async function handleNimboBooking(input: {
     return {
       handled: true,
       reply:
-        "Ese día no aparece disponible. El siguiente con horarios en Nimbo es " +
+        "Ese día no aparece disponible con esa preferencia. El siguiente con horarios es " +
         formatDateLabel(nextDay.date, config.timezone) +
         ": " +
         options.map((slot) => slot.label).join(", ") +
-        ".",
+        ". ¿Cuál prefieres?",
     };
   }
 
