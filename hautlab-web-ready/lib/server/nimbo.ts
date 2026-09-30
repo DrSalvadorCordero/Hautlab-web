@@ -907,33 +907,10 @@ export async function getNimboAvailability(input: {
   const config = await getNimboConfig();
   if (!config.enabled || !config.base_url || !config.doctor_account_id) return [];
 
-  const accountParams = new URLSearchParams({
-    from: input.from,
-    to: input.to,
-    monthly: "false",
-    account: String(config.doctor_account_id),
-  });
-
-  try {
-    const accountPayload = await nimboFetch(
-      config,
-      `calendar/available_hours?${accountParams.toString()}`,
-    );
-    const parsed = parseAvailability(accountPayload, config.timezone);
-    console.info("nimbo_availability_source", {
-      source: "doctor_account",
-      from: input.from,
-      to: input.to,
-      days: parsed.length,
-      slots: availabilitySlotCount(parsed),
-    });
-    // A successful doctor-account response is authoritative, including zero
-    // availability. Do not replace a genuinely empty physician calendar with
-    // organization-wide availability.
-    return parsed;
-  } catch (accountError) {
-    if (!config.organization_slug) throw accountError;
-
+  // Nimbo's organization availability endpoint is the proven production
+  // source for this account. The physician endpoint currently returns HTTP 500
+  // for the configured doctor account, so use it only as a fallback.
+  if (config.organization_slug) {
     const organizationParams = new URLSearchParams({
       from: input.from,
       to: input.to,
@@ -941,20 +918,49 @@ export async function getNimboAvailability(input: {
       slug: config.organization_slug,
     });
 
-    const orgPayload = await nimboFetch(
-      config,
-      `calendar/available_hours_organization?${organizationParams.toString()}`,
-    );
-    const parsed = parseAvailability(orgPayload, config.timezone);
-    console.info("nimbo_availability_source", {
-      source: "organization_fallback",
-      from: input.from,
-      to: input.to,
-      days: parsed.length,
-      slots: availabilitySlotCount(parsed),
-    });
-    return parsed;
+    try {
+      const orgPayload = await nimboFetch(
+        config,
+        `calendar/available_hours_organization?${organizationParams.toString()}`,
+      );
+      const parsed = parseAvailability(orgPayload, config.timezone);
+      console.info("nimbo_availability_source", {
+        source: "organization",
+        from: input.from,
+        to: input.to,
+        days: parsed.length,
+        slots: availabilitySlotCount(parsed),
+      });
+      return parsed;
+    } catch (organizationError) {
+      console.warn(
+        "nimbo_organization_availability_failed",
+        organizationError instanceof Error
+          ? organizationError.message
+          : "unknown_error",
+      );
+    }
   }
+
+  const accountParams = new URLSearchParams({
+    from: input.from,
+    to: input.to,
+    monthly: "false",
+    account: String(config.doctor_account_id),
+  });
+  const accountPayload = await nimboFetch(
+    config,
+    `calendar/available_hours?${accountParams.toString()}`,
+  );
+  const parsed = parseAvailability(accountPayload, config.timezone);
+  console.info("nimbo_availability_source", {
+    source: "doctor_account_fallback",
+    from: input.from,
+    to: input.to,
+    days: parsed.length,
+    slots: availabilitySlotCount(parsed),
+  });
+  return parsed;
 }
 
 function phoneCandidates(phone: string) {
