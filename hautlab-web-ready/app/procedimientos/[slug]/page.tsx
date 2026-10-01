@@ -21,8 +21,8 @@ const procedureVisuals: Record<string, { image: string; imageAlt: string }> = {
     imageAlt: "Imagen editorial de marcaje anatómico nasal previo a una valoración de rinomodelación"
   },
   "toxina-botulinica": {
-    image: "/visuals/hautlab-toxina-temporal-masetero.webp",
-    imageAlt: "Infografía HAUTLAB sobre la relación funcional entre músculo temporal y masetero y su modulación con toxina botulínica"
+    image: "/visuals/skin-macro.webp",
+    imageAlt: "Fotografía editorial HAUTLAB de piel facial en primer plano para la sección de toxina botulínica"
   },
   "armonizacion-facial": {
     image: "/visuals/hautlab-armonizacion.webp",
