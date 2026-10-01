@@ -1064,6 +1064,7 @@ async function finalizeBookingIntake(input: {
       });
     }
 
+    console.info("hautlab_funnel_event", { event: "booking_intake_completed", conversation_id: input.conversation.id });
     const schedule = await createNimboSchedule({
       personId: patient.id,
       startsAt: input.pendingSlot,
@@ -1093,6 +1094,7 @@ async function finalizeBookingIntake(input: {
       next_action: "confirm_registered_appointment",
     });
 
+    console.info("hautlab_funnel_event", { event: "booking_confirmed", conversation_id: input.conversation.id, nimbo_schedule_id: schedule.id });
     try {
       await recordConfirmedAppointmentConversion({
         conversationId: input.conversation.id,
@@ -1197,6 +1199,7 @@ async function beginBookingIntake(input: {
 
   const action = nextBookingIntakeAction(pendingConversation);
 
+  console.info("hautlab_funnel_event", { event: "booking_slot_selected", conversation_id: input.conversation.id });
   await updateConversation(input.conversation.id, {
     nimbo_pending_slot: input.selectedSlot,
     nimbo_pending_cause: reason ?? "Cita HAUTLAB",
@@ -1489,6 +1492,7 @@ async function handleNimboBooking(input: {
 
   if (eligible.length > 0) {
     const options = eligible.slice(0, 3);
+    console.info("hautlab_funnel_event", { event: "booking_slots_offered", conversation_id: input.conversation.id, slot_count: options.length });
     await updateConversation(input.conversation.id, {
       nimbo_last_offered_slots: options,
       nimbo_offer_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
