@@ -17,6 +17,13 @@ function authorized(request: NextRequest) {
   if (!secret) return false;
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
+async function saveNimboSnapshot(input: { from: string; to: string; days: unknown; slotCount: number; status: "ok" | "error"; error?: string }) {
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
+  if (!url || !key) return;
+  await fetch(`${url}/rest/v1/nimbo_availability_snapshot?on_conflict=id`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ id: "global", from_date: input.from, to_date: input.to, days: input.days, slot_count: input.slotCount, status: input.status, error: input.error ?? null, checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }), cache: "no-store", signal: AbortSignal.timeout(8000) });
+}
+
 function check(status: Check["status"], detail?: string, latencyMs?: number): Check {
   return { status, ...(detail ? { detail } : {}), ...(latencyMs !== undefined ? { latencyMs } : {}), checkedAt: new Date().toISOString() };
 }
@@ -50,6 +57,7 @@ export async function GET(request: NextRequest) {
       const days = await getNimboAvailability({ from, to: addDays(from, 7) });
       const slotCount = days.reduce((sum, day) => sum + day.slots.length, 0);
       components.nimbo = check("healthy", `availability_ok:slots=${slotCount}`, Date.now() - t0);
+      await saveNimboSnapshot({ from, to: addDays(from, 7), days, slotCount, status: "ok" });
     }
   } catch (error) {
     components.nimbo = check("down", error instanceof Error ? error.message.slice(0, 120) : "nimbo_probe_failed");
