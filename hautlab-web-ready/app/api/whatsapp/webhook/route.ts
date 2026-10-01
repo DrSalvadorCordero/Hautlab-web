@@ -318,6 +318,25 @@ export async function POST(request: NextRequest) {
 
   after(async () => {
     try {
+      // Meta edit events are state updates, not a new patient turn. Acknowledging
+      // them without routing to the conversational orchestrator prevents a
+      // duplicate bot response while keeping observability explicit.
+      if (incoming?.type === "edit") {
+        console.info("[whatsapp-webhook] edit event acknowledged", {
+          messageIdPresent: Boolean(incoming.id),
+          replyContext: Boolean(incoming.replyToMessageId),
+        });
+        return;
+      }
+
+      if (incoming && !["text", "button", "interactive", "image", "video", "audio", "document", "sticker", "location", "contacts", "reaction", "unsupported"].includes(incoming.type)) {
+        console.warn("[whatsapp-webhook] unhandled inbound type", {
+          type: incoming.type,
+          messageIdPresent: Boolean(incoming.id),
+          replyContext: Boolean(incoming.replyToMessageId),
+        });
+        return;
+      }
       if (incoming && (await isOperatorPhone(incoming.from))) {
         await callCommandRelay("operator_ingest", {
           phone: incoming.from,
