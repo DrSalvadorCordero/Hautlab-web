@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { normalizeNimboGender } from "@/lib/server/nimbo-contract";
 import {
   createNimboPatient,
   createNimboSchedule,
@@ -31,6 +32,7 @@ type ConversationRow = {
   nimbo_pending_cause: string | null;
   booking_full_name: string | null;
   booking_birth_date: string | null;
+  booking_gender: "f" | "m" | "o" | null;
   booking_email: string | null;
   booking_whatsapp: string | null;
   booking_reason: string | null;
@@ -240,7 +242,7 @@ async function upsertConversation(input: {
 }): Promise<ConversationRow> {
   const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
-    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
+    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_gender,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
     {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -946,6 +948,7 @@ function isNegative(text: string) {
 type BookingIntakeAction =
   | "collect_booking_full_name"
   | "collect_booking_birth_date"
+  | "collect_booking_gender"
   | "collect_booking_email"
   | "confirm_booking_whatsapp"
   | "collect_booking_whatsapp_number"
@@ -956,6 +959,7 @@ function nextBookingIntakeAction(
 ): BookingIntakeAction | null {
   if (!conversation.booking_full_name) return "collect_booking_full_name";
   if (!conversation.booking_birth_date) return "collect_booking_birth_date";
+  if (!conversation.booking_gender && !conversation.nimbo_person_id) return "collect_booking_gender";
   if (!conversation.booking_email) return "collect_booking_email";
   if (!conversation.booking_whatsapp) return "confirm_booking_whatsapp";
   if (!conversation.booking_reason && !conversation.treatment) {
@@ -970,6 +974,9 @@ function bookingIntakePrompt(action: BookingIntakeAction) {
   }
   if (action === "collect_booking_birth_date") {
     return "¿Cuál es tu fecha de nacimiento? Escríbela como dd/mm/aaaa.";
+  }
+  if (action === "collect_booking_gender") {
+    return "¿Qué sexo registramos en tu expediente: femenino, masculino u otro?";
   }
   if (action === "collect_booking_email") {
     return "¿Qué correo electrónico usamos para tu registro?";
@@ -989,6 +996,7 @@ async function finalizeBookingIntake(input: {
   pendingSlot: string;
   fullName: string;
   birthDate: string;
+  gender: "f" | "m" | "o" | null;
   email: string;
   whatsapp: string;
   reason: string;
@@ -1015,6 +1023,7 @@ async function finalizeBookingIntake(input: {
     await updateConversation(input.conversation.id, {
       booking_full_name: input.fullName,
       booking_birth_date: input.birthDate,
+      booking_gender: input.gender,
       booking_email: input.email,
       booking_whatsapp: input.whatsapp,
       booking_reason: input.reason,
@@ -1048,11 +1057,16 @@ async function finalizeBookingIntake(input: {
       );
     }
 
+    if (!patient && !input.gender) {
+      await updateConversation(input.conversation.id, { next_action: "collect_booking_gender" });
+      return { handled: true, reply: bookingIntakePrompt("collect_booking_gender") };
+    }
     if (!patient) {
       patient = await createNimboPatient({
         phone: input.whatsapp,
         fullName: input.fullName,
         birthDate: input.birthDate,
+        gender: input.gender,
         email: input.email,
       });
     } else {
@@ -1060,6 +1074,7 @@ async function finalizeBookingIntake(input: {
         phone: input.whatsapp,
         fullName: input.fullName,
         birthDate: input.birthDate,
+        gender: input.gender,
         email: input.email,
       });
     }
@@ -1076,6 +1091,7 @@ async function finalizeBookingIntake(input: {
     await updateConversation(input.conversation.id, {
       booking_full_name: input.fullName,
       booking_birth_date: input.birthDate,
+      booking_gender: input.gender,
       booking_email: input.email,
       booking_whatsapp: input.whatsapp,
       booking_reason: input.reason,
@@ -1219,6 +1235,7 @@ async function beginBookingIntake(input: {
     pendingSlot: input.selectedSlot,
     fullName: pendingConversation.booking_full_name!,
     birthDate: pendingConversation.booking_birth_date!,
+    gender: pendingConversation.booking_gender,
     email: pendingConversation.booking_email!,
     whatsapp: pendingConversation.booking_whatsapp!,
     reason: reason!,
@@ -1234,6 +1251,7 @@ async function handlePendingBookingIntake(input: {
   const validActions = new Set<BookingIntakeAction>([
     "collect_booking_full_name",
     "collect_booking_birth_date",
+    "collect_booking_gender",
     "collect_booking_email",
     "confirm_booking_whatsapp",
     "collect_booking_whatsapp_number",
@@ -1310,6 +1328,11 @@ async function handlePendingBookingIntake(input: {
     }
     patch.booking_birth_date = value;
     updated.booking_birth_date = value;
+  } else if (action === "collect_booking_gender" && !updated.booking_gender) {
+    const value = normalizeNimboGender(input.text);
+    if (!value) return { handled: true, reply: bookingIntakePrompt("collect_booking_gender") };
+    patch.booking_gender = value;
+    updated.booking_gender = value;
   } else if (action === "collect_booking_email" && !updated.booking_email) {
     const value = normalizeBookingEmail(input.text);
     if (!value) {
@@ -1375,6 +1398,7 @@ async function handlePendingBookingIntake(input: {
 
   const fullName = updated.booking_full_name!;
   const birthDate = updated.booking_birth_date!;
+  const gender = updated.booking_gender;
   const email = updated.booking_email!;
   const whatsapp = updated.booking_whatsapp!;
   const reason = updated.booking_reason!;
@@ -1391,6 +1415,7 @@ async function handlePendingBookingIntake(input: {
     pendingSlot,
     fullName,
     birthDate,
+    gender,
     email,
     whatsapp,
     reason,

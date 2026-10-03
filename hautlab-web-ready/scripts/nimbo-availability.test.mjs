@@ -1,10 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveNimboSchedulingAccount, nimboAvailabilityRows, isWithinNimboWorkingHours } from "../lib/server/nimbo-availability.ts";
+import { resolveNimboSchedulingAccount, nimboAvailabilityRows, isWithinNimboWorkingHours, resolveNimboEncounterTypeId } from "../lib/server/nimbo-availability.ts";
 import { classifyNimboAvailabilitySnapshot } from "../lib/server/nimbo-health.ts";
 
 const schedule = { mon: ["12:00-19:00"], sat: ["12:00-15:00"] };
 const within = (startsAt) => isWithinNimboWorkingHours({ startsAt, timezone: "America/Merida", schedule, durationMinutes: 60 });
+
+test("booking selects the sole in-person encounter type and refuses an ambiguous catalog", () => {
+  const row = { id: 4916, configuration: { types: { in_person: true } } };
+  assert.equal(resolveNimboEncounterTypeId({ encounter_types: [row] }), 4916);
+  assert.throws(() => resolveNimboEncounterTypeId({ encounter_types: [] }), /selection_required/);
+  assert.throws(() => resolveNimboEncounterTypeId({ encounter_types: [row, { ...row, id: 4917 }] }), /selection_required/);
+  assert.throws(() => resolveNimboEncounterTypeId({ encounter_types: [{ ...row, configuration: { types: { in_person: false } } }] }), /selection_required/);
+});
 
 test("availability uses the selected doctor's username and location, not another member", () => {
   const result = resolveNimboSchedulingAccount({ organization_members: [

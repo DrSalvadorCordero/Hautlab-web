@@ -32,6 +32,18 @@ export function nimboAvailabilityRows(payload: unknown): unknown[] {
   throw new Error("nimbo_availability_invalid_payload");
 }
 
+export function resolveNimboEncounterTypeId(payload: unknown) {
+  const root = record(payload);
+  const rows = root?.encounter_types;
+  if (!Array.isArray(rows)) throw new Error("nimbo_encounter_types_invalid_payload");
+  const eligible = rows.map(record).filter((row) => {
+    const types = record(record(row?.configuration)?.types);
+    return row && Number.isInteger(row.id) && Number(row.id) > 0 && row.active !== false && types?.in_person !== false;
+  });
+  if (eligible.length !== 1) throw new Error("nimbo_encounter_type_selection_required");
+  return eligible[0]!.id as number;
+}
+
 export function isWithinNimboWorkingHours(input: {
   startsAt: string;
   timezone: string;

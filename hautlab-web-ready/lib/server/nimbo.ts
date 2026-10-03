@@ -5,10 +5,11 @@ import {
   findNimboScheduleIdsByTimes,
   resolveNimboPatientByBirthDate,
   verifyNimboSchedulePayload,
+  splitNimboFullName,
   type NimboScheduleSnapshot,
 } from "./nimbo-contract";
 import type { NimboAvailabilitySnapshot } from "./nimbo-health";
-import { isWithinNimboWorkingHours, nimboAvailabilityRows, resolveNimboSchedulingAccount } from "./nimbo-availability";
+import { isWithinNimboWorkingHours, nimboAvailabilityRows, resolveNimboSchedulingAccount, resolveNimboEncounterTypeId } from "./nimbo-availability";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -51,6 +52,7 @@ export type NimboPatientDemographics = {
   fullName: string;
   birthDate: string;
   email: string;
+  gender?: "f" | "m" | "o" | null;
 };
 
 export type NimboCreatedSchedule = {
@@ -1048,20 +1050,6 @@ export async function verifyNimboPatientIdentity(
 }
 
 
-function splitFullName(value: string) {
-  const normalized = value
-    .replace(/[^\\p{L}\\p{M}'’.-]+/gu, " ")
-    .replace(/\\s+/g, " ")
-    .trim();
-  const parts = normalized.split(" ").filter(Boolean);
-  if (parts.length < 2 || normalized.length < 5) {
-    throw new NimboApiError("nimbo_full_name_required");
-  }
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
-  };
-}
 
 export async function createNimboPatient(
   input: NimboPatientDemographics,
@@ -1071,7 +1059,8 @@ export async function createNimboPatient(
     throw new NimboApiError("nimbo_booking_not_ready");
   }
 
-  const { firstName, lastName } = splitFullName(input.fullName);
+  const { firstName, lastName } = splitNimboFullName(input.fullName);
+  if (!input.gender) throw new NimboApiError("nimbo_patient_gender_required");
   const rawDigits = input.phone.replace(/\D/g, "");
   const isMexican = /^52(?:1)?\d{10}$/.test(rawDigits);
   if (!isMexican) {
@@ -1089,6 +1078,7 @@ export async function createNimboPatient(
         first_name: firstName,
         last_name: lastName,
         born_at: input.birthDate,
+        gender: input.gender,
         telephone2,
         email: input.email,
         phone_country_id: "142",
@@ -1124,7 +1114,7 @@ export async function updateNimboPatientDemographics(
     throw new NimboApiError("nimbo_booking_not_ready");
   }
 
-  const { firstName, lastName } = splitFullName(input.fullName);
+  const { firstName, lastName } = splitNimboFullName(input.fullName);
   const rawDigits = input.phone.replace(/\D/g, "");
   const isMexican = /^52(?:1)?\d{10}$/.test(rawDigits);
   if (!isMexican) {
@@ -1303,6 +1293,7 @@ export async function createNimboSchedule(input: {
     endsAt,
     personId: input.personId,
     accountId: config.doctor_account_id,
+    encounterTypeId: resolveNimboEncounterTypeId(await nimboFetch(config, "encounter_types")),
     // Preserve current reminder ownership until HAUTLAB has a proven reminder
     // subsystem. Payment-link side effects are explicitly disabled.
     reminderOwner: "nimbo",
