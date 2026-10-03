@@ -60,7 +60,19 @@ export async function GET(request: NextRequest) {
       await saveNimboSnapshot({ from, to: addDays(from, 7), days, slotCount, status: "ok" });
     }
   } catch (error) {
-    components.nimbo = check("down", error instanceof Error ? error.message.slice(0, 120) : "nimbo_probe_failed");
+    const detail = error instanceof Error ? error.message.slice(0, 120) : "nimbo_probe_failed";
+    components.nimbo = check("down", detail);
+    if (deep && isAuthorized) {
+      const from = todayInMerida();
+      await saveNimboSnapshot({
+        from,
+        to: addDays(from, 7),
+        days: [],
+        slotCount: 0,
+        status: "error",
+        error: detail,
+      }).catch(() => undefined);
+    }
   }
 
   const states = Object.values(components).map((item) => item.status);
