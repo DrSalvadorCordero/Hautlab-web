@@ -27,10 +27,10 @@ const faq = [
 
 const references = [
   { label: "Almohanna HM, et al. The Role of Vitamins and Minerals in Hair Loss: A Review. Dermatol Ther (Heidelb). 2019.", href: "https://pubmed.ncbi.nlm.nih.gov/30547302/" },
-  { label: "Lacarrubba F, et al. Trichoscopy in the differential diagnosis of alopecia: a systematic review. Dermatol Ther. 2022.", href: "https://pubmed.ncbi.nlm.nih.gov/35293625/" },
+  { label: "Lacarrubba F, Micali G, Tosti A. Scalp dermoscopy or trichoscopy. Curr Probl Dermatol. 2015;47:21–32.", href: "https://pubmed.ncbi.nlm.nih.gov/26370641/" },
   { label: "Kanti V, et al. Evidence-based (S3) guideline for the treatment of androgenetic alopecia in women and in men – short version. J Eur Acad Dermatol Venereol. 2018.", href: "https://pubmed.ncbi.nlm.nih.gov/29178529/" },
   { label: "Randolph M, Tosti A. Oral minoxidil treatment for hair loss: A review of efficacy and safety. J Am Acad Dermatol. 2021.", href: "https://pubmed.ncbi.nlm.nih.gov/32622136/" },
-  { label: "Gupta AK, et al. Platelet-rich plasma and its use in hair regrowth: a review. J Cosmet Dermatol. 2021.", href: "https://pubmed.ncbi.nlm.nih.gov/32757405/" }
+  { label: "Paichitrojjana A, Paichitrojjana A. Platelet Rich Plasma and Its Use in Hair Regrowth: A Review. Drug Des Devel Ther. 2022;16:635–645.", href: "https://pubmed.ncbi.nlm.nih.gov/35300222/" }
 ];
 
 export default function HairLossDiagnosisArticle() {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getNimboAvailability, getNimboConfig, isNimboReadyForAutobooking } from "@/lib/server/nimbo";
+import { timingSafeEqual } from "node:crypto";
+import { getNimboAvailability, getNimboAvailabilitySnapshot, getNimboConfig, isNimboReadyForAutobooking } from "@/lib/server/nimbo";
+import { classifyNimboAvailabilitySnapshot } from "@/lib/server/nimbo-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,16 +14,39 @@ function todayInMerida() {
 function addDays(date: string, days: number) {
   const d = new Date(date + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10);
 }
-function authorized(request: NextRequest) {
+function secretMatches(received: string, expected: string) {
+  const left = Buffer.from(received);
+  const right = Buffer.from(expected);
+  return Boolean(expected) && left.length === right.length && timingSafeEqual(left, right);
+}
+async function authorized(request: NextRequest) {
   const secret = process.env.CRON_SECRET?.trim();
-  if (!secret) return false;
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  if (secret && secretMatches(request.headers.get("authorization") ?? "", `Bearer ${secret}`)) return true;
+  // Reuse the existing server-to-server triage credential for operational
+  // verification. Never allow an unauthenticated request to trigger a probe.
+  const received = request.headers.get("x-hautlab-internal-key")?.trim();
+  if (!received) return false;
+  const configured = process.env.HAUTLAB_INTERNAL_API_KEY?.trim();
+  if (configured) return secretMatches(received, configured);
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const key = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
+  if (!url || !key) return false;
+  try {
+    const response = await fetch(`${url}/rest/v1/wa_internal_config?key=eq.relay_hmac_secret&select=secret_value&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+      cache: "no-store", signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return false;
+    const rows = await response.json() as Array<{ secret_value?: string }>;
+    return secretMatches(received, rows[0]?.secret_value?.trim() ?? "");
+  } catch { return false; }
 }
 async function saveNimboSnapshot(input: { from: string; to: string; days: unknown; slotCount: number; status: "ok" | "error"; error?: string }) {
   const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
   const key = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
   if (!url || !key) return;
-  await fetch(`${url}/rest/v1/nimbo_availability_snapshot?on_conflict=id`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ id: "global", from_date: input.from, to_date: input.to, days: input.days, slot_count: input.slotCount, status: input.status, error: input.error ?? null, checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }), cache: "no-store", signal: AbortSignal.timeout(8000) });
+  const response = await fetch(`${url}/rest/v1/nimbo_availability_snapshot?on_conflict=id`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ id: "global", from_date: input.from, to_date: input.to, days: input.days, slot_count: input.slotCount, status: input.status, error: input.error ?? null, checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }), cache: "no-store", signal: AbortSignal.timeout(8000) });
+  if (!response.ok) throw new Error("nimbo_snapshot_save_failed");
 }
 
 function check(status: Check["status"], detail?: string, latencyMs?: number): Check {
@@ -31,7 +56,7 @@ function check(status: Check["status"], detail?: string, latencyMs?: number): Ch
 export async function GET(request: NextRequest) {
   const started = Date.now();
   const deep = request.nextUrl.searchParams.get("deep") === "1";
-  const isAuthorized = authorized(request);
+  const isAuthorized = await authorized(request);
   const components: Record<string, Check> = {
     app: check("healthy", "nextjs_runtime", Date.now() - started),
     whatsapp: process.env.WHATSAPP_VERIFY_TOKEN || process.env.META_VERIFY_TOKEN
@@ -47,9 +72,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const config = await getNimboConfig();
-    components.nimbo = isNimboReadyForAutobooking(config)
-      ? check("healthy", "autobooking_configured")
-      : check("degraded", "autobooking_not_ready");
+    if (isNimboReadyForAutobooking(config)) {
+      const verified = classifyNimboAvailabilitySnapshot(await getNimboAvailabilitySnapshot());
+      components.nimbo = check(verified.status, verified.detail);
+    } else {
+      components.nimbo = check("degraded", "autobooking_not_ready");
+    }
 
     if (deep && isAuthorized && isNimboReadyForAutobooking(config)) {
       const from = todayInMerida();

@@ -7,6 +7,8 @@ import {
   verifyNimboSchedulePayload,
   type NimboScheduleSnapshot,
 } from "./nimbo-contract";
+import type { NimboAvailabilitySnapshot } from "./nimbo-health";
+import { isWithinNimboWorkingHours, nimboAvailabilityRows, resolveNimboSchedulingAccount } from "./nimbo-availability";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -285,6 +287,13 @@ export async function getNimboConfig(): Promise<NimboIntegrationConfig> {
   return row;
 }
 
+export async function getNimboAvailabilitySnapshot() {
+  const rows = await supabaseJson<NimboAvailabilitySnapshot[]>(
+    "nimbo_availability_snapshot?id=eq.global&select=status,error,slot_count,checked_at&limit=1",
+  );
+  return rows[0] ?? null;
+}
+
 async function patchNimboConfig(
   patch: Partial<Omit<NimboIntegrationConfig, "id" | "created_at" | "updated_at">>,
 ) {
@@ -450,16 +459,6 @@ function discoverOrganization(payload: unknown) {
   };
 }
 
-function discoverLocation(payload: unknown) {
-  const root = asRecord(payload);
-  const list = Array.isArray(root?.locations)
-    ? root?.locations
-    : Array.isArray(payload)
-      ? payload
-      : [];
-  const first = list.find((item) => asFiniteNumber(asRecord(item)?.id) !== null);
-  return asFiniteNumber(asRecord(first)?.id);
-}
 
 function discoverPortalUrl(payloads: unknown[]) {
   for (const payload of payloads) {
@@ -555,7 +554,7 @@ export async function connectNimbo(input: {
     doctor_name: account.fullName,
     organization_id: organization.id,
     organization_slug: organization.slug,
-    location_id: discoverLocation(locationsPayload),
+    location_id: resolveNimboSchedulingAccount(membersPayload, account.id).locationId,
     timezone: account.timezone ?? "America/Merida",
     consultation_duration_minutes: account.duration,
     portal_url: portalUrl,
@@ -819,18 +818,6 @@ function slotLabel(startsAt: string, timeZone: string) {
   }).format(parsed);
 }
 
-function availabilityRows(payload: unknown) {
-  if (Array.isArray(payload)) return payload;
-  const root = asRecord(payload);
-  if (Array.isArray(root?.hours)) return root.hours;
-
-  const data = asRecord(root?.data);
-  if (Array.isArray(data?.hours)) return data.hours;
-  if (Array.isArray(root?.availability)) return root.availability;
-
-  return [] as unknown[];
-}
-
 function scheduleValue(value: unknown) {
   const direct = cleanString(value, 160);
   if (direct) return direct;
@@ -858,7 +845,7 @@ function parseAvailability(
   payload: unknown,
   timeZone: string,
 ): NimboAvailabilityDay[] {
-  const hours = availabilityRows(payload);
+  const hours = nimboAvailabilityRows(payload);
   const result: NimboAvailabilityDay[] = [];
 
   for (const item of hours) {
@@ -907,78 +894,37 @@ export async function getNimboAvailability(input: {
   const config = await getNimboConfig();
   if (!config.enabled || !config.base_url || !config.doctor_account_id) return [];
 
-  // Nimbo has shipped more than one calendar contract in production. Probe
-  // only safe GET variants and stop on the first valid availability payload.
-  // This avoids coupling HAUTLAB booking to one undocumented parameter name.
-  const candidates: Array<{ source: string; path: string }> = [];
-
-  if (config.organization_slug) {
-    const params = new URLSearchParams({
-      from: input.from,
-      to: input.to,
-      monthly: "false",
-      slug: config.organization_slug,
+  // The documented account parameter is the physician username, not the
+  // numeric account ID. Resolve it from the authenticated member catalog.
+  const members = await nimboFetch(config, "organization_members");
+  const doctor = resolveNimboSchedulingAccount(members, config.doctor_account_id);
+  const timezone = doctor.timezone ?? config.timezone;
+  const params = new URLSearchParams({
+    from: input.from,
+    to: input.to,
+    monthly: "false",
+    account: doctor.username,
+  });
+  const payload = await nimboFetch(config, `calendar/available_hours?${params.toString()}`);
+  const parsed = parseAvailability(payload, timezone)
+    .filter((day) => day.date >= input.from && day.date <= input.to)
+    .map((day) => {
+      const slots = day.slots.filter((slot) => isWithinNimboWorkingHours({
+        startsAt: slot.startsAt,
+        timezone,
+        schedule: doctor.schedule,
+        durationMinutes: config.consultation_duration_minutes ?? 60,
+      }));
+      return { ...day, available: slots.length > 0, slots };
     });
-    candidates.push({
-      source: "organization_slug",
-      path: `calendar/available_hours_organization?${params.toString()}`,
-    });
-  }
-
-  if (config.organization_id) {
-    const params = new URLSearchParams({
-      from: input.from,
-      to: input.to,
-      monthly: "false",
-      organization_id: String(config.organization_id),
-    });
-    candidates.push({
-      source: "organization_id",
-      path: `calendar/available_hours_organization?${params.toString()}`,
-    });
-  }
-
-  const accountParamVariants = ["account", "account_id"] as const;
-  for (const key of accountParamVariants) {
-    const params = new URLSearchParams({
-      from: input.from,
-      to: input.to,
-      monthly: "false",
-      [key]: String(config.doctor_account_id),
-    });
-    if (config.location_id) params.set("location_id", String(config.location_id));
-    candidates.push({
-      source: `doctor_${key}`,
-      path: `calendar/available_hours?${params.toString()}`,
-    });
-  }
-
-  let lastError: unknown = null;
-  for (const candidate of candidates) {
-    try {
-      const payload = await nimboFetch(config, candidate.path);
-      const parsed = parseAvailability(payload, config.timezone);
-      // A successful API response with zero slots is valid. Preserve it.
-      console.info("nimbo_availability_source", {
-        source: candidate.source,
-        from: input.from,
-        to: input.to,
-        days: parsed.length,
-        slots: availabilitySlotCount(parsed),
-      });
-      return parsed;
-    } catch (error) {
-      lastError = error;
-      console.warn("nimbo_availability_candidate_failed", {
-        source: candidate.source,
-        error: error instanceof Error ? error.message : "unknown_error",
-      });
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new NimboApiError("nimbo_availability_unavailable");
+  console.info("nimbo_availability_source", {
+    source: "doctor_username",
+    from: input.from,
+    to: input.to,
+    days: parsed.length,
+    slots: availabilitySlotCount(parsed),
+  });
+  return parsed;
 }
 
 function phoneCandidates(phone: string) {
