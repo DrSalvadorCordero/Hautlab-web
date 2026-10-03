@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit && npm run test:nimbo-contract",
     "smoke-test": "node scripts/smoke-test.mjs",
     "eval:whatsapp": "node scripts/whatsapp-eval.mjs",
-    "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs",
+    "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs scripts/nimbo-availability.test.mjs",
     "check:performance-budget": "node scripts/performance-budget.mjs"
   },
   "dependencies": {

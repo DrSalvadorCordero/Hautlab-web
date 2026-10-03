@@ -1,5 +1,20 @@
 type JsonRecord = Record<string, unknown>;
 
+export function splitNimboFullName(value: string) {
+  const normalized = value.replace(/[^\p{L}\p{M}'’.-]+/gu, " ").replace(/\s+/g, " ").trim();
+  const parts = normalized.split(" ").filter(Boolean);
+  if (parts.length < 2 || normalized.length < 5) throw new Error("nimbo_full_name_required");
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
+export function normalizeNimboGender(value: string): "f" | "m" | "o" | null {
+  const normalized = value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (["f", "femenino", "mujer"].includes(normalized)) return "f";
+  if (["m", "masculino", "hombre"].includes(normalized)) return "m";
+  if (["o", "otro", "otra"].includes(normalized)) return "o";
+  return null;
+}
+
 export type NimboContractPatient = {
   id: number;
   fullName: string | null;
@@ -289,6 +304,7 @@ export function buildNimboAppointmentPayload(input: {
   endsAt: string;
   personId: number;
   accountId: number;
+  encounterTypeId?: number;
   reminderOwner: "nimbo" | "hautlab";
 }) {
   const nimboOwnsAppointmentReminder = input.reminderOwner === "nimbo";
@@ -306,6 +322,7 @@ export function buildNimboAppointmentPayload(input: {
       },
       person_id: String(input.personId),
       account_id: String(input.accountId),
+      ...(input.encounterTypeId ? { encounter_type_id: input.encounterTypeId } : {}),
     },
   };
 }

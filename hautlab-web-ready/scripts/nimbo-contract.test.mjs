@@ -6,7 +6,24 @@ import {
   findUniqueNimboScheduleIdByTimes,
   resolveNimboPatientByBirthDate,
   verifyNimboSchedulePayload,
+  splitNimboFullName,
+  normalizeNimboGender,
 } from "../lib/server/nimbo-contract.ts";
+
+test("patient names preserve accented letters, surnames and whitespace", () => {
+  assert.deepEqual(splitNimboFullName("Juan Pérez López"), { firstName: "Juan", lastName: "Pérez López" });
+  assert.deepEqual(splitNimboFullName("  María   José  O’Connor  "), { firstName: "María", lastName: "José O’Connor" });
+  assert.deepEqual(splitNimboFullName("Salvador Cordero Romero"), { firstName: "Salvador", lastName: "Cordero Romero" });
+  assert.throws(() => splitNimboFullName("Juan"), /full_name_required/);
+});
+
+test("gender is explicitly supplied and normalized, never inferred from a name", () => {
+  assert.equal(normalizeNimboGender("Femenino"), "f");
+  assert.equal(normalizeNimboGender("MASCULINO"), "m");
+  assert.equal(normalizeNimboGender("otro"), "o");
+  assert.equal(normalizeNimboGender("María"), null);
+  assert.equal(normalizeNimboGender(""), null);
+});
 
 test("shared phone with a different DOB never resolves to the wrong patient", () => {
   const payload = {
@@ -139,9 +156,11 @@ test("appointment payload makes reminder/payment behavior explicit", () => {
     personId: 2001,
     accountId: 1001,
     reminderOwner: "nimbo",
+    encounterTypeId: 4916,
   });
 
   assert.equal(body.consultation_schedule.schedule_type, "appointment");
+  assert.equal(body.consultation_schedule.encounter_type_id, 4916);
   assert.equal(body.consultation_schedule.reminder, true);
   assert.equal(body.consultation_schedule.sms_reminder, false);
   assert.deepEqual(body.consultation_schedule.metadata, {
