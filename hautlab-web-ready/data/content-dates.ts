@@ -36,6 +36,7 @@ const priorityProcedureDates = new Set([
 const searchConsoleProcedureDates: Record<string, string> = {
   verrugas: "2026-09-08",
   "armonizacion-facial": "2026-09-08",
+  rosacea: "2026-09-23",
   melasma: "2026-08-10",
   "skin-booster": "2026-08-10"
 };

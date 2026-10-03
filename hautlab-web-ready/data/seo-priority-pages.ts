@@ -97,9 +97,9 @@ export const prioritySeoPages: Record<string, PrioritySeoPage> = {
   rosacea: {
     title: "Tratamiento de rosácea en Mérida | Consulta médica | HAUTLAB",
     description:
-      "Consulta médica para rosácea en Mérida: enrojecimiento, ardor, vasos visibles y brotes. Diagnóstico diferencial, barrera cutánea y tratamiento individualizado.",
+      "Consulta médica para rosácea en Mérida: enrojecimiento, vasos visibles, brotes y síntomas oculares. Evaluación por manifestaciones, barrera cutánea y tratamiento individualizado.",
     pageSummary:
-      "Consulta médica para rosácea en Mérida enfocada en enrojecimiento, sensibilidad, vasos visibles, brotes, desencadenantes y estado de la barrera cutánea.",
+      "Consulta médica para rosácea en Mérida con evaluación por manifestaciones clínicas: enrojecimiento persistente, vasos visibles, lesiones inflamatorias, ardor, síntomas oculares y cambios de la piel.",
     schema: {
       type: "MedicalCondition",
       name: "Rosácea",
@@ -110,39 +110,48 @@ export const prioritySeoPages: Record<string, PrioritySeoPage> = {
       {
         question: "¿Cómo saber si es rosácea o acné?",
         answer:
-          "Ambas pueden producir pápulas y pústulas, pero la rosácea suele acompañarse de enrojecimiento persistente, ardor, sensibilidad o vasos visibles. La exploración permite descartar dermatitis, foliculitis y otras causas."
+          "Ambas pueden producir pápulas y pústulas, pero la rosácea suele acompañarse de enrojecimiento persistente, ardor, sensibilidad o vasos visibles. La exploración permite valorar el patrón completo y descartar acné, dermatitis, foliculitis y otras causas."
+      },
+      {
+        question: "¿La rosácea puede afectar los ojos?",
+        answer:
+          "Sí. Puede acompañarse de sequedad, ardor, sensación de cuerpo extraño, enrojecimiento ocular o inflamación de los párpados. Dolor ocular, sensibilidad marcada a la luz o visión borrosa nueva requieren valoración oportuna y pueden justificar evaluación oftalmológica."
       },
       {
         question: "¿El láser es obligatorio para tratar la rosácea?",
         answer:
-          "No. El plan puede incluir cuidado suave, fotoprotección y medicamentos. Láser o luz se consideran principalmente para vasos o enrojecimiento persistente y no sustituyen el control de inflamación y desencadenantes."
+          "No. El tratamiento se elige según las manifestaciones predominantes. Láser y otras fuentes de luz pueden ser útiles sobre todo para vasos visibles y eritema persistente en pacientes seleccionados, pero no sustituyen el manejo de inflamación, síntomas oculares, barrera cutánea y desencadenantes relevantes."
       }
     ],
     clinicalDetails: {
       evaluation: [
-        "Distribución del enrojecimiento, vasos visibles, pápulas, pústulas, ardor, edema y síntomas oculares.",
-        "Desencadenantes, productos utilizados, exposición solar, medicamentos y antecedentes de tratamientos irritantes.",
-        "Diagnósticos diferenciales como acné, dermatitis perioral, dermatitis seborreica, lupus o reacción a productos."
+        "Se identifican las manifestaciones predominantes en lugar de asumir un solo subtipo: enrojecimiento persistente o episódico, telangiectasias, pápulas y pústulas, edema, cambios fimatosos y síntomas oculares.",
+        "Se revisan ardor, sensibilidad, sequedad ocular, sensación de cuerpo extraño, cambios palpebrales, desencadenantes, exposición solar, productos utilizados y tratamientos previos.",
+        "Se consideran diagnósticos diferenciales como acné, dermatitis perioral, dermatitis seborreica, lupus, foliculitis o reacción a productos cuando el patrón no es típico.",
+        "La intensidad del tratamiento se decide según las manifestaciones, su gravedad, impacto cotidiano, tolerancia y antecedentes; no existe un protocolo único para todas las personas con rosácea."
       ],
       recovery: [
-        "El control suele ser progresivo y puede requerir ajustes según tolerancia y tipo de manifestación.",
-        "La barrera cutánea y la fotoprotección forman parte del tratamiento diario.",
-        "Los procedimientos vasculares o de luz se espacian y se indican cuando la piel está suficientemente estable."
+        "El control suele ser progresivo y puede requerir ajustes según la manifestación predominante y la tolerancia de la piel.",
+        "El cuidado de barrera y la fotoprotección forman parte del manejo diario, incluso cuando se utilizan medicamentos o procedimientos.",
+        "Después de láser o luz pueden aparecer enrojecimiento, inflamación o sensibilidad transitorios; la recuperación depende del dispositivo, parámetros, fototipo y respuesta individual.",
+        "Los procedimientos vasculares suelen integrarse dentro de un plan y no se consideran una corrección única de todos los componentes de la rosácea."
       ],
       risks: [
         "Rutinas agresivas, exfoliación excesiva o procedimientos durante un brote pueden intensificar ardor y enrojecimiento.",
-        "Algunos medicamentos pueden causar irritación o cambios temporales de color y requieren ajuste individual.",
-        "Tratar solo el enrojecimiento visible sin controlar inflamación y desencadenantes puede producir una respuesta incompleta."
+        "Los tratamientos tópicos, sistémicos y basados en energía tienen perfiles de efectos adversos diferentes; la selección depende de la manifestación tratada y del paciente.",
+        "Láser o luz pueden producir inflamación, cambios transitorios de color y, en determinados fototipos o parámetros, alteraciones pigmentarias; por eso requieren selección y ajustes individualizados.",
+        "Tratar únicamente vasos o color persistente puede dejar sin tratar lesiones inflamatorias, síntomas oculares u otros componentes de la enfermedad."
       ],
       alternatives: [
-        "Cuidado suave de barrera, fotoprotección y reducción de desencadenantes relevantes.",
-        "Tratamiento tópico u oral según predominio de enrojecimiento, inflamación o síntomas oculares.",
-        "Láser o luz para vasos y color persistente en pacientes seleccionados."
+        "Cuidado suave de barrera, fotoprotección y reducción de desencadenantes que sean relevantes para esa persona.",
+        "Tratamiento tópico u oral seleccionado según la manifestación predominante y la gravedad, en lugar de aplicar el mismo esquema a todos los pacientes.",
+        "Láser o luz para telangiectasias y eritema persistente cuando existe una indicación clara y la piel puede tratarse con seguridad.",
+        "Valoración oftalmológica cuando los síntomas oculares son moderados, persistentes, atípicos o presentan señales de alarma."
       ],
       warningSigns: [
-        "Dolor ocular, sensibilidad marcada a la luz, visión borrosa nueva o sensación persistente de cuerpo extraño.",
-        "Inflamación facial rápida, ronchas, dificultad respiratoria o reacción intensa después de un producto.",
-        "Enrojecimiento unilateral, fiebre, dolor intenso o lesiones que no corresponden al patrón habitual."
+        "Dolor ocular, sensibilidad marcada a la luz, visión borrosa nueva o disminución visual requieren valoración médica oportuna y no deben atribuirse automáticamente a rosácea leve.",
+        "Inflamación facial rápida, ronchas, dificultad respiratoria o reacción intensa después de un producto requieren atención inmediata.",
+        "Enrojecimiento unilateral, fiebre, dolor intenso, úlceras o lesiones que no corresponden al patrón habitual justifican reconsiderar el diagnóstico."
       ]
     },
     medicalReview: {
@@ -150,15 +159,27 @@ export const prioritySeoPages: Record<string, PrioritySeoPage> = {
       professionalTitle: "Médico Cirujano",
       practiceArea: "Dermatología Clínica y Estética",
       license: "Cédula Profesional 11804418",
-      reviewedAt: "27 de julio de 2026",
+      reviewedAt: "23 de septiembre de 2026",
       sources: [
         {
           label: "American Academy of Dermatology · Diagnóstico y tratamiento de la rosácea",
           href: "https://www.aad.org/public/diseases/rosacea/treatment/diagnosis-treat"
         },
         {
-          label: "American Academy of Dermatology · Panorama general de la rosácea",
-          href: "https://www.aad.org/public/diseases/rosacea/what-is/overview"
+          label: "American Academy of Dermatology · Láser y luz en rosácea",
+          href: "https://www.aad.org/public/diseases/rosacea/treatment/lasers-lights"
+        },
+        {
+          label: "Global ROSacea COnsensus · diagnóstico, clasificación y manejo por fenotipo",
+          href: "https://pubmed.ncbi.nlm.nih.gov/31392722/"
+        },
+        {
+          label: "JAMA Dermatology 2024 · dominios clínicos esenciales en rosácea",
+          href: "https://pubmed.ncbi.nlm.nih.gov/38656294/"
+        },
+        {
+          label: "JDDG 2026 · consenso Delphi sobre láser y tecnologías basadas en energía para rosácea",
+          href: "https://pubmed.ncbi.nlm.nih.gov/41414941/"
         }
       ]
     }
