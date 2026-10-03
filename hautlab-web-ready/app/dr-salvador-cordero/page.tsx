@@ -80,7 +80,7 @@ export default function DoctorProfilePage() {
   };
 
   return (
-    <main id="contenido-principal">
+    <main>
       <section className="border-b border-line bg-aurora py-16 lg:py-24">
         <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
           <div>
