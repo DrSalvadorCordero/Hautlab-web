@@ -1431,7 +1431,13 @@ async function handleNimboBooking(input: {
       "nimbo_availability_lookup_failed",
       error instanceof Error ? error.message : "unknown_error",
     );
-    return { handled: false };
+    return {
+      handled: true,
+      reply:
+        "No pude consultar la agenda en Nimbo en este momento. Voy a pasar tu solicitud al equipo para confirmar un horario real antes de ofrecerte una cita.",
+      escalate: "karen",
+      reasonCode: "nimbo_availability_unavailable",
+    };
   }
 
   const matchesPreference = (startsAt: string) =>
