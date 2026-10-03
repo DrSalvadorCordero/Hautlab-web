@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "caida-cabello-diagnostico-antes-tratamiento",
+    title: "Caída de cabello: por qué el diagnóstico debe ir antes del tratamiento",
+    description:
+      "No toda caída de cabello es la misma. Qué aportan la historia clínica, la exploración y la tricoscopia antes de elegir un tratamiento para alopecia.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-03",
+    readingTime: "10 min"
+  },
+  {
     slug: "rosacea-barrera-cutanea-irritar-no-es-tratar",
     title: "Rosácea y barrera cutánea: por qué irritar más no significa tratar mejor",
     description:
