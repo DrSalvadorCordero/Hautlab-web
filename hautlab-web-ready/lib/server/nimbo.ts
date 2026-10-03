@@ -976,6 +976,28 @@ export async function getNimboAvailability(input: {
     }
   }
 
+  // Diagnostic fallback: organization_members is a documented endpoint and
+  // remains healthy for this account. Log schema names only (never values/PII)
+  // so we can detect whether Nimbo now exposes scheduling configuration there.
+  try {
+    const membersPayload = await nimboFetch(config, "organization_members");
+    const members = organizationMemberArray(membersPayload);
+    const member = members.find((item) => {
+      const row = asRecord(item);
+      const account = asRecord(row?.account);
+      return asFiniteNumber(row?.account_id) === config.doctor_account_id ||
+        asFiniteNumber(account?.id) === config.doctor_account_id;
+    });
+    const row = asRecord(member);
+    const account = asRecord(row?.account);
+    console.info("nimbo_member_schema", {
+      rowKeys: row ? Object.keys(row).slice(0, 40) : [],
+      accountKeys: account ? Object.keys(account).slice(0, 40) : [],
+    });
+  } catch (schemaError) {
+    console.warn("nimbo_member_schema_failed", schemaError instanceof Error ? schemaError.message : "unknown_error");
+  }
+
   throw lastError instanceof Error
     ? lastError
     : new NimboApiError("nimbo_availability_unavailable");
