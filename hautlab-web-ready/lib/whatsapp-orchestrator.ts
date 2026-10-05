@@ -1897,7 +1897,7 @@ async function processTextMessage(input: {
   // In WhatsApp coexistence and Click-to-WhatsApp flows Meta may withhold the
   // first message body. Recover the lead without pretending a file was sent.
   if (!text && input.message.type === "unsupported") {
-    console.warn("[whatsapp-orchestrator] unsupported inbound message", {
+    console.info("[whatsapp-orchestrator] unsupported inbound recovered", {
       hasReferral: Boolean(referralSnapshot),
       errorCodes: (input.message.errors ?? [])
         .map((item) => item.code)
