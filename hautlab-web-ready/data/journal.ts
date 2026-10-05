@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "piel-merida-sol-calor-humedad",
+    title: "Piel en Mérida: sol, calor y humedad sin convertir el clima en diagnóstico",
+    description:
+      "Cómo pueden influir radiación, calor, sudor y humedad en la piel en Mérida, y por qué el entorno modifica síntomas sin sustituir un diagnóstico dermatológico.",
+    category: "Guía local",
+    axis: "Piel",
+    preparedAt: "2026-10-05",
+    readingTime: "9 min"
+  },
+  {
     slug: "caida-cabello-diagnostico-antes-tratamiento",
     title: "Caída de cabello: por qué el diagnóstico debe ir antes del tratamiento",
     description:
