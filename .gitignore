@@ -2,5 +2,10 @@
 **/.next/
 **/tsconfig.tsbuildinfo
 **/.DS_Store
-hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-final.webp
 
+# Never commit local or deployment environment files.
+**/.env
+**/.env.*
+!**/.env.example
+
+hautlab-web-ready/public/visuals/dr-salvador-cordero-portrait-final.webp
