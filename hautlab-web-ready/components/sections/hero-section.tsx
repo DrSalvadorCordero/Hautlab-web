@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Languages, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";\nimport { PlanResume } from "@/components/plan/plan-resume";
+import { Button } from "@/components/ui/button";
+import { PlanResume } from "@/components/plan/plan-resume";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
