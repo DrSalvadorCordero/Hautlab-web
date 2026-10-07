@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Languages, ShieldCheck } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
+import { PlanResume } from "@/components/plan/plan-resume";
 import { siteConfig } from "@/lib/siteConfig";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -64,9 +65,10 @@ export async function HeroSection() {
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href="#tratamientos">Ver tratamientos</a>
+                <Link href="/plan">Diseña tu plan</Link>
               </Button>
             </div>
+            <PlanResume />
           </div>
         </Reveal>
 
