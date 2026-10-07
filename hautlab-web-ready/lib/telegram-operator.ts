@@ -545,6 +545,9 @@ export async function getTelegramBusinessSnapshotText(days = 30) {
   const responseRate = percent(snapshot.responded, snapshot.leads);
   const bookingRequestRate = percent(snapshot.appointmentRequested, snapshot.leads);
   const confirmedRate = percent(snapshot.appointmentConfirmed, snapshot.leads);
+  const planOpenRate = percent(snapshot.plansOpened, snapshot.plansCreated);
+  const planEngagementRate = percent(snapshot.plansEngaged, snapshot.plansCreated);
+  const planBookingRate = percent(snapshot.plansScheduled, snapshot.plansCreated);
 
   const coverageWarnings: string[] = [];
   if (snapshot.leads > 0 && snapshot.attributedLeads / snapshot.leads < 0.5) {
@@ -566,6 +569,7 @@ export async function getTelegramBusinessSnapshotText(days = 30) {
     `Leads: ${snapshot.leads} · respondidos ${snapshot.responded} (${responseRate})`,
     `Solicitudes de cita: ${snapshot.appointmentRequested} (${bookingRequestRate})`,
     `Citas confirmadas registradas: ${snapshot.appointmentConfirmed} (${confirmedRate})`,
+    `Planes HAUTLAB: ${snapshot.plansCreated} creados · ${snapshot.plansOpened} abiertos (${planOpenRate}) · ${snapshot.plansEngaged} a WhatsApp (${planEngagementRate}) · ${snapshot.plansScheduled} con cita (${planBookingRate})`,
     `Atribución conocida: ${snapshot.attributedLeads}/${snapshot.leads} (${attributionCoverage})`,
     `Ingresos registrados: ${formatMxn(snapshot.recordedRevenueMxn)}`,
     `Ingresos ligados a conversación: ${formatMxn(snapshot.conversationAttributedRevenueMxn)}`,
