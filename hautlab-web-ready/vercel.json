@@ -13,7 +13,7 @@
   "ignoreCommand": "node -e \"const u=process.env.VERCEL_PROJECT_PRODUCTION_URL||''; process.exit(/(^|\\.)hautlabmx\\.com$|^hautlabmxcom\\.vercel\\.app$/.test(u)?1:0)\"",
   "crons": [
     {
-      "path": "/api/health?deep=1",
+      "path": "/api/health",
       "schedule": "0 * * * *"
     }
   ]
