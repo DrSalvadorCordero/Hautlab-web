@@ -21,3 +21,11 @@ export function classifyNimboAvailabilitySnapshot(
   }
   return { status: "healthy" as const, detail: `availability_verified:slots=${snapshot.slot_count}` };
 }
+
+
+export function shouldRunDeepHealthProbe(input: {
+  requested: boolean;
+  cronSchedule: string | null;
+}) {
+  return input.requested || Boolean(input.cronSchedule?.trim());
+}
