@@ -329,6 +329,17 @@ export async function POST(request: NextRequest) {
         return;
       }
 
+      // Meta also emits platform-generated message objects (for example
+      // type=system). They are not patient turns and must never enter triage,
+      // booking, or operator-command handling.
+      if (incoming?.type === "system") {
+        console.info("[whatsapp-webhook] platform system event acknowledged", {
+          messageIdPresent: Boolean(incoming.id),
+          replyContext: Boolean(incoming.replyToMessageId),
+        });
+        return;
+      }
+
       if (incoming && !["text", "button", "interactive", "image", "video", "audio", "document", "sticker", "location", "contacts", "reaction", "unsupported"].includes(incoming.type)) {
         console.warn("[whatsapp-webhook] unhandled inbound type", {
           type: incoming.type,

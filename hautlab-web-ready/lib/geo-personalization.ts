@@ -55,6 +55,12 @@ export function resolveGeoContext(headers: HeaderReader): GeoContext {
   return { audience: "general", country, region, city };
 }
 
+function safeHeaderValue(value: string) {
+  // Request header values must be byte-safe. Preserve Unicode geo labels
+  // losslessly instead of passing raw non-Latin-1 characters to Headers.
+  return encodeURIComponent(value);
+}
+
 export function geoHeaders(requestHeaders: HeaderReader, pathname: string) {
   const context = resolveGeoContext(requestHeaders);
   const headers = new Headers(requestHeaders as Headers);
@@ -63,7 +69,7 @@ export function geoHeaders(requestHeaders: HeaderReader, pathname: string) {
   headers.set("x-hautlab-audience", context.audience);
   headers.set("x-hautlab-country", context.country);
   headers.set("x-hautlab-region", context.region);
-  headers.set("x-hautlab-city", context.city);
+  headers.set("x-hautlab-city", safeHeaderValue(context.city));
   headers.set("x-hautlab-pathname", pathname);
 
   return headers;
