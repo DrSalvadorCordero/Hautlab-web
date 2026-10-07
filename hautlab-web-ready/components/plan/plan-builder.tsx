@@ -95,6 +95,14 @@ const BUDGET = [
   { id: "unsure", label: "Quiero entender opciones primero" },
 ] as const;
 
+const INVESTMENT_RANGE = [
+  { id: "under_5k", label: "Hasta $5,000 MXN" },
+  { id: "5k_10k", label: "$5,000 – $10,000 MXN" },
+  { id: "10k_20k", label: "$10,000 – $20,000 MXN" },
+  { id: "over_20k", label: "Más de $20,000 MXN" },
+  { id: "unsure", label: "Prefiero definirlo después" },
+] as const;
+
 const STORAGE_KEY = "hautlab_plan_v1";
 
 function money(value: number | null) {
@@ -112,6 +120,7 @@ export function PlanBuilder() {
   const [priorities, setPriorities] = useState<string[]>([]);
   const [timing, setTiming] = useState("exploring");
   const [budget, setBudget] = useState("unsure");
+  const [investmentRange, setInvestmentRange] = useState("unsure");
   const [result, setResult] = useState<PlanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -148,7 +157,7 @@ export function PlanBuilder() {
         body: JSON.stringify({
           goals,
           priorities,
-          preferences: { timing, budget },
+          preferences: { timing, budget, investmentRange },
           language: "es",
           sourcePath: window.location.pathname,
         }),
@@ -378,7 +387,7 @@ export function PlanBuilder() {
           <>
             <p className="text-xs uppercase tracking-[0.22em] text-champagne">03 · Contexto</p>
             <h2 className="mt-3 max-w-3xl font-serif text-4xl tracking-[-0.05em] text-bone sm:text-5xl">
-              Dos datos para ordenar tu plan.
+              Tres datos para ordenar tu plan.
             </h2>
             <div className="mt-8 grid gap-8 md:grid-cols-2">
               <fieldset>
@@ -418,6 +427,30 @@ export function PlanBuilder() {
                 </div>
               </fieldset>
             </div>
+
+            <fieldset className="mt-8">
+              <legend className="text-sm font-medium text-bone">
+                ¿Qué rango te gustaría invertir en esta etapa?
+              </legend>
+              <p className="mt-2 max-w-2xl text-xs leading-5 text-quiet">
+                Es una referencia para ordenar opciones; no cambia la indicación médica ni constituye una cotización.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {INVESTMENT_RANGE.map((item) => (
+                  <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-background/40 p-4 text-sm text-muted">
+                    <input
+                      type="radio"
+                      name="investmentRange"
+                      value={item.id}
+                      checked={investmentRange === item.id}
+                      onChange={() => setInvestmentRange(item.id)}
+                      className="accent-[#c8b39a]"
+                    />
+                    {item.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </>
         ) : null}
 
