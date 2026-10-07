@@ -28,6 +28,10 @@ type ConversationRow = {
   next_action: string | null;
   ai_mode: "inherit" | AiMode;
   bot_paused: boolean;
+  paused_reason: string | null;
+  stage: string | null;
+  clinical_risk: boolean;
+  handoff_status: string | null;
   first_attribution: Record<string, unknown> | null;
   nimbo_person_id: number | null;
   nimbo_schedule_id: number | null;
@@ -247,7 +251,7 @@ async function upsertConversation(input: {
 }): Promise<ConversationRow> {
   const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
-    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_gender,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
+    "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,paused_reason,stage,clinical_risk,handoff_status,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_gender,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
     {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates,return=representation" },
@@ -329,6 +333,30 @@ async function updateConversation(
       body: JSON.stringify({ ...body, updated_at: new Date().toISOString() }),
     },
   );
+}
+
+function canResumeAfterHumanReply(conversation: ConversationRow) {
+  if (!conversation.bot_paused || conversation.paused_reason !== "manual_reply") {
+    return false;
+  }
+  if (conversation.clinical_risk || conversation.stage === "human_review") {
+    return false;
+  }
+  return !conversation.handoff_status || ["none", "resolved", "closed"].includes(conversation.handoff_status);
+}
+
+async function resumeAfterHumanReplyIfSafe(conversation: ConversationRow) {
+  if (!canResumeAfterHumanReply(conversation)) return false;
+  await updateConversation(conversation.id, {
+    bot_paused: false,
+    bot_paused_at: null,
+    bot_paused_by: null,
+    paused_reason: null,
+  });
+  console.info("[whatsapp-orchestrator] automation resumed after human reply", {
+    conversationIdPresent: Boolean(conversation.id),
+  });
+  return true;
 }
 
 async function currentAutomationMode(
@@ -1915,7 +1943,7 @@ async function processTextMessage(input: {
     if (!isLatest) return;
   }
 
-  const mode = await currentAutomationMode(conversation.id);
+  // A normal WhatsApp Business reply pauses automation only for that human turn.\n  // When the patient writes back, resume safely unless the conversation is in\n  // clinical/human review or has an unresolved handoff. This preserves human\n  // context without turning every manual intervention into a dead end.\n  await resumeAfterHumanReplyIfSafe(conversation);\n\n  const mode = await currentAutomationMode(conversation.id);
   if (mode === "off" || mode === "manual") return;
 
   // "unsupported" is a transport limitation, not a clinical/media signal.
