@@ -5,11 +5,52 @@ import {
   isSameOriginRequest,
 } from "@/lib/server/admin-request-security";
 import { buildVoiceReceptionInstructions } from "@/lib/voice/hautlab-voice-prompt";
+import { loadWhatsAppAssistantContext } from "@/lib/whatsapp-context";
+import { getNimboAvailability } from "@/lib/server/nimbo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 96 * 1024;
+
+function todayInMerida() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Merida",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function addDays(date: string, days: number) {
+  const value = new Date(date + "T12:00:00Z");
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+function formatVoiceAvailability(
+  days: Awaited<ReturnType<typeof getNimboAvailability>>,
+) {
+  const slots = days
+    .flatMap((day) =>
+      day.slots.map((slot) => ({
+        date: day.date,
+        startsAt: slot.startsAt,
+        label: slot.label,
+      })),
+    )
+    .slice(0, 18);
+
+  if (!slots.length) return "";
+
+  return [
+    `Consultado: ${new Date().toISOString()}`,
+    "Usa únicamente estos horarios como referencia de disponibilidad al inicio de la sesión.",
+    ...slots.map(
+      (slot) => `- ${slot.date}: ${slot.label} (${slot.startsAt})`,
+    ),
+  ].join("\n");
+}
 
 function json(value: unknown, init?: ResponseInit) {
   const headers = new Headers(init?.headers);
@@ -46,6 +87,40 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const from = todayInMerida();
+    const [sharedContextResult, availabilityResult] = await Promise.allSettled([
+      loadWhatsAppAssistantContext({ city: "merida" }),
+      getNimboAvailability({ from, to: addDays(from, 7) }),
+    ]);
+
+    const sharedKnowledge =
+      sharedContextResult.status === "fulfilled"
+        ? sharedContextResult.value.trustedSystemContext
+        : "";
+
+    const availabilitySnapshot =
+      availabilityResult.status === "fulfilled"
+        ? formatVoiceAvailability(availabilityResult.value)
+        : "";
+
+    if (sharedContextResult.status === "rejected") {
+      console.warn("[hautlab-voice] shared knowledge unavailable", {
+        reason:
+          sharedContextResult.reason instanceof Error
+            ? sharedContextResult.reason.message
+            : "unknown_error",
+      });
+    }
+
+    if (availabilityResult.status === "rejected") {
+      console.warn("[hautlab-voice] Nimbo availability unavailable", {
+        reason:
+          availabilityResult.reason instanceof Error
+            ? availabilityResult.reason.message
+            : "unknown_error",
+      });
+    }
+
     const response = await fetch("https://api.openai.com/v1/live/sessions", {
       method: "POST",
       headers: {
@@ -56,7 +131,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         session: {
           model: "gpt-live-1",
-          instructions: buildVoiceReceptionInstructions(),
+          instructions: buildVoiceReceptionInstructions({
+            sharedKnowledge,
+            availabilitySnapshot,
+          }),
           audio: {
             output: {
               voice: "marin",
