@@ -4,10 +4,14 @@ import {
   PLAN_GOALS,
   PLAN_PRIORITIES,
   createHautlabPlan,
+  hautlabPlanAccessCookieName,
 } from "@/lib/server/hautlab-plan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MAX_BODY_BYTES = 16 * 1024;
+const PLAN_SESSION_SECONDS = 60 * 60 * 24 * 90;
 
 const schema = z.object({
   goals: z.array(z.enum(PLAN_GOALS)).min(1).max(3),
@@ -23,7 +27,29 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null);
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json(
+      { error: "payload_too_large" },
+      { status: 413, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  const rawBody = await request.text();
+  if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
+    return NextResponse.json(
+      { error: "payload_too_large" },
+      { status: 413, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  let body: unknown = null;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    body = null;
+  }
+
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -41,15 +67,12 @@ export async function POST(request: NextRequest) {
       sourcePath: parsed.data.sourcePath ?? request.nextUrl.pathname,
     });
 
-    const portalUrl = new URL(
-      `/mi-hautlab/${plan.public_code}?access=${accessToken}`,
-      request.nextUrl.origin,
-    ).toString();
+    const portalPath = `/mi-hautlab/${plan.public_code}`;
+    const portalUrl = new URL(portalPath, request.nextUrl.origin).toString();
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         code: plan.public_code,
-        accessToken,
         portalUrl,
         recommendations: plan.recommendations,
         estimate: {
@@ -60,6 +83,20 @@ export async function POST(request: NextRequest) {
       },
       { status: 201, headers: { "Cache-Control": "no-store" } },
     );
+
+    response.cookies.set(
+      hautlabPlanAccessCookieName(plan.public_code),
+      accessToken,
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: portalPath,
+        maxAge: PLAN_SESSION_SECONDS,
+      },
+    );
+
+    return response;
   } catch (error) {
     console.error("[hautlab-plan] create failed", {
       message: error instanceof Error ? error.message : "unknown_error",

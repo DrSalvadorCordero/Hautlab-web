@@ -150,6 +150,11 @@ function hashAccessToken(token: string) {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
 
+export function hautlabPlanAccessCookieName(publicCode: string) {
+  const normalized = publicCode.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return `hautlab_plan_${normalized.slice(-12)}`;
+}
+
 function unique<T>(values: T[]) {
   return [...new Set(values)];
 }

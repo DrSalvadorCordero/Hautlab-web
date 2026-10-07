@@ -24,7 +24,6 @@ type Recommendation = {
 
 type PlanResult = {
   code: string;
-  accessToken: string;
   portalUrl: string;
   recommendations: Recommendation[];
   estimate: {
@@ -162,7 +161,6 @@ export function PlanBuilder() {
           STORAGE_KEY,
           JSON.stringify({
             code: payload.code,
-            accessToken: payload.accessToken,
             portalUrl: payload.portalUrl,
             savedAt: new Date().toISOString(),
           }),
