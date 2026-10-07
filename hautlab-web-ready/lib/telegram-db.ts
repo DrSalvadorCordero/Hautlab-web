@@ -77,6 +77,13 @@ export type GrowthOsSnapshot = {
   exportedEvents: number;
   googleClickConversions: number;
   metaClickConversions: number;
+  plansCreated: number;
+  plansOpened: number;
+  plansEngaged: number;
+  plansScheduled: number;
+  planOpenRate: number | null;
+  planEngagementRate: number | null;
+  planBookingRate: number | null;
   recordedRevenueMxn: number;
   conversationAttributedRevenueMxn: number;
   marketingAttributedRevenueMxn: number;

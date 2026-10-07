@@ -6,10 +6,12 @@ import {
   BadgeDollarSign,
   CalendarCheck2,
   CalendarClock,
+  Eye,
   Link2,
   Megaphone,
   MessageCircle,
   RefreshCw,
+  Sparkles,
   Target,
   TrendingUp,
   WalletCards
@@ -96,6 +98,20 @@ export function GrowthDashboard() {
             <Metric icon={Activity} label="Respondidos" value={String(data.responded)} detail={rate(data.responded, data.leads)} />
             <Metric icon={CalendarClock} label="Solicitan cita" value={String(data.appointmentRequested)} detail={rate(data.appointmentRequested, data.leads)} />
             <Metric icon={CalendarCheck2} label="Cita confirmada" value={String(data.appointmentConfirmed)} detail={rate(data.appointmentConfirmed, data.leads)} />
+          </section>
+
+          <section className="rounded-[2rem] border border-line bg-white/[0.025] p-6 sm:p-8">
+            <p className="text-xs uppercase tracking-[0.22em] text-champagne">HAUTLAB Plan</p>
+            <h3 className="mt-3 font-serif text-2xl">Configurador → interés → WhatsApp → cita</h3>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
+              Cohorte de planes creados dentro del periodo. Permite medir si el configurador realmente empuja conversaciones y agenda.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric icon={Sparkles} label="Planes creados" value={String(data.plansCreated)} detail="Inicio del embudo" />
+              <Metric icon={Eye} label="Planes abiertos" value={String(data.plansOpened)} detail={rate(data.plansOpened, data.plansCreated)} />
+              <Metric icon={Link2} label="Conectados a WhatsApp" value={String(data.plansEngaged)} detail={rate(data.plansEngaged, data.plansCreated)} />
+              <Metric icon={CalendarCheck2} label="Con cita confirmada" value={String(data.plansScheduled)} detail={rate(data.plansScheduled, data.plansCreated)} />
+            </div>
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
