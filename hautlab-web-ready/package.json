@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/materialize-portrait-final.mjs && next dev",
-    "build": "node scripts/print-lock-security-fixes.mjs && node scripts/materialize-portrait-final.mjs && next build && npm run check:performance-budget",
+    "build": "node scripts/materialize-portrait-final.mjs && next build && npm run check:performance-budget",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit && npm run test:nimbo-contract",
