@@ -20,6 +20,9 @@ const schema = z.object({
     .object({
       timing: z.enum(["now", "month", "exploring"]).optional(),
       budget: z.enum(["focused", "flexible", "unsure"]).optional(),
+      investmentRange: z
+        .enum(["under_5k", "5k_10k", "10k_20k", "over_20k", "unsure"])
+        .optional(),
     })
     .default({}),
   sourcePath: z.string().max(512).optional(),
