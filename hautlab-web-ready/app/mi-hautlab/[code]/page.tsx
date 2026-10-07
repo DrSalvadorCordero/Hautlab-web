@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { CalendarCheck, Check, Circle, ShieldCheck } from "lucide-react";
 import { PlanWhatsAppButton } from "@/components/plan/plan-whatsapp-button";
 import { Button } from "@/components/ui/button";
-import { getHautlabPlan } from "@/lib/server/hautlab-plan";
+import {
+  getHautlabPlan,
+  hautlabPlanAccessCookieName,
+} from "@/lib/server/hautlab-plan";
 
 export const metadata: Metadata = {
   title: "My HAUTLAB",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 function money(value: number | null) {
@@ -38,8 +43,20 @@ export default async function MyHautlabPage({
   searchParams: Promise<{ access?: string }>;
 }) {
   const { code } = await params;
-  const { access } = await searchParams;
-  const snapshot = access ? await getHautlabPlan(code.toUpperCase(), access) : null;
+  const { access: legacyAccess } = await searchParams;
+  const normalizedCode = code.toUpperCase();
+  const cookieStore = await cookies();
+  const cookieAccess = cookieStore.get(
+    hautlabPlanAccessCookieName(normalizedCode),
+  )?.value;
+
+  let snapshot = cookieAccess
+    ? await getHautlabPlan(normalizedCode, cookieAccess)
+    : null;
+
+  if (!snapshot && legacyAccess) {
+    snapshot = await getHautlabPlan(normalizedCode, legacyAccess);
+  }
 
   if (!snapshot) {
     return (
