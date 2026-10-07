@@ -1943,7 +1943,13 @@ async function processTextMessage(input: {
     if (!isLatest) return;
   }
 
-  // A normal WhatsApp Business reply pauses automation only for that human turn.\n  // When the patient writes back, resume safely unless the conversation is in\n  // clinical/human review or has an unresolved handoff. This preserves human\n  // context without turning every manual intervention into a dead end.\n  await resumeAfterHumanReplyIfSafe(conversation);\n\n  const mode = await currentAutomationMode(conversation.id);
+  // A normal WhatsApp Business reply pauses automation only for that human turn.
+  // When the patient writes back, resume safely unless the conversation is in
+  // clinical/human review or has an unresolved handoff. This preserves human
+  // context without turning every manual intervention into a dead end.
+  await resumeAfterHumanReplyIfSafe(conversation);
+
+  const mode = await currentAutomationMode(conversation.id);
   if (mode === "off" || mode === "manual") return;
 
   // "unsupported" is a transport limitation, not a clinical/media signal.
