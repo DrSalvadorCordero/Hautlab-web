@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resolveNimboSchedulingAccount, nimboAvailabilityRows, isWithinNimboWorkingHours, resolveNimboEncounterTypeId } from "../lib/server/nimbo-availability.ts";
-import { classifyNimboAvailabilitySnapshot } from "../lib/server/nimbo-health.ts";
+import {
+  classifyNimboAvailabilitySnapshot,
+  shouldRunDeepHealthProbe,
+} from "../lib/server/nimbo-health.ts";
 
 const schedule = { mon: ["12:00-19:00"], sat: ["12:00-15:00"] };
 const within = (startsAt) => isWithinNimboWorkingHours({ startsAt, timezone: "America/Merida", schedule, durationMinutes: 60 });
@@ -48,4 +51,23 @@ test("configuration cannot mask a failed, missing or stale availability probe", 
   assert.equal(classifyNimboAvailabilitySnapshot({ ...snapshot, status: "error", error: "nimbo_api_500" }, now).status, "down");
   assert.equal(classifyNimboAvailabilitySnapshot({ ...snapshot, checked_at: "2026-10-03T05:00:00Z" }, now).status, "degraded");
   assert.equal(classifyNimboAvailabilitySnapshot(snapshot, now).status, "healthy");
+});
+
+
+test("deep health runs for explicit requests or Vercel Cron schedule headers", () => {
+  assert.equal(
+    shouldRunDeepHealthProbe({ requested: false, cronSchedule: null }),
+    false,
+  );
+  assert.equal(
+    shouldRunDeepHealthProbe({ requested: true, cronSchedule: null }),
+    true,
+  );
+  assert.equal(
+    shouldRunDeepHealthProbe({
+      requested: false,
+      cronSchedule: "0 * * * *",
+    }),
+    true,
+  );
 });
