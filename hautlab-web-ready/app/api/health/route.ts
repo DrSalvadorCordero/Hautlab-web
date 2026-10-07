@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getNimboAvailability, getNimboAvailabilitySnapshot, getNimboConfig, isNimboReadyForAutobooking } from "@/lib/server/nimbo";
-import { classifyNimboAvailabilitySnapshot } from "@/lib/server/nimbo-health";
+import {
+  classifyNimboAvailabilitySnapshot,
+  shouldRunDeepHealthProbe,
+} from "@/lib/server/nimbo-health";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +58,10 @@ function check(status: Check["status"], detail?: string, latencyMs?: number): Ch
 
 export async function GET(request: NextRequest) {
   const started = Date.now();
-  const deep = request.nextUrl.searchParams.get("deep") === "1";
+  const deep = shouldRunDeepHealthProbe({
+    requested: request.nextUrl.searchParams.get("deep") === "1",
+    cronSchedule: request.headers.get("x-vercel-cron-schedule"),
+  });
   const isAuthorized = await authorized(request);
   const components: Record<string, Check> = {
     app: check("healthy", "nextjs_runtime", Date.now() - started),
