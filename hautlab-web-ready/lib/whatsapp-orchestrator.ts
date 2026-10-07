@@ -1,4 +1,9 @@
 import { createHmac } from "node:crypto";
+import {
+  attachHautlabPlanToConversation,
+  extractHautlabPlanCode,
+  stripHautlabPlanReference,
+} from "@/lib/server/hautlab-plan";
 import { normalizeNimboGender } from "@/lib/server/nimbo-contract";
 import {
   createNimboPatient,
@@ -1847,7 +1852,27 @@ async function processTextMessage(input: {
 
   const rawText = extractText(input.message);
   const attributionCode = getAttributionReference(rawText);
-  const text = stripAttributionReference(rawText);
+  const planCode = extractHautlabPlanCode(rawText);
+  const text = stripHautlabPlanReference(stripAttributionReference(rawText));
+
+  if (planCode) {
+    try {
+      await attachHautlabPlanToConversation({
+        publicCode: planCode,
+        conversationId: conversation.id,
+        attributionCode,
+      });
+      console.info("[whatsapp-orchestrator] HAUTLAB plan linked", {
+        planCodePresent: true,
+        attributionPresent: Boolean(attributionCode),
+      });
+    } catch (error) {
+      console.error("[whatsapp-orchestrator] HAUTLAB plan link failed", {
+        reason: error instanceof Error ? error.message : "unknown_error",
+      });
+    }
+  }
+
   const isNew = await insertInboundMessage({
     conversationId: conversation.id,
     metaMessageId: input.message.id,
