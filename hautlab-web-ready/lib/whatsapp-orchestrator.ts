@@ -294,6 +294,17 @@ async function insertInboundMessage(input: {
   return rows.length > 0;
 }
 
+async function claimInboundProcessing(conversationId: string, metaMessageId: string) {
+  const claimed = await supabaseRequest<boolean>("rpc/wa_claim_inbound_processing", {
+    method: "POST",
+    body: JSON.stringify({
+      p_conversation_id: conversationId,
+      p_meta_message_id: metaMessageId,
+    }),
+  });
+  return claimed === true;
+}
+
 async function isLatestInboundMessage(
   conversationId: string,
   metaMessageId: string,
@@ -1942,6 +1953,10 @@ async function processTextMessage(input: {
     );
     if (!isLatest) return;
   }
+
+  // Atomically claim the latest inbound message before any AI, booking, or
+  // outbound work. Duplicate webhook workers cannot process the same turn.
+  if (!(await claimInboundProcessing(conversation.id, input.message.id))) return;
 
   // A normal WhatsApp Business reply pauses automation only for that human turn.
   // When the patient writes back, resume safely unless the conversation is in
