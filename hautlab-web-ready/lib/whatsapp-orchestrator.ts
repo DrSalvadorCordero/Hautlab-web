@@ -182,7 +182,7 @@ type WebhookPayload = {
   }>;
 };
 
-const LEGACY_SEND_RELAY_URL = "https://nuevo-zzys.vercel.app/api/send-relay";
+const LEGACY_SEND_RELAY_URL = "https://www.hautlabmx.com/api/whatsapp/send";
 const RELAY_SECRET_KEY = "relay_hmac_secret";
 
 function getSupabaseConfig() {
