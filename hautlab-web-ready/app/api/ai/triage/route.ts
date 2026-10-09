@@ -790,17 +790,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+function enforcePatientReplyLanguage<T extends { reply: string }>(decision: T, message: string): T {
+  // Preserve clinical escalation and urgent-care instructions verbatim.
+  // The model is instructed to use Spanish for Spanish-speaking patients;
+  // this final guard prevents common English handoff boilerplate from escaping.
+  if (!decision.reply || !/\\b(I'm transferring you|a member of the team|connected to assist you)\\b/i.test(decision.reply)) return decision;
+  if (/\\b(hello|hi|please|thank you|appointment|schedule)\\b/i.test(message) && !/[áéíóúñ¿¡]/i.test(message)) return decision;
+  return { ...decision, reply: "Tu conversación se ha canalizado con el equipo de HAUTLAB para atención personalizada." };
+}
+
     const decision = applyBookingDateReplyGuardrail(
       applySalesPricingGuardrail(
         applyHardGuardrails(parsedDecision.data, message),
       ),
     );
 
+    const localizedDecision = enforcePatientReplyLanguage(decision, message);
+
     return NextResponse.json(
       {
-        ...decision,
+        ...localizedDecision,
         model,
-        automated: decision.action !== "escalate",
+        automated: localizedDecision.action !== "escalate",
       },
       { headers: { "Cache-Control": "no-store" } },
     );
