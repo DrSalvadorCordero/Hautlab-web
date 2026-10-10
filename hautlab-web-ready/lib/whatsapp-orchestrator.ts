@@ -1,3 +1,4 @@
+import { classifyNonBookingTurn } from "@/lib/whatsapp-turn-interruption";
 import { createHmac } from "node:crypto";
 import {
   attachHautlabPlanToConversation,
@@ -302,6 +303,25 @@ async function isLatestInboundMessage(
     `wa_messages?conversation_id=eq.${encodeURIComponent(conversationId)}&direction=eq.inbound&select=meta_message_id&order=created_at.desc&limit=1`,
   );
   return rows[0]?.meta_message_id === metaMessageId;
+}
+
+async function recentlySentIdenticalAutomatedReply(
+  conversationId: string,
+  reply: string,
+) {
+  try {
+    const since = new Date(Date.now() - 5 * 60_000).toISOString();
+    const rows = await supabaseRequest<Array<{ body: string | null }>>(
+      `wa_messages?conversation_id=eq.${encodeURIComponent(conversationId)}&direction=eq.outbound&sender_type=in.(ai,system)&created_at=gte.${encodeURIComponent(since)}&select=body&order=created_at.desc&limit=15`,
+    );
+    return rows.some((row) => row.body?.trim() === reply.trim());
+  } catch (error) {
+    console.error("[whatsapp-orchestrator] repeat-check unavailable", {
+      reason: error instanceof Error ? error.message : "unknown_error",
+    });
+    // Do not silently abandon a new customer turn on a temporary read error.
+    return false;
+  }
 }
 
 function whatsappBurstWindowMs() {
@@ -1656,8 +1676,13 @@ async function deliverNimboFlow(input: {
   conversation: ConversationRow;
   phone: string;
   origin: string;
+  inboundMetaMessageId?: string;
 }) {
   if (!input.result.handled) return false;
+  if (
+    input.inboundMetaMessageId &&
+    !(await isLatestInboundMessage(input.conversation.id, input.inboundMetaMessageId))
+  ) return true;
 
   const currentMode = await currentAutomationMode(input.conversation.id);
   if (currentMode === "off" || currentMode === "manual") return true;
@@ -1669,6 +1694,10 @@ async function deliverNimboFlow(input: {
       proposedBy: "nimbo-scheduler",
     });
   } else if (currentMode === "automatic") {
+    if (await recentlySentIdenticalAutomatedReply(input.conversation.id, input.result.reply)) {
+      console.info("[whatsapp-orchestrator] suppressed repeated Nimbo reply");
+      return true;
+    }
     const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply);
     await storeSentMessage({
       conversationId: input.conversation.id,
@@ -2052,6 +2081,47 @@ async function processTextMessage(input: {
   // do not justify a clinical escalation or an invented acknowledgement.
   if (!text) return;
 
+  // Explicit pauses and courtesy-only replies override a pending booking flow.
+  // Prevent Nimbo from reviving previous slot offers after "mejor nos esperamos".
+  const nonBookingTurn = classifyNonBookingTurn(text);
+  if (nonBookingTurn) {
+    if (nonBookingTurn.resetBooking) {
+      await updateConversation(conversation.id, {
+        stage: conversation.stage === "scheduled" ? "scheduled" : "exploring",
+        next_action: "close",
+        pending_question: null,
+        last_question_asked: null,
+        nimbo_last_offered_slots: null,
+        nimbo_offer_expires_at: null,
+        nimbo_pending_slot: null,
+        nimbo_pending_cause: null,
+      });
+    }
+    const courtesyMode = await currentAutomationMode(conversation.id);
+    if (courtesyMode === "supervised") {
+      await storeDraft({
+        conversationId: conversation.id,
+        body: nonBookingTurn.reply,
+        proposedBy: "continuity-guard",
+      });
+    } else if (
+      courtesyMode === "automatic" &&
+      !(await recentlySentIdenticalAutomatedReply(conversation.id, nonBookingTurn.reply))
+    ) {
+      const metaMessageId = await sendWhatsAppText(input.message.from, nonBookingTurn.reply);
+      await storeSentMessage({
+        conversationId: conversation.id,
+        body: nonBookingTurn.reply,
+        metaMessageId,
+        proposedBy: "continuity-guard",
+      });
+      await updateConversation(conversation.id, {
+        last_team_message_at: new Date().toISOString(),
+      });
+    }
+    return;
+  }
+
   const pendingNimbo = await handlePendingBookingIntake({
     conversation,
     text,
@@ -2064,6 +2134,7 @@ async function processTextMessage(input: {
       conversation,
       phone: input.message.from,
       origin: input.origin,
+      inboundMetaMessageId: input.message.id,
     })
   ) {
     return;
@@ -2126,6 +2197,10 @@ async function processTextMessage(input: {
     });
     return;
   }
+
+  // AI routing may take many seconds: do not answer an obsolete bubble if
+  // the patient has since sent a correction or a stop instruction.
+  if (!(await isLatestInboundMessage(conversation.id, input.message.id))) return;
 
   const postTriageMode = await currentAutomationMode(conversation.id);
   if (postTriageMode === "off" || postTriageMode === "manual") return;
@@ -2194,6 +2269,7 @@ async function processTextMessage(input: {
       conversation,
       phone: input.message.from,
       origin: input.origin,
+      inboundMetaMessageId: input.message.id,
     });
     return;
   }
@@ -2285,6 +2361,11 @@ async function processTextMessage(input: {
   }
 
   if (finalMode === "automatic") {
+    if (await recentlySentIdenticalAutomatedReply(conversation.id, decision.reply)) {
+      console.info("[whatsapp-orchestrator] suppressed repeated AI reply");
+      return;
+    }
+    if (!(await isLatestInboundMessage(conversation.id, input.message.id))) return;
     const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply);
     await storeSentMessage({
       conversationId: conversation.id,
