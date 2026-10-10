@@ -90,3 +90,53 @@ test("fresh unanswered incoming messages get the full 15 minute grace period", (
   };
   assert.equal(countOverdueAutomaticConversations([row], now), 0);
 });
+
+test("probe failures preserve only safe fixed labels and HTTP status", async () => {
+  const { WhatsAppProbeReadError, safeWhatsAppProbeFailure } = await import("../lib/server/whatsapp-health.ts");
+  assert.deepEqual(safeWhatsAppProbeFailure(new WhatsAppProbeReadError("notifications", "http", 403)), {
+    code: "whatsapp_probe_store_unavailable", resource: "notifications", reason: "http", httpStatus: 403,
+  });
+  assert.deepEqual(safeWhatsAppProbeFailure(new Error("secret patient body https://private.example")), {
+    code: "whatsapp_operational_probe_unavailable",
+  });
+  assert.deepEqual(safeWhatsAppProbeFailure(new Error("supabase_configuration_missing")), {
+    code: "supabase_configuration_missing",
+  });
+});
+
+test("read-only probe classifies HTTP, timeout, network and malformed responses without leaking payloads", async () => {
+  const { readWhatsAppOperationalSignals, safeWhatsAppProbeFailure } = await import("../lib/server/whatsapp-health.ts");
+  const oldFetch = globalThis.fetch;
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_URL = "https://example.invalid";
+  process.env.SUPABASE_SECRET_KEY = "test-only-not-a-credential";
+  try {
+    const cases = [
+      [async () => new Response("private response body", { status: 401 }), "http"],
+      [async () => { throw new DOMException("private error", "TimeoutError"); }, "timeout"],
+      [async () => { throw new TypeError("private error"); }, "network"],
+      [async () => new Response('{"private":"data"}'), "invalid_response"],
+    ];
+    globalThis.fetch = async (url, init) => {
+      assert.equal(init.method, undefined);
+      const data = url.includes("wa_settings?") ? [{ global_mode: "automatic", emergency_stop: false }] : [];
+      return Response.json(data);
+    };
+    assert.deepEqual(await readWhatsAppOperationalSignals(), normal);
+    for (const [mock, reason] of cases) {
+      globalThis.fetch = mock;
+      await assert.rejects(readWhatsAppOperationalSignals(), (error) => {
+        const safe = safeWhatsAppProbeFailure(error);
+        assert.equal(safe.reason, reason);
+        assert.equal(safe.resource, "settings");
+        assert.equal(JSON.stringify(safe).includes("private"), false);
+        return true;
+      });
+    }
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = oldKey;
+  }
+});

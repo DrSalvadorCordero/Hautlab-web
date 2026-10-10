@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { classifyWhatsAppOperationalSignals, readWhatsAppOperationalSignals } from "@/lib/server/whatsapp-health";
+import { classifyWhatsAppOperationalSignals, readWhatsAppOperationalSignals, safeWhatsAppProbeFailure } from "@/lib/server/whatsapp-health";
 import { getNimboAvailability, getNimboAvailabilitySnapshot, getNimboConfig, isNimboReadyForAutobooking } from "@/lib/server/nimbo";
 import {
   classifyNimboAvailabilitySnapshot,
@@ -82,7 +82,8 @@ export async function GET(request: NextRequest) {
       const signals = await readWhatsAppOperationalSignals();
       const observed = classifyWhatsAppOperationalSignals(signals);
       components.whatsapp = check(observed.status, observed.detail);
-    } catch {
+    } catch (error) {
+      console.error("[whatsapp-health] operational probe failed", safeWhatsAppProbeFailure(error));
       // A verified credential is not sufficient to claim a healthy inbox.
       components.whatsapp = check("down", "whatsapp_operational_probe_unavailable");
     }
