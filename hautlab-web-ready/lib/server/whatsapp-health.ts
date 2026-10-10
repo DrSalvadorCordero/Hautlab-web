@@ -50,10 +50,12 @@ export async function readWhatsAppOperationalSignals(
     process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
   )?.trim();
   if (!baseUrl || !key) throw new Error("supabase_configuration_missing");
+  const validBaseUrl: string = baseUrl;
+  const validKey: string = key;
 
   async function read<T>(path: string): Promise<T> {
-    const response = await fetch(baseUrl + "/rest/v1/" + path, {
-      headers: { apikey: key, Authorization: "Bearer " + key, Accept: "application/json" },
+    const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
+      headers: { apikey: validKey, Authorization: "Bearer " + validKey, Accept: "application/json" },
       signal: AbortSignal.timeout(6000),
       cache: "no-store",
     });
