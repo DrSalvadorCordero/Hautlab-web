@@ -42,6 +42,19 @@ type ConversationStatus = {
 };
 type SettingsStatus = { global_mode: string; emergency_stop: boolean };
 
+export function countOverdueAutomaticConversations(conversations: ConversationStatus[], now: number): number {
+  return conversations.filter((row) => {
+    if (row.closed_at || row.clinical_risk || row.bot_paused) return false;
+    if (row.ai_mode !== "inherit" && row.ai_mode !== "automatic") return false;
+    if (row.handoff_status && row.handoff_status !== "none") return false;
+    const patientAt = Date.parse(row.last_patient_message_at ?? "");
+    const teamAt = Date.parse(row.last_team_message_at ?? "");
+    return Number.isFinite(patientAt) &&
+      patientAt < now - 15 * 60_000 &&
+      (!Number.isFinite(teamAt) || teamAt < patientAt);
+  }).length;
+}
+
 export async function readWhatsAppOperationalSignals(
   now = Date.now(),
 ): Promise<WhatsAppOperationalSignals> {
@@ -81,16 +94,7 @@ export async function readWhatsAppOperationalSignals(
   ]);
 
   if (!settings[0]) throw new Error("whatsapp_settings_unavailable");
-  const overdueAutomaticConversations = conversations.filter((row) => {
-    if (row.closed_at || row.clinical_risk || row.bot_paused) return false;
-    if (row.ai_mode !== "inherit" && row.ai_mode !== "automatic") return false;
-    if (row.handoff_status && row.handoff_status !== "none") return false;
-    const patientAt = Date.parse(row.last_patient_message_at ?? "");
-    const teamAt = Date.parse(row.last_team_message_at ?? "");
-    return Number.isFinite(patientAt) &&
-      patientAt < now - 15 * 60_000 &&
-      (!Number.isFinite(teamAt) || teamAt < patientAt);
-  }).length;
+  const overdueAutomaticConversations = countOverdueAutomaticConversations(conversations, now);
 
   return {
     globalMode: settings[0].global_mode,
