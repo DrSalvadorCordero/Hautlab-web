@@ -1694,20 +1694,24 @@ async function deliverNimboFlow(input: {
       proposedBy: "nimbo-scheduler",
     });
   } else if (currentMode === "automatic") {
-    if (await recentlySentIdenticalAutomatedReply(input.conversation.id, input.result.reply)) {
+    const isRepeated = await recentlySentIdenticalAutomatedReply(
+      input.conversation.id,
+      input.result.reply,
+    );
+    if (isRepeated) {
       console.info("[whatsapp-orchestrator] suppressed repeated Nimbo reply");
-      return true;
+    } else {
+      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply);
+      await storeSentMessage({
+        conversationId: input.conversation.id,
+        body: input.result.reply,
+        metaMessageId,
+        proposedBy: "nimbo-scheduler",
+      });
+      await updateConversation(input.conversation.id, {
+        last_team_message_at: new Date().toISOString(),
+      });
     }
-    const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply);
-    await storeSentMessage({
-      conversationId: input.conversation.id,
-      body: input.result.reply,
-      metaMessageId,
-      proposedBy: "nimbo-scheduler",
-    });
-    await updateConversation(input.conversation.id, {
-      last_team_message_at: new Date().toISOString(),
-    });
   }
 
   if (input.result.escalate) {
