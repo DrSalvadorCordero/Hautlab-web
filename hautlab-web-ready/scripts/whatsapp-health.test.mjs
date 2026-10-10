@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyWhatsAppOperationalSignals } from "../lib/server/whatsapp-health.ts";
+import { classifyWhatsAppOperationalSignals, countOverdueAutomaticConversations } from "../lib/server/whatsapp-health.ts";
 
 const normal = {
   globalMode: "automatic",
@@ -51,4 +51,42 @@ test("intentional manual mode remains visible without changing settings", () => 
     ...normal, globalMode: "manual",
   });
   assert.equal(result.detail, "automation_not_in_automatic_mode");
+});
+
+test("overdue detector excludes human-paused, clinical, handoff and answered conversations", () => {
+  const now = Date.parse("2026-10-10T20:00:00Z");
+  const base = {
+    last_patient_message_at: "2026-10-10T19:30:00Z",
+    last_team_message_at: "2026-10-10T19:20:00Z",
+    ai_mode: "inherit",
+    bot_paused: false,
+    handoff_status: "none",
+    clinical_risk: false,
+    closed_at: null,
+  };
+  const rows = [
+    base,
+    { ...base, bot_paused: true },
+    { ...base, clinical_risk: true },
+    { ...base, handoff_status: "assigned" },
+    { ...base, ai_mode: "off" },
+    { ...base, closed_at: "2026-10-10T19:45:00Z" },
+    { ...base, last_team_message_at: "2026-10-10T19:35:00Z" },
+    { ...base, last_patient_message_at: "2026-10-10T19:50:00Z" },
+  ];
+  assert.equal(countOverdueAutomaticConversations(rows, now), 1);
+});
+
+test("fresh unanswered incoming messages get the full 15 minute grace period", () => {
+  const now = Date.parse("2026-10-10T20:00:00Z");
+  const row = {
+    last_patient_message_at: "2026-10-10T19:46:00Z",
+    last_team_message_at: null,
+    ai_mode: "automatic",
+    bot_paused: false,
+    handoff_status: "none",
+    clinical_risk: false,
+    closed_at: null,
+  };
+  assert.equal(countOverdueAutomaticConversations([row], now), 0);
 });
