@@ -7,11 +7,12 @@
     "build": "node scripts/materialize-portrait-final.mjs && next build && npm run check:performance-budget",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit && npm run test:nimbo-contract",
+    "type-check": "tsc --noEmit && npm run test:nimbo-contract && npm run test:whatsapp-guards",
     "smoke-test": "node scripts/smoke-test.mjs",
     "eval:whatsapp": "node scripts/whatsapp-eval.mjs",
     "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs scripts/nimbo-availability.test.mjs",
-    "check:performance-budget": "node scripts/performance-budget.mjs"
+    "check:performance-budget": "node scripts/performance-budget.mjs",
+    "test:whatsapp-guards": "node --experimental-strip-types --test scripts/whatsapp-turn-interruption.test.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "7.5.22",
