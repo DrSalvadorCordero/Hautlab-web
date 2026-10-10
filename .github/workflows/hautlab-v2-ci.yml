@@ -36,31 +36,31 @@ jobs:
         run: npm audit --package-lock-only --omit=dev --audit-level=moderate
 
       - name: Install dependencies
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm ci
 
       - name: Capture production dependency audit
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm audit --omit=dev --json > /tmp/hautlab-audit.json || true
 
       - name: Capture full dependency audit for diagnostics
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm audit --json > /tmp/hautlab-audit-all.json || true
 
       - name: Lint
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm run lint
 
       - name: Type check
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm run type-check
 
       - name: Build Next.js
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm run build
 
       - name: Smoke test production routes
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: |
           set -o pipefail
           npm run start -- -H 127.0.0.1 -p 3000 > /tmp/hautlab-next.log 2>&1 &
@@ -86,11 +86,11 @@ jobs:
           grep -q '<svg' /tmp/hautlab-icon.svg
 
       - name: Audit production dependencies
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2'
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main'
         run: npm audit --omit=dev --audit-level=moderate
 
       - name: Upload diagnostics
-        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/v2')
+        if: always() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: hautlab-diagnostics
