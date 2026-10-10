@@ -1,0 +1,78 @@
+name: HAUTLAB Reliability Probe
+
+# External, read-only synthetic checks. No patient data or credentials are used.
+# GitHub scheduled runs are best effort and can be delayed or skipped.
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hautlab-reliability-probe
+  cancel-in-progress: false
+
+jobs:
+  public-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check canonical production health with transient retry
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const origin = "https://www.hautlabmx.com";
+          const checks = [
+            { path: "/", validate: async (r) => {
+              if (!r.ok || !(r.headers.get("content-type") || "").includes("text/html")) {
+                throw new Error("homepage_response_invalid");
+              }
+            }},
+            { path: "/api/health", validate: async (r) => {
+              if (!r.ok) throw new Error("health_http_" + r.status);
+              const data = await r.json();
+              if (data.status !== "healthy") {
+                const components = data.components || {};
+                const failed = Object.entries(components)
+                  .filter(([, status]) => status.status !== "healthy")
+                  .map(([name]) => name);
+                throw new Error("health_" + String(data.status) + ":" + failed.join(","));
+              }
+            }},
+            { path: "/api/assistant/health", validate: async (r) => {
+              if (!r.ok) throw new Error("assistant_http_" + r.status);
+              const data = await r.json();
+              if (data.status !== "ready") throw new Error("assistant_unready");
+            }},
+            { path: "/api/whatsapp/webhook", validate: async (r) => {
+              if (!r.ok) throw new Error("whatsapp_webhook_http_" + r.status);
+              const data = await r.json();
+              if (data.status !== "ok" || data.service !== "hautlab-whatsapp-webhook") {
+                throw new Error("whatsapp_webhook_unready");
+              }
+            }},
+          ];
+
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              for (const check of checks) {
+                const response = await fetch(origin + check.path, {
+                  headers: { Accept: "application/json,text/html" },
+                  cache: "no-store",
+                  signal: AbortSignal.timeout(12000),
+                });
+                await check.validate(response);
+                console.log("PASS " + check.path);
+              }
+              console.log("HAUTLAB public production probe passed");
+              process.exit(0);
+            } catch (error) {
+              // No raw response bodies, credentials, lead IDs or patient content in logs.
+              console.error("Attempt " + attempt + "/3: " + String(error.message || error));
+              if (attempt === 3) process.exit(1);
+              await new Promise((resolve) => setTimeout(resolve, 15000));
+            }
+          }
+          NODE
