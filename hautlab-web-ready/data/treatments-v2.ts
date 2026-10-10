@@ -133,7 +133,8 @@ export const treatmentsV2: Record<string, TreatmentPageContent> = {
       { label: "Armonización facial", href: "/procedimientos/armonizacion-facial" },
       { label: "Ojeras", href: "/procedimientos/ojeras" },
       { label: "Rinomodelación", href: "/procedimientos/rinomodelacion" },
-      { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" }
+      { label: "Diseño facial", href: "/tratamientos/medicina-estetica-facial" },
+      { label: "Journal · movimiento y expresión", href: "/journal/toxina-movimiento-sin-borrar-expresion" }
     ],
     whatsappMessage: "Hola, quiero agendar valoración para toxina botulínica.",
     medicalReview: review([
