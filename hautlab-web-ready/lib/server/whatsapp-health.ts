@@ -55,6 +55,31 @@ export function countOverdueAutomaticConversations(conversations: ConversationSt
   }).length;
 }
 
+// Only fixed labels and numeric HTTP status are safe for operational logs.
+// Never attach response bodies, URLs, headers or raw exception messages.
+export class WhatsAppProbeReadError extends Error {
+  readonly resource: "settings" | "conversations" | "outbound" | "notifications";
+  readonly reason: "http" | "timeout" | "network" | "invalid_response";
+  readonly httpStatus?: number;
+  constructor(resource: WhatsAppProbeReadError["resource"], reason: WhatsAppProbeReadError["reason"], httpStatus?: number) {
+    super("whatsapp_probe_store_unavailable");
+    this.resource = resource;
+    this.reason = reason;
+    this.httpStatus = httpStatus;
+  }
+}
+
+export function safeWhatsAppProbeFailure(error: unknown) {
+  if (error instanceof WhatsAppProbeReadError) {
+    return { code: error.message, resource: error.resource, reason: error.reason,
+      ...(error.httpStatus !== undefined ? { httpStatus: error.httpStatus } : {}) };
+  }
+  const code = error instanceof Error &&
+    ["supabase_configuration_missing", "whatsapp_settings_unavailable"].includes(error.message)
+    ? error.message : "whatsapp_operational_probe_unavailable";
+  return { code };
+}
+
 export async function readWhatsAppOperationalSignals(
   now = Date.now(),
 ): Promise<WhatsAppOperationalSignals> {
@@ -66,29 +91,41 @@ export async function readWhatsAppOperationalSignals(
   const validBaseUrl: string = baseUrl;
   const validKey: string = key;
 
-  async function read<T>(path: string): Promise<T> {
-    const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
-      headers: { apikey: validKey, Authorization: "Bearer " + validKey, Accept: "application/json" },
-      signal: AbortSignal.timeout(6000),
-      cache: "no-store",
-    });
-    if (!response.ok) throw new Error("whatsapp_probe_store_unavailable");
-    return (await response.json()) as T;
+  async function read<T>(resource: WhatsAppProbeReadError["resource"], path: string): Promise<T> {
+    try {
+      const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
+        headers: { apikey: validKey, Authorization: "Bearer " + validKey, Accept: "application/json" },
+        signal: AbortSignal.timeout(6000),
+        cache: "no-store",
+      });
+      if (!response.ok) throw new WhatsAppProbeReadError(resource, "http", response.status);
+      try {
+        const data: unknown = await response.json();
+        if (!Array.isArray(data)) throw new Error("invalid_shape");
+        return data as T;
+      } catch {
+        throw new WhatsAppProbeReadError(resource, "invalid_response");
+      }
+    } catch (error) {
+      if (error instanceof WhatsAppProbeReadError) throw error;
+      const timeout = error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name);
+      throw new WhatsAppProbeReadError(resource, timeout ? "timeout" : "network");
+    }
   }
 
   const from24h = encodeURIComponent(new Date(now - 24 * 60 * 60_000).toISOString());
   const from1h = encodeURIComponent(new Date(now - 60 * 60_000).toISOString());
   const [settings, conversations, failedOutbound, failedNotifications] = await Promise.all([
-    read<SettingsStatus[]>("wa_settings?id=eq.global&select=global_mode,emergency_stop&limit=1"),
-    read<ConversationStatus[]>(
+    read<SettingsStatus[]>("settings", "wa_settings?id=eq.global&select=global_mode,emergency_stop&limit=1"),
+    read<ConversationStatus[]>("conversations",
       "wa_conversations?select=last_patient_message_at,last_team_message_at,bot_paused,ai_mode,handoff_status,clinical_risk,closed_at" +
       "&bot_paused=eq.false&last_patient_message_at=gte." + from24h +
       "&order=last_patient_message_at.desc&limit=300",
     ),
-    read<Array<{ id: string }>>(
+    read<Array<{ id: string }>>("outbound",
       "wa_messages?select=id&direction=eq.outbound&status=eq.failed&created_at=gte." + from1h + "&limit=3",
     ),
-    read<Array<{ id: string }>>(
+    read<Array<{ id: string }>>("notifications",
       "wa_notifications?select=id&status=eq.failed&created_at=gte." + from1h + "&limit=3",
     ),
   ]);
