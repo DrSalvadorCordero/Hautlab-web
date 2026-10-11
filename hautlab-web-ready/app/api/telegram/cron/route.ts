@@ -8,20 +8,22 @@ import {
 } from "@/lib/telegram-db";
 import { getTelegramTodaySummaryText } from "@/lib/telegram-operator";
 import { safeSecretEqual, sendTelegramMessage } from "@/lib/telegram";
-import { getTelegramSecret } from "@/lib/telegram-secrets";
+import { getTelegramCronVerificationKeys } from "@/lib/telegram-secrets";
 import { syncKnownNimboSchedules } from "@/lib/server/nimbo-sync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-async function cronSecret() {
-  return getTelegramSecret("cron_key", { allowMissing: true });
+async function cronSecrets() {
+  return getTelegramCronVerificationKeys();
 }
 
-function authorized(request: NextRequest, expected: string) {
+function authorized(request: NextRequest, expected: string[]) {
   const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return safeSecretEqual(bearer, expected);
+  // Every token is checked using timing-safe comparison. Secrets never leave
+  // server-side memory and are never included in logs or responses.
+  return expected.reduce((matched, secret) => safeSecretEqual(bearer, secret) || matched, false);
 }
 
 function nextRecurringRun(job: TelegramJob) {
@@ -62,9 +64,9 @@ async function executeJob(job: TelegramJob) {
 }
 
 export async function GET(request: NextRequest) {
-  const expected = await cronSecret();
+  const expected = await cronSecrets();
 
-  if (!expected) {
+  if (expected.length === 0) {
     return NextResponse.json(
       { ok: true, enabled: false },
       { headers: { "Cache-Control": "no-store" } },
