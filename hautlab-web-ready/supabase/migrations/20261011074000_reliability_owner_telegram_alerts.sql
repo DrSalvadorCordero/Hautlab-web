@@ -55,6 +55,7 @@ begin
    and op.alert_enabled = true
   where incident.status = 'open'
     and incident.occurrences >= 2
+    and incident.last_seen_at >= now() - interval '12 minutes'
     and incident.code in (
       'watchdog_automatic_conversation_overdue',
       'watchdog_outbound_failures',
@@ -65,7 +66,8 @@ begin
     and not exists (
       select 1
       from public.telegram_jobs existing
-      where existing.created_by like 'reliability:' || incident.code || ':%'
+      where left(existing.created_by, length('reliability:' || incident.code || ':'))
+          = 'reliability:' || incident.code || ':'
         and existing.created_at > now() - interval '2 hours'
     )
   on conflict do nothing;
