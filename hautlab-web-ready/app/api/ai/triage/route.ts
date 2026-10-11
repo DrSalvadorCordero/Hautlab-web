@@ -6,6 +6,8 @@ import {
   WHATSAPP_SAFETY_INSTRUCTIONS,
 } from "@/lib/whatsapp-prompt";
 import { loadWhatsAppAssistantContext } from "@/lib/whatsapp-context";
+import { HAUTLAB_RESPONSE_POLICY } from "@/lib/commercial-policy";
+import { applyWhatsAppReplyLengthGuardrail, WHATSAPP_REPLY_MAX_CHARS } from "@/lib/whatsapp-reply-length";
 import { calculateSalesQuote, formatMoney } from "@/lib/sales-brain";
 
 export const runtime = "nodejs";
@@ -552,6 +554,7 @@ export async function POST(request: NextRequest) {
 
     const systemInstructions = [
       WHATSAPP_SAFETY_INSTRUCTIONS.trim(),
+      HAUTLAB_RESPONSE_POLICY.trim(),
       promptSettings.prompt.trim(),
       assistantContext.trustedSystemContext,
     ]
@@ -806,12 +809,21 @@ function enforcePatientReplyLanguage<T extends { reply: string }>(decision: T, m
     );
 
     const localizedDecision = enforcePatientReplyLanguage(decision, message);
+    const conciseDecision = applyWhatsAppReplyLengthGuardrail(localizedDecision);
+    if (localizedDecision.reply.length > WHATSAPP_REPLY_MAX_CHARS) {
+      console.info("hautlab_reply_length_guardrail", {
+        before: localizedDecision.reply.length,
+        after: conciseDecision.reply.length,
+        intent: localizedDecision.intent,
+        action: conciseDecision.action,
+      });
+    }
 
     return NextResponse.json(
       {
-        ...localizedDecision,
+        ...conciseDecision,
         model,
-        automated: localizedDecision.action !== "escalate",
+        automated: conciseDecision.action !== "escalate",
       },
       { headers: { "Cache-Control": "no-store" } },
     );
