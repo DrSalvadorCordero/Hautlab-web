@@ -71,6 +71,23 @@ export async function getTelegramSecret(
   throw new Error("telegram_secret_not_configured");
 }
 
+// The production Vercel CRON_SECRET and the independent database-vault
+// cron_key can differ during secret rotation. Accept only these two explicitly
+// managed credentials; never surface either credential in responses or logs.
+export async function getTelegramCronVerificationKeys(): Promise<string[]> {
+  const valid = new Set<string>();
+  const deployed = process.env.CRON_SECRET?.trim();
+  if (deployed) valid.add(deployed);
+  try {
+    const databaseCron = await readVaultSecret("cron_key");
+    if (databaseCron) valid.add(databaseCron);
+  } catch {
+    // Maintain the deployed credential even if the Supabase vault is unavailable.
+    // If neither source is available, the caller fails closed.
+  }
+  return [...valid];
+}
+
 export async function hasTelegramSecret(name: TelegramSecretName) {
   return Boolean(await getTelegramSecret(name, { allowMissing: true }));
 }
