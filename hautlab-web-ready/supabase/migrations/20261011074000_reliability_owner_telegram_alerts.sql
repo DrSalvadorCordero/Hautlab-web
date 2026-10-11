@@ -49,10 +49,10 @@ begin
     on link.operator_key = 'doctor'
    and link.active = true
    and link.telegram_chat_id is not null
-  join public.wa_operators operator
-    on operator.operator_key = 'doctor'
-   and operator.active = true
-   and operator.alert_enabled = true
+  join public.wa_operators op
+    on op.operator_key = 'doctor'
+   and op.active = true
+   and op.alert_enabled = true
   where incident.status = 'open'
     and incident.occurrences >= 2
     and incident.code in (
