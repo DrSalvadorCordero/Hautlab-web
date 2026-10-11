@@ -7,7 +7,7 @@
     "build": "node scripts/materialize-portrait-final.mjs && next build && npm run check:performance-budget",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit && npm run test:nimbo-contract && node --test scripts/whatsapp-health.test.mjs",
+    "type-check": "tsc --noEmit && npm run test:nimbo-contract && node --test scripts/whatsapp-health.test.mjs scripts/whatsapp-reply-length.test.mjs",
     "smoke-test": "node scripts/smoke-test.mjs",
     "eval:whatsapp": "node scripts/whatsapp-eval.mjs",
     "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs scripts/nimbo-availability.test.mjs",
