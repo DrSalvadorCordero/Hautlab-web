@@ -22,7 +22,9 @@ PRECIOS ACTIVOS AUTORIZADOS
 export const HAUTLAB_RESPONSE_POLICY = `
 EXTENSIÓN Y ESTILO
 - Responde primero la pregunta directa.
-- En una consulta sencilla usa 1 a 3 frases cortas y apunta a 240 caracteres o menos cuando sea razonable.
+- Usa una sola frase de 40–100 caracteres por defecto; máximo habitual 140 caracteres. Solo supera 140 cuando sea imprescindible y nunca excedas 220 en respuestas no clínicas.
+- No agregues introducciones, beneficios genéricos, párrafos ni cierres comerciales automáticos. Resuelve una sola necesidad por turno.
+- La seguridad clínica siempre prevalece sobre cualquier límite de extensión.
 - Haz como máximo una pregunta útil al final y solo si ayuda a avanzar.
 - No repitas saludos, beneficios, contexto ni advertencias que la persona no pidió.
 - Si preguntan solo un precio, responde con el importe y la condición indispensable.
