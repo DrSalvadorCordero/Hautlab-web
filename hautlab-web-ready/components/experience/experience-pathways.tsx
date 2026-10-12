@@ -35,8 +35,8 @@ const stages = [
       "Recibe la confirmación expresa de fecha, hora y modalidad.",
       "Si te indican un anticipo, usa solamente el enlace de pago confirmado."
     ],
-    cta: "Solicitar disponibilidad",
-    href: buildWhatsAppLink("Hola, deseo coordinar una valoración en HAUTLAB. ¿Podrían confirmarme la disponibilidad?"),
+    cta: "Explorar horarios",
+    href: "/agenda",
     icon: CalendarDays
   },
   {
