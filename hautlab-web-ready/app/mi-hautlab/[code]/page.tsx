@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { CalendarCheck, Check, Circle, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarCheck, Check, Circle, MessageCircle, ShieldCheck } from "lucide-react";
 import { PlanWhatsAppButton } from "@/components/plan/plan-whatsapp-button";
 import { Button } from "@/components/ui/button";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import {
   getHautlabPlan,
   hautlabPlanAccessCookieName,
@@ -77,16 +78,18 @@ export default async function MyHautlabPage({
 
   const { plan, conversation } = snapshot;
   const requested = Boolean(conversation?.appointment_requested_at) || Boolean(conversation && conversation.appointment_status !== "none");
-  const confirmed =
-    Boolean(conversation?.appointment_confirmed_at) ||
-    conversation?.appointment_status === "confirmed";
+  // Never treat an old confirmation timestamp as proof of a current booking.
+  const appointmentStatus = conversation?.appointment_status ?? "none";
+  const confirmed = appointmentStatus === "confirmed";
+  const completed = appointmentStatus === "completed";
+  const cancelled = appointmentStatus === "cancelled";
   const date = appointmentDate(conversation?.appointment_datetime ?? null);
 
   const journey = [
     { label: "Plan HAUTLAB creado", done: true },
     { label: "Conversación conectada", done: Boolean(conversation) },
     { label: "Valoración solicitada", done: requested },
-    { label: "Cita confirmada", done: confirmed },
+    { label: cancelled ? "Cita cancelada" : completed ? "Valoración realizada" : "Cita confirmada", done: confirmed || completed },
   ];
 
   return (
@@ -121,7 +124,7 @@ export default async function MyHautlabPage({
                   </div>
                   <div className="pt-1">
                     <p className={step.done ? "text-sm font-medium text-bone" : "text-sm text-quiet"}>{step.label}</p>
-                    {step.label === "Cita confirmada" && confirmed && date ? (
+                    {(confirmed || completed) && index === journey.length - 1 && date ? (
                       <p className="mt-1 text-xs leading-5 text-muted">{date}</p>
                     ) : null}
                   </div>
@@ -132,9 +135,25 @@ export default async function MyHautlabPage({
               <div className="mt-7 flex items-start gap-3 rounded-2xl border border-champagne/25 bg-champagne/[0.07] p-4">
                 <CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-champagne" />
                 <p className="text-xs leading-5 text-muted">
-                  Tu cita ya está conectada con el flujo de agenda. Las indicaciones específicas se confirman según el procedimiento.
+                  Tu cita figura confirmada en el estado de coordinación. Si necesitas modificarla, comunícate con el equipo; la agenda médica es la referencia definitiva.
                 </p>
               </div>
+            ) : completed ? (
+              <div className="mt-7 rounded-2xl border border-champagne/25 bg-champagne/[0.07] p-5">
+                <p className="text-sm font-medium text-bone">Continuidad después de tu valoración</p>
+                <p className="mt-2 text-xs leading-6 text-muted">Consulta las indicaciones entregadas por tu profesional y solicita la revisión que corresponda. Este portal no muestra recetas ni sustituye la historia clínica.</p>
+                <a href={buildWhatsAppLink(`Hola, quiero coordinar seguimiento de mi Plan HAUTLAB ${plan.public_code} después de mi consulta.`)} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm text-bone transition hover:text-champagne">
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" /> Solicitar seguimiento <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
+            ) : cancelled ? (
+              <div className="mt-7 rounded-2xl border border-line p-5">
+                <p className="text-sm font-medium text-bone">La cita anterior fue cancelada.</p>
+                <p className="mt-2 text-xs leading-6 text-muted">La confirmación anterior ya no está vigente. Solicita una nueva fecha antes de acudir.</p>
+                <Link href="/agenda" className="mt-4 inline-flex items-center gap-2 text-sm text-champagne">Consultar nuevos horarios <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+              </div>
+            ) : requested ? (
+              <Link href="/agenda" className="mt-7 inline-flex items-center gap-2 text-sm text-champagne">Ver horarios propuestos <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             ) : null}
           </section>
 
