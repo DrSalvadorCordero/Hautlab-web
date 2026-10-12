@@ -30,6 +30,20 @@ jobs:
                 throw new Error("homepage_response_invalid");
               }
             }},
+            { path: "/agenda", validate: async (r) => {
+              if (!r.ok || !(r.headers.get("content-type") || "").includes("text/html")) {
+                throw new Error("agenda_page_invalid");
+              }
+            }},
+            { path: "/api/agenda/disponibilidad", validate: async (r) => {
+              if (!r.ok) throw new Error("agenda_snapshot_unavailable_" + r.status);
+              const data = await r.json();
+              if (data.status !== "ok" || !Array.isArray(data.days)) {
+                throw new Error("agenda_verified_slots_invalid");
+              }
+              // Empty lists can be legitimate. This verifies freshness,
+              // NOT real-time availability or completed booking.
+            }},
             { path: "/api/health", validate: async (r) => {
               if (!r.ok) throw new Error("health_http_" + r.status);
               const data = await r.json();
