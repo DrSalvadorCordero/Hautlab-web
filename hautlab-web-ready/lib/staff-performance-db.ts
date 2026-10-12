@@ -26,7 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       apikey: current.key,
-      Authorization: `Bearer ${current.key}`,
+      ...(current.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${current.key}` }),
       "Content-Type": "application/json",
       Accept: "application/json",
       ...(init?.headers ?? {})
