@@ -25,6 +25,9 @@ export function CtaSection() {
                 </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-background/20 text-background hover:bg-background/5">
+                <a href="/agenda">Consultar horarios</a>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="border-background/20 text-background hover:bg-background/5">
                 <a href="/pagos">Pagos seguros</a>
               </Button>
             </div>
