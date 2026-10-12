@@ -35,8 +35,8 @@ async function config(key: string) {
     }
     const status = Number((error as { status?: number }).status ?? 0);
     const code = String(error.code ?? "unknown");
-    const authError = status === 401 || status === 403 || code === "PGRST301" || code === "42501";
-    if (attempt === 0 && (status === 401 || code === "PGRST301")) {
+    const authError = status === 401 || status === 403 || code === "PGRST301" || code === "PGRST303" || code === "42501";
+    if (attempt === 0 && (status === 401 || code === "PGRST301" || code === "PGRST303")) {
       await new Promise((resolve) => setTimeout(resolve, 150));
       continue;
     }
