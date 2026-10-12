@@ -9,7 +9,7 @@ import { isClerkConfigured } from "@/lib/auth-config";
 const modules = [
   { title: "Check-in / Check-out", description: "Entradas, salidas, horas, retardos, correcciones y exportación.", href: "/admin/asistencia", icon: Clock3, status: "Disponible" },
   { title: "Usuarios internos", description: "Invita y administra al personal autorizado.", href: "/admin/usuarios", icon: Users, status: "Disponible" },
-  { title: "Agenda y anticipos", description: "Disponibilidad, confirmación de cita y control de pagos.", href: "/admin/configuracion", icon: CalendarDays, status: "Siguiente fase" },
+  { title: "Agenda y anticipos", description: "Preparación real de Nimbo, anticipos, reservas y Passport, con bloqueos visibles.", href: "/admin/experiencia", icon: CalendarDays, status: "Auditoría activa" },
   { title: "Asistente HAUTLAB", description: "Base de conocimiento, uso y preguntas frecuentes.", href: "/admin/configuracion", icon: Bot, status: "En producción" },
   { title: "Growth OS", description: "Embudo, atribución y revenue desde marketing hasta cita confirmada.", href: "/admin/growth", icon: TrendingUp, status: "En producción" },
   { title: "Sales Brain", description: "Precio objetivo, última concesión, piso interno y estrategia de cierre por caso.", href: "/admin/ventas", icon: BadgeDollarSign, status: "En producción" },
