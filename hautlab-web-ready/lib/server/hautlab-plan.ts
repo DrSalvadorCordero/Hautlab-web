@@ -106,7 +106,7 @@ async function supabaseJson<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
+      ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
       "Content-Type": "application/json",
       Accept: "application/json",
       ...(init?.headers ?? {}),
