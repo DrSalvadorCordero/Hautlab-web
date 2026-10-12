@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "pdl-vs-ipl-vs-ndyag-rosacea",
+    title: "PDL vs IPL vs Nd:YAG 1064: cómo elegir tecnología vascular en rosácea",
+    description:
+      "PDL, IPL y Nd:YAG 1064 no son intercambiables. Una comparación clínica sobre eritema, telangiectasias, profundidad vascular, evidencia y límites de cada tecnología.",
+    category: "Tecnologías vasculares",
+    axis: "Piel",
+    preparedAt: "2026-10-06",
+    readingTime: "9 min"
+  },
+  {
     slug: "caida-cabello-diagnostico-antes-tratamiento",
     title: "Caída de cabello: por qué el diagnóstico debe ir antes del tratamiento",
     description:
