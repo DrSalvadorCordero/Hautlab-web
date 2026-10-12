@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     method: "POST",
     headers: {
       apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
+      ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
       "Content-Type": "application/json",
       Accept: "application/json",
       Prefer: "return=minimal",

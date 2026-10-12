@@ -79,7 +79,7 @@ async function supabaseJson<T>(path: string): Promise<T> {
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
     headers: {
       apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
+      ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
       Accept: "application/json",
     },
     cache: "no-store",

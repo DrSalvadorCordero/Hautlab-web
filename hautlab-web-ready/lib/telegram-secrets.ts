@@ -35,7 +35,7 @@ async function readVaultSecret(name: TelegramSecretName) {
       method: "POST",
       headers: {
         apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
+        ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
         "Content-Type": "application/json",
         Accept: "application/json",
       },

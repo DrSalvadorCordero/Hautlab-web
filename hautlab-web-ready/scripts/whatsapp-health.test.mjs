@@ -140,3 +140,46 @@ test("read-only probe classifies HTTP, timeout, network and malformed responses 
     if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = oldKey;
   }
 });
+
+test("Supabase opaque keys use apikey only, while legacy JWT keys retain Bearer", async () => {
+  const { readWhatsAppOperationalSignals } = await import("../lib/server/whatsapp-health.ts");
+  const previous = {
+    fetch: globalThis.fetch,
+    url: process.env.SUPABASE_URL,
+    secret: process.env.SUPABASE_SECRET_KEY,
+    legacy: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
+  const requests = [];
+  process.env.SUPABASE_URL = "https://example.invalid";
+  globalThis.fetch = async (url, init) => {
+    requests.push(init.headers);
+    const rows = String(url).includes("wa_settings?")
+      ? [{ global_mode: "automatic", emergency_stop: false }] : [];
+    return Response.json(rows);
+  };
+  try {
+    process.env.SUPABASE_SECRET_KEY = "sb_secret_example_test_only";
+    await readWhatsAppOperationalSignals();
+    assert.equal(requests.length, 4);
+    for (const headers of requests) {
+      assert.equal(headers.apikey, "sb_secret_example_test_only");
+      assert.equal(headers.Authorization, undefined);
+    }
+    requests.length = 0;
+    process.env.SUPABASE_SECRET_KEY = "legacy.mock.jwt";
+    await readWhatsAppOperationalSignals();
+    assert.equal(requests.length, 4);
+    for (const headers of requests) {
+      assert.equal(headers.apikey, "legacy.mock.jwt");
+      assert.equal(headers.Authorization, "Bearer legacy.mock.jwt");
+    }
+  } finally {
+    globalThis.fetch = previous.fetch;
+    if (previous.url === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previous.url;
+    if (previous.secret === undefined) delete process.env.SUPABASE_SECRET_KEY;
+    else process.env.SUPABASE_SECRET_KEY = previous.secret;
+    if (previous.legacy === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = previous.legacy;
+  }
+});

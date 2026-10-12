@@ -46,7 +46,7 @@ async function getRelaySecret() {
     {
       headers: {
         apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
+        ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
         Accept: "application/json",
       },
       cache: "no-store",

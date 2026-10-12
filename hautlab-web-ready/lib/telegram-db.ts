@@ -111,7 +111,7 @@ export function telegramDatabaseConfigured() {
 function headers(key: string, prefer?: string) {
   return {
     apikey: key,
-    Authorization: `Bearer ${key}`,
+    ...(key.startsWith("sb_") ? {} : { Authorization: `Bearer ${key}` }),
     "Content-Type": "application/json",
     Accept: "application/json",
     ...(prefer ? { Prefer: prefer } : {}),

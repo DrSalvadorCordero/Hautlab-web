@@ -86,7 +86,7 @@ async function dbRequest<T>(path: string, init: RequestInit = {}) {
     ...init,
     headers: {
       apikey: serviceRoleKey,
-      Authorization: `Bearer ${serviceRoleKey}`,
+      ...(serviceRoleKey.startsWith("sb_") ? {} : { Authorization: `Bearer ${serviceRoleKey}` }),
       Accept: "application/json",
       "Content-Type": "application/json",
       ...(init.headers ?? {})
