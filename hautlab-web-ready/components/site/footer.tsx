@@ -49,6 +49,7 @@ export function Footer() {
             <Link className={linkClass} href={siteConfig.doctorProfilePath}>Perfil médico</Link>
             <Link className={linkClass} href="/cabina" data-event="cabina_footer_link">Cabina Dermatocosmética</Link>
             <Link className={linkClass} href="/journal">Journal</Link>
+            <Link className={linkClass} href="/experiencia">Mi experiencia</Link>
             <Link className={linkClass} href="/publicaciones">Publicaciones</Link>
             <a className={linkClass} href={siteConfig.instagram} target="_blank" rel="noreferrer">
               <Instagram className="mr-2 inline h-4 w-4" /> {siteConfig.instagramHandle}
