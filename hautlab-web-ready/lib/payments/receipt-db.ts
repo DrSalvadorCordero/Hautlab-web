@@ -55,7 +55,7 @@ async function databaseRequest<T>(path: string): Promise<T> {
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
     headers: {
       apikey: config.serviceRoleKey,
-      Authorization: `Bearer ${config.serviceRoleKey}`,
+      ...(config.serviceRoleKey.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.serviceRoleKey}` }),
       Accept: "application/json",
     },
     cache: "no-store",
