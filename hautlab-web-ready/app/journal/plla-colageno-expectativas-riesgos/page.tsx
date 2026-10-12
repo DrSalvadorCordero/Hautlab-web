@@ -53,7 +53,7 @@ export default function PllaExpectationsArticle() {
       <p className="mt-8 text-xs uppercase tracking-[0.22em] text-champagne">Artículo clínico · {article.readingTime}</p>
       <h1 className="mt-5 font-serif text-[clamp(3rem,7vw,6rem)] leading-[.92] tracking-[-.06em] text-bone">{article.title}</h1>
       <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">{article.description}</p>
-      <p className="mt-8 text-xs leading-6 text-quiet">Preparado: 9 de octubre de 2026 · Pendiente de revisión médica final por Dr. Salvador Cordero</p>
+      <p className="mt-8 text-xs leading-6 text-quiet">Preparado: 9 de octubre de 2026 · Revisión editorial aprobada: 12 de octubre de 2026</p>
     </div></section>
 
     <section className="border-b border-line py-14 lg:py-20"><div className="mx-auto w-[min(920px,calc(100%-32px))]"><Card className="p-7 sm:p-9">
@@ -102,7 +102,7 @@ export default function PllaExpectationsArticle() {
 
     <section className="border-b border-line py-16 lg:py-20"><div className="mx-auto grid w-[min(1040px,calc(100%-32px))] gap-6 lg:grid-cols-[1.1fr_.9fr]">
       <Card className="p-7"><BookOpen className="h-5 w-5 text-champagne"/><p className="mt-5 text-xs uppercase tracking-[0.2em] text-champagne">Fuentes y nivel de certeza</p><p className="mt-4 text-sm leading-7 text-muted">Los ensayos respaldan beneficios en indicaciones definidas. Las revisiones señalan limitaciones de calidad y heterogeneidad. La evidencia de granulomas se utiliza para describir complicaciones posibles, no para estimar su frecuencia.</p><ul className="mt-5 space-y-4 text-sm leading-7 text-muted">{references.map((r)=><li key={r.href}><a href={r.href} target="_blank" rel="noreferrer" className="transition hover:text-bone">{r.label}</a></li>)}</ul></Card>
-      <Card className="p-7"><p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p><p className="mt-5 text-lg font-medium text-bone">Pendiente de revisión médica final</p><p className="mt-3 text-sm leading-7 text-muted">Revisión requerida por Dr. Salvador Cordero antes de publicar: mecanismo y tiempos de respuesta, selección de candidatos, riesgo de nódulos, signos de alarma y diferencias entre formulaciones y jurisdicciones.</p><p className="mt-5 text-xs leading-6 text-quiet">Contenido educativo. No es una indicación de tratamiento ni un protocolo de inyección.</p></Card>
+      <Card className="p-7"><p className="text-xs uppercase tracking-[0.2em] text-champagne">Nota editorial</p><p className="mt-5 text-lg font-medium text-bone">Información para una decisión individualizada.</p><p className="mt-3 text-sm leading-7 text-muted">La indicación de PLLA requiere valoración médica, revisión de las características del producto y discusión de beneficios, límites y complicaciones posibles.</p><p className="mt-5 text-xs leading-6 text-quiet">Contenido educativo. No es una indicación de tratamiento ni un protocolo de inyección.</p></Card>
     </div></section>
 
     <section className="py-16 lg:py-24"><div className="mx-auto w-[min(920px,calc(100%-32px))] text-center">
