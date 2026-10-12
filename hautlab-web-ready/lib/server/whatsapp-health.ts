@@ -93,19 +93,29 @@ export async function readWhatsAppOperationalSignals(
 
   async function read<T>(resource: WhatsAppProbeReadError["resource"], path: string): Promise<T> {
     try {
-      const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
-        headers: { apikey: validKey, ...(validKey.startsWith("sb_") ? {} : { Authorization: "Bearer " + validKey }), Accept: "application/json" },
-        signal: AbortSignal.timeout(6000),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new WhatsAppProbeReadError(resource, "http", response.status);
-      try {
-        const data: unknown = await response.json();
-        if (!Array.isArray(data)) throw new Error("invalid_shape");
-        return data as T;
-      } catch {
-        throw new WhatsAppProbeReadError(resource, "invalid_response");
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
+          headers: { apikey: validKey, ...(validKey.startsWith("sb_") ? {} : { Authorization: "Bearer " + validKey }), Accept: "application/json" },
+          signal: AbortSignal.timeout(6000),
+          cache: "no-store",
+        });
+        // Supabase occasionally returns a transient 401 on independent REST
+        // reads. Repeat this read-only request once, with the SAME credential.
+        // A persistent 401 still fails closed; never rotate/fallback keys here.
+        if (response.status === 401 && attempt === 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 150));
+          continue;
+        }
+        if (!response.ok) throw new WhatsAppProbeReadError(resource, "http", response.status);
+        try {
+          const data: unknown = await response.json();
+          if (!Array.isArray(data)) throw new Error("invalid_shape");
+          return data as T;
+        } catch {
+          throw new WhatsAppProbeReadError(resource, "invalid_response");
+        }
       }
+      throw new WhatsAppProbeReadError(resource, "http", 401);
     } catch (error) {
       if (error instanceof WhatsAppProbeReadError) throw error;
       const timeout = error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name);
