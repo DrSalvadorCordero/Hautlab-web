@@ -296,6 +296,19 @@ export async function getNimboAvailabilitySnapshot() {
   return rows[0] ?? null;
 }
 
+// Read-only, server-only availability feed from the authenticated cron probe.
+// The public handler independently strips all fields except valid slot times.
+export async function getNimboPublicAvailabilitySnapshot() {
+  const rows = await supabaseJson<Array<{
+    status: string;
+    checked_at: string;
+    days: unknown;
+  }>>(
+    "nimbo_availability_snapshot?id=eq.global&select=status,checked_at,days&limit=1",
+  );
+  return rows[0] ?? null;
+}
+
 async function patchNimboConfig(
   patch: Partial<Omit<NimboIntegrationConfig, "id" | "created_at" | "updated_at">>,
 ) {
