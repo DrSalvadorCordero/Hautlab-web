@@ -366,30 +366,6 @@ async function updateConversation(
   );
 }
 
-function canResumeAfterHumanReply(conversation: ConversationRow) {
-  if (!conversation.bot_paused || conversation.paused_reason !== "manual_reply") {
-    return false;
-  }
-  if (conversation.clinical_risk || conversation.stage === "human_review") {
-    return false;
-  }
-  return !conversation.handoff_status || ["none", "resolved", "closed"].includes(conversation.handoff_status);
-}
-
-async function resumeAfterHumanReplyIfSafe(conversation: ConversationRow) {
-  if (!canResumeAfterHumanReply(conversation)) return false;
-  await updateConversation(conversation.id, {
-    bot_paused: false,
-    bot_paused_at: null,
-    bot_paused_by: null,
-    paused_reason: null,
-  });
-  console.info("[whatsapp-orchestrator] automation resumed after human reply", {
-    conversationIdPresent: Boolean(conversation.id),
-  });
-  return true;
-}
-
 async function currentAutomationMode(
   conversationId: string,
 ): Promise<AiMode> {
@@ -1991,11 +1967,9 @@ async function processTextMessage(input: {
   // The service-role-only SQL RPC rejects competing workers.
   if (!(await claimInboundProcessing(conversation.id, input.message.id))) return;
 
-  // A normal WhatsApp Business reply pauses automation only for that human turn.
-  // When the patient writes back, resume safely unless the conversation is in
-  // clinical/human review or has an unresolved handoff. This preserves human
-  // context without turning every manual intervention into a dead end.
-  await resumeAfterHumanReplyIfSafe(conversation);
+  // Human takeover is sticky: inbound patient replies must never resume a paused
+  // bot. Only an explicit, authorized operator resume may clear bot_paused.
+  // currentAutomationMode checks the persisted pause again before any send.
 
   const mode = await currentAutomationMode(conversation.id);
   if (mode === "off" || mode === "manual") return;
