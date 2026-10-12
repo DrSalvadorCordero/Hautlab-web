@@ -60,6 +60,7 @@ const secondaryNav = [
   { label: "Método", href: "/#metodo" },
   { label: "Plan HAUTLAB", href: "/plan" },
   { label: "Mi experiencia", href: "/experiencia" },
+  { label: "Horarios", href: "/agenda" },
   { label: "Journal", href: "/journal" },
   { label: "Publicaciones", href: "/publicaciones" },
   { label: "Cabina Dermatocosmética", href: "/cabina" },
