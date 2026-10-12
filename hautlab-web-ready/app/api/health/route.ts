@@ -37,7 +37,7 @@ async function authorized(request: NextRequest) {
   if (!url || !key) return false;
   try {
     const response = await fetch(`${url}/rest/v1/wa_internal_config?key=eq.relay_hmac_secret&select=secret_value&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+      headers: { apikey: key, ...(key.startsWith("sb_") ? {} : { Authorization: `Bearer ${key}` }), Accept: "application/json" },
       cache: "no-store", signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return false;
@@ -49,7 +49,7 @@ async function saveNimboSnapshot(input: { from: string; to: string; days: unknow
   const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
   const key = (process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
   if (!url || !key) return;
-  const response = await fetch(`${url}/rest/v1/nimbo_availability_snapshot?on_conflict=id`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ id: "global", from_date: input.from, to_date: input.to, days: input.days, slot_count: input.slotCount, status: input.status, error: input.error ?? null, checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }), cache: "no-store", signal: AbortSignal.timeout(8000) });
+  const response = await fetch(`${url}/rest/v1/nimbo_availability_snapshot?on_conflict=id`, { method: "POST", headers: { apikey: key, ...(key.startsWith("sb_") ? {} : { Authorization: `Bearer ${key}` }), "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" }, body: JSON.stringify({ id: "global", from_date: input.from, to_date: input.to, days: input.days, slot_count: input.slotCount, status: input.status, error: input.error ?? null, checked_at: new Date().toISOString(), updated_at: new Date().toISOString() }), cache: "no-store", signal: AbortSignal.timeout(8000) });
   if (!response.ok) throw new Error("nimbo_snapshot_save_failed");
 }
 
