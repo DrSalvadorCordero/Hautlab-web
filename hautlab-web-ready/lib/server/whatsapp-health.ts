@@ -125,7 +125,9 @@ export async function readWhatsAppOperationalSignals(
 
   const from24h = encodeURIComponent(new Date(now - 24 * 60 * 60_000).toISOString());
   const from1h = encodeURIComponent(new Date(now - 60 * 60_000).toISOString());
-  const [settings, conversations, failedOutbound, failedNotifications] = await Promise.all([
+  // Finish every probe before reporting failure. Promise.all can reject early
+  // while its other requests continue retrying, creating orphaned requests.
+  const settled = await Promise.allSettled([
     read<SettingsStatus[]>("settings", "wa_settings?id=eq.global&select=global_mode,emergency_stop&limit=1"),
     read<ConversationStatus[]>("conversations",
       "wa_conversations?select=last_patient_message_at,last_team_message_at,bot_paused,ai_mode,handoff_status,clinical_risk,closed_at" +
@@ -139,6 +141,11 @@ export async function readWhatsAppOperationalSignals(
       "wa_notifications?select=id&status=eq.failed&created_at=gte." + from1h + "&limit=3",
     ),
   ]);
+  const failure = settled.find((entry): entry is PromiseRejectedResult => entry.status === "rejected");
+  if (failure) throw failure.reason;
+  const [settings, conversations, failedOutbound, failedNotifications] =
+    settled.map((entry) => (entry as PromiseFulfilledResult<unknown>).value) as
+    [SettingsStatus[], ConversationStatus[], Array<{ id: string }>, Array<{ id: string }>];
 
   if (!settings[0]) throw new Error("whatsapp_settings_unavailable");
   const overdueAutomaticConversations = countOverdueAutomaticConversations(conversations, now);
