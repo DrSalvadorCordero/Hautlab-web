@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CtaSection } from "@/components/sections/cta-section";
 import { FeaturedTreatmentsSection } from "@/components/sections/featured-treatments-section";
+import { ExperienceSection } from "@/components/sections/experience-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { MethodSection } from "@/components/sections/method-section";
 import { PhilosophySection } from "@/components/sections/philosophy-section";
@@ -30,6 +31,7 @@ export default function HomePage() {
       <PublicationsSection />
       <FeaturedTreatmentsSection />
       <TestimonialsSection />
+      <ExperienceSection />
       <CtaSection />
     </main>
   );
