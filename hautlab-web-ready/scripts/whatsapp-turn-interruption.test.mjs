@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { classifyNonBookingTurn } from "../lib/whatsapp-turn-interruption.ts";
 
@@ -138,4 +139,13 @@ test("30 real-world inspired WhatsApp turn interruption classifications", async 
       }
     });
   }
+});
+
+// Regression guard: a patient reply must never undo human takeover automatically.
+test("human handoff remains paused until an operator explicitly resumes it", () => {
+  const source = readFileSync(new URL("../lib/whatsapp-orchestrator.ts", import.meta.url), "utf8");
+  assert.match(source, /bot_paused:\s*true,[\s\S]*?paused_reason:\s*"manual_reply"/);
+  assert.match(source, /if \(!conversation \|\| conversation\.bot_paused\) return "off"/);
+  assert.match(source, /const mode = await currentAutomationMode\(conversation\.id\)/);
+  assert.doesNotMatch(source, /resumeAfterHumanReplyIfSafe|canResumeAfterHumanReply/);
 });
