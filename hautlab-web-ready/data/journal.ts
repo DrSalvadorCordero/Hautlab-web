@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "plla-colageno-expectativas-riesgos",
+    title: "PLLA facial: qué significa estimular colágeno, cuánto esperar y qué riesgos importan",
+    description:
+      "Qué puede esperarse del ácido poli-L-láctico facial: estimulación gradual de colágeno, tiempos de evolución, selección de pacientes, nódulos y límites de reversibilidad.",
+    category: "Medicina estética",
+    axis: "Fundamentos",
+    preparedAt: "2026-10-09",
+    readingTime: "10 min"
+  },
+  {
     slug: "caida-cabello-diagnostico-antes-tratamiento",
     title: "Caída de cabello: por qué el diagnóstico debe ir antes del tratamiento",
     description:
