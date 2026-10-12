@@ -94,7 +94,7 @@ export async function readWhatsAppOperationalSignals(
   async function read<T>(resource: WhatsAppProbeReadError["resource"], path: string): Promise<T> {
     try {
       const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
-        headers: { apikey: validKey, Authorization: "Bearer " + validKey, Accept: "application/json" },
+        headers: { apikey: validKey, ...(validKey.startsWith("sb_") ? {} : { Authorization: "Bearer " + validKey }), Accept: "application/json" },
         signal: AbortSignal.timeout(6000),
         cache: "no-store",
       });
