@@ -141,7 +141,7 @@ async function getInternalApiKey(): Promise<string> {
       {
         headers: {
           apikey: config.key,
-          Authorization: `Bearer ${config.key}`,
+          ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
           Accept: "application/json",
         },
         cache: "no-store",
@@ -173,7 +173,7 @@ async function loadConversationHistory(conversationId?: string): Promise<History
     const response = await fetch(`${config.url}/rest/v1/wa_messages?${params.toString()}`, {
       headers: {
         apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
+        ...(config.key.startsWith("sb_") ? {} : { Authorization: `Bearer ${config.key}` }),
         Accept: "application/json",
       },
       cache: "no-store",
