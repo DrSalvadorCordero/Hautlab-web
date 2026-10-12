@@ -62,6 +62,8 @@ async function main() {
   record(locs.includes(`${productionOrigin}/publicaciones`), "sitemap incluye la página de publicaciones");
   record(locs.includes(`${productionOrigin}/cabina`), "sitemap incluye la Cabina Dermatocosmética");
   record(locs.includes(`${productionOrigin}/cabina/karen-cruz`), "sitemap incluye el perfil de Karen Cruz");
+  record(locs.includes(`${productionOrigin}/agenda`), "sitemap incluye la agenda consultiva HAUTLAB");
+  record(locs.includes(`${productionOrigin}/experiencia`), "sitemap incluye HAUTLAB Experience");
 
   for (const loc of locs) {
     const productionUrl = new URL(loc);
@@ -87,6 +89,23 @@ async function main() {
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
   record(!homeHtml.includes("Physician"), "el schema no infla la acreditación profesional");
   record(homeHtml.includes("MedicalClinic"), "la portada identifica la clínica con schema");
+
+  const agendaPage = await request("/agenda");
+  const agendaHtml = await agendaPage.text();
+  record(agendaPage.status === 200, "/agenda responde 200");
+  record(agendaHtml.includes("Horarios orientativos"), "agenda diferencia horarios orientativos de citas confirmadas");
+  record(agendaHtml.includes("El pago no reserva automáticamente un horario"), "agenda informa que pagar no confirma cita");
+  record(homeHtml.includes("Consultar horarios"), "portada enlaza a consulta de horarios");
+
+  const availabilityResponse = await request("/api/agenda/disponibilidad");
+  const availability = await availabilityResponse.json();
+  record([200, 503].includes(availabilityResponse.status), "agenda no expone errores inesperados");
+  record(["ok", "stale", "unavailable"].includes(availability.status), "agenda solo devuelve estados públicos controlados");
+  record(Array.isArray(availability.days), "agenda devuelve una lista de días sanitizada");
+  record(!JSON.stringify(availability).includes("patient_name"), "agenda no expone datos de pacientes");
+  if (availabilityResponse.status === 503) {
+    record(availability.days.length === 0, "agenda falla cerrada sin exhibir slots no verificados");
+  }
 
   const englishResponse = await request("/en");
   const englishHtml = await englishResponse.text();
