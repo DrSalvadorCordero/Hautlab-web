@@ -59,6 +59,7 @@ const areas = [
 const secondaryNav = [
   { label: "Método", href: "/#metodo" },
   { label: "Plan HAUTLAB", href: "/plan" },
+  { label: "Mi experiencia", href: "/experiencia" },
   { label: "Journal", href: "/journal" },
   { label: "Publicaciones", href: "/publicaciones" },
   { label: "Cabina Dermatocosmética", href: "/cabina" },
