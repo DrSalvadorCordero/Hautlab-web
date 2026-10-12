@@ -183,3 +183,64 @@ test("Supabase opaque keys use apikey only, while legacy JWT keys retain Bearer"
     else process.env.SUPABASE_SERVICE_ROLE_KEY = previous.legacy;
   }
 });
+
+
+test("transient HTTP 401 is retried once without exposing records or changing the credential", async () => {
+  const { readWhatsAppOperationalSignals } = await import("../lib/server/whatsapp-health.ts");
+  const oldFetch = globalThis.fetch;
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_URL = "https://example.invalid";
+  process.env.SUPABASE_SECRET_KEY = "sb_secret_health_mock_not_real";
+  const resources = [];
+  let rejected = false;
+  try {
+    globalThis.fetch = async (url, init) => {
+      const resource = String(url).includes("/wa_settings?") ? "settings" : "other";
+      resources.push({ resource, credential: init.headers.apikey });
+      if (resource === "settings" && !rejected) {
+        rejected = true;
+        return new Response("", { status: 401 });
+      }
+      return Response.json(resource === "settings" ? [{ global_mode: "automatic", emergency_stop: false }] : []);
+    };
+    assert.deepEqual(await readWhatsAppOperationalSignals(), normal);
+    assert.equal(resources.filter((item) => item.resource === "settings").length, 2);
+    assert.equal(resources.length, 5);
+    assert.ok(resources.every((item) => item.credential === "sb_secret_health_mock_not_real"));
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = oldKey;
+  }
+});
+
+test("persistent HTTP 401 remains a visible auth failure after exactly one retry", async () => {
+  const { readWhatsAppOperationalSignals, safeWhatsAppProbeFailure } = await import("../lib/server/whatsapp-health.ts");
+  const oldFetch = globalThis.fetch;
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_URL = "https://example.invalid";
+  process.env.SUPABASE_SECRET_KEY = "sb_secret_health_mock_not_real";
+  let settingsCalls = 0;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes("/wa_settings?")) {
+        settingsCalls += 1;
+        return new Response("never log this", { status: 401 });
+      }
+      return Response.json([]);
+    };
+    await assert.rejects(readWhatsAppOperationalSignals(), (error) => {
+      assert.deepEqual(safeWhatsAppProbeFailure(error), {
+        code: "whatsapp_probe_store_unavailable", resource: "settings", reason: "http", httpStatus: 401,
+      });
+      return true;
+    });
+    assert.equal(settingsCalls, 2);
+  } finally {
+    globalThis.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = oldKey;
+  }
+});

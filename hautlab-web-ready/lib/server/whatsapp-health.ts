@@ -93,19 +93,29 @@ export async function readWhatsAppOperationalSignals(
 
   async function read<T>(resource: WhatsAppProbeReadError["resource"], path: string): Promise<T> {
     try {
-      const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
-        headers: { apikey: validKey, ...(validKey.startsWith("sb_") ? {} : { Authorization: "Bearer " + validKey }), Accept: "application/json" },
-        signal: AbortSignal.timeout(6000),
-        cache: "no-store",
-      });
-      if (!response.ok) throw new WhatsAppProbeReadError(resource, "http", response.status);
-      try {
-        const data: unknown = await response.json();
-        if (!Array.isArray(data)) throw new Error("invalid_shape");
-        return data as T;
-      } catch {
-        throw new WhatsAppProbeReadError(resource, "invalid_response");
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const response = await fetch(validBaseUrl + "/rest/v1/" + path, {
+          headers: { apikey: validKey, ...(validKey.startsWith("sb_") ? {} : { Authorization: "Bearer " + validKey }), Accept: "application/json" },
+          signal: AbortSignal.timeout(6000),
+          cache: "no-store",
+        });
+        // Supabase occasionally returns a transient 401 on independent REST
+        // reads. Repeat this read-only request once, with the SAME credential.
+        // A persistent 401 still fails closed; never rotate/fallback keys here.
+        if (response.status === 401 && attempt === 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 150));
+          continue;
+        }
+        if (!response.ok) throw new WhatsAppProbeReadError(resource, "http", response.status);
+        try {
+          const data: unknown = await response.json();
+          if (!Array.isArray(data)) throw new Error("invalid_shape");
+          return data as T;
+        } catch {
+          throw new WhatsAppProbeReadError(resource, "invalid_response");
+        }
       }
+      throw new WhatsAppProbeReadError(resource, "http", 401);
     } catch (error) {
       if (error instanceof WhatsAppProbeReadError) throw error;
       const timeout = error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name);
@@ -115,7 +125,9 @@ export async function readWhatsAppOperationalSignals(
 
   const from24h = encodeURIComponent(new Date(now - 24 * 60 * 60_000).toISOString());
   const from1h = encodeURIComponent(new Date(now - 60 * 60_000).toISOString());
-  const [settings, conversations, failedOutbound, failedNotifications] = await Promise.all([
+  // Finish every probe before reporting failure. Promise.all can reject early
+  // while its other requests continue retrying, creating orphaned requests.
+  const settled = await Promise.allSettled([
     read<SettingsStatus[]>("settings", "wa_settings?id=eq.global&select=global_mode,emergency_stop&limit=1"),
     read<ConversationStatus[]>("conversations",
       "wa_conversations?select=last_patient_message_at,last_team_message_at,bot_paused,ai_mode,handoff_status,clinical_risk,closed_at" +
@@ -129,6 +141,11 @@ export async function readWhatsAppOperationalSignals(
       "wa_notifications?select=id&status=eq.failed&created_at=gte." + from1h + "&limit=3",
     ),
   ]);
+  const failure = settled.find((entry): entry is PromiseRejectedResult => entry.status === "rejected");
+  if (failure) throw failure.reason;
+  const [settings, conversations, failedOutbound, failedNotifications] =
+    settled.map((entry) => (entry as PromiseFulfilledResult<unknown>).value) as
+    [SettingsStatus[], ConversationStatus[], Array<{ id: string }>, Array<{ id: string }>];
 
   if (!settings[0]) throw new Error("whatsapp_settings_unavailable");
   const overdueAutomaticConversations = countOverdueAutomaticConversations(conversations, now);
