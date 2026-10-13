@@ -1,0 +1,3 @@
+# Default owner for repository changes.
+# Enforcement requires a branch protection rule or ruleset.
+* @DrSalvadorCordero
