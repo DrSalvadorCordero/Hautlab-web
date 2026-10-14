@@ -411,6 +411,7 @@ async function storeSentMessage(input: {
   senderType?: "ai" | "system";
   proposedBy?: string;
 }) {
+  if (!input.metaMessageId) return; // An atomic claim rejected this send.
   await supabaseRequest("wa_messages", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
@@ -1688,7 +1689,7 @@ async function deliverNimboFlow(input: {
     if (isRepeated) {
       console.info("[whatsapp-orchestrator] suppressed repeated Nimbo reply");
     } else {
-      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply);
+      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply, input.inboundMetaMessageId);
       await storeSentMessage({
         conversationId: input.conversation.id,
         body: input.result.reply,
@@ -1763,7 +1764,55 @@ async function callTriage(input: {
   return (await response.json()) as TriageDecision;
 }
 
-async function sendWhatsAppText(to: string, body: string) {
+// Reserve the patient turn atomically before calling Meta. A second worker
+// cannot send another answer for the same inbound turn or a bubble received
+// before the previous response finished sending.
+async function sendWhatsAppText(
+  to: string,
+  body: string,
+  inboundMetaMessageId: string | undefined,
+): Promise<string | null> {
+  if (!inboundMetaMessageId) throw new Error("whatsapp_inbound_id_missing");
+  const claimId = await supabaseRequest<string | null>("rpc/wa_claim_auto_reply", {
+    method: "POST",
+    body: JSON.stringify({
+      p_phone: to,
+      p_meta_message_id: inboundMetaMessageId,
+    }),
+  });
+  if (!claimId) {
+    console.info("[whatsapp-orchestrator] blocked duplicate or stale outbound turn");
+    return null;
+  }
+
+  // Fail closed on ambiguous Meta responses: a possibly sent message must not
+  // be retried by another worker merely because confirmation could not persist.
+  const messageId = await sendWhatsAppUnclaimedText(to, body);
+  if (!messageId) throw new Error("whatsapp_meta_send_unverified");
+  try {
+    await supabaseRequest(
+      `wa_auto_reply_claims?id=eq.${encodeURIComponent(claimId)}`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          outbound_meta_message_id: messageId,
+        }),
+      },
+    );
+  } catch (error) {
+    console.error("[whatsapp-orchestrator] reply claim confirmation failed", {
+      reason: error instanceof Error ? error.message : "unknown_error",
+    });
+    // Meta accepted the message. Preserve the reservation even if the
+    // bookkeeping PATCH failed; the normal sent-message path still runs.
+  }
+  return messageId;
+}
+
+async function sendWhatsAppUnclaimedText(to: string, body: string) {
   const accessToken =
     process.env.WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.WHATSAPP_TOKEN?.trim() ||
@@ -2022,7 +2071,7 @@ async function processTextMessage(input: {
     }
 
     if (currentMode === "automatic") {
-      const metaMessageId = await sendWhatsAppText(input.message.from, reply);
+      const metaMessageId = await sendWhatsAppText(input.message.from, reply, input.message.id);
       await storeSentMessage({
         conversationId: conversation.id,
         body: reply,
@@ -2055,7 +2104,7 @@ async function processTextMessage(input: {
     });
     const currentMode = await currentAutomationMode(conversation.id);
     if (currentMode === "off" || currentMode === "manual") return;
-    const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement);
+    const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement, input.message.id);
     await storeSentMessage({
       conversationId: conversation.id,
       body: acknowledgement,
@@ -2101,7 +2150,7 @@ async function processTextMessage(input: {
       courtesyMode === "automatic" &&
       !(await recentlySentIdenticalAutomatedReply(conversation.id, nonBookingTurn.reply))
     ) {
-      const metaMessageId = await sendWhatsAppText(input.message.from, nonBookingTurn.reply);
+      const metaMessageId = await sendWhatsAppText(input.message.from, nonBookingTurn.reply, input.message.id);
       await storeSentMessage({
         conversationId: conversation.id,
         body: nonBookingTurn.reply,
@@ -2177,7 +2226,7 @@ async function processTextMessage(input: {
 
     const fallbackReply =
       "No pude procesar tu mensaje automáticamente. Ya pasé la conversación con Karen para que la revise.";
-    const metaMessageId = await sendWhatsAppText(input.message.from, fallbackReply);
+    const metaMessageId = await sendWhatsAppText(input.message.from, fallbackReply, input.message.id);
     await storeSentMessage({
       conversationId: conversation.id,
       body: fallbackReply,
@@ -2324,7 +2373,7 @@ async function processTextMessage(input: {
     if (currentMode === "off" || currentMode === "manual") return;
     const operator: OperatorKey = decision.operator === "karen" ? "karen" : "doctor";
     if (decision.reply) {
-      const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply);
+      const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
       await storeSentMessage({
         conversationId: conversation.id,
         body: decision.reply,
@@ -2359,7 +2408,7 @@ async function processTextMessage(input: {
       return;
     }
     if (!(await isLatestInboundMessage(conversation.id, input.message.id))) return;
-    const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply);
+    const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
     await storeSentMessage({
       conversationId: conversation.id,
       body: decision.reply,
