@@ -12,6 +12,15 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "acne-vs-rosacea-como-distinguir",
+    title: "Acné vs rosácea: cómo distinguir brotes que se parecen",
+    description: "Comedones, flushing, eritema y pápulas: claves para diferenciar acné y rosácea, reconocer coexistencia y saber cuándo consultar.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-13",
+    readingTime: "8 min"
+  },
+  {
     slug: "plla-colageno-expectativas-riesgos",
     title: "PLLA facial: qué significa estimular colágeno, cuánto esperar y qué riesgos importan",
     description:
