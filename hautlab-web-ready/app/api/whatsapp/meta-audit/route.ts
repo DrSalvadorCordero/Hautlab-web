@@ -63,9 +63,15 @@ export async function GET(request: NextRequest) {
       const app = object(row.whatsapp_business_api_data);
       const id = app.id ?? row.id;
       const name = app.name ?? row.name;
+      const callback = row.override_callback_uri;
+      let callbackHost: string | null = null;
+      if (typeof callback === "string") {
+        try { callbackHost = new URL(callback).hostname.slice(0, 160); } catch { /* no public callback */ }
+      }
       return {
         id: typeof id === "string" || typeof id === "number" ? String(id).slice(0, 100) : null,
         name: typeof name === "string" ? name.slice(0, 150) : null,
+        callbackHost,
       };
     });
     const phoneIds = numbers.data.map((entry) => String(object(entry).id ?? "")).filter(Boolean);
