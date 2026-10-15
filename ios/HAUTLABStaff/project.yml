@@ -22,7 +22,7 @@ targets:
         CFBundleDisplayName: HAUTLAB Staff
         UILaunchScreen: {}
         NSLocationWhenInUseUsageDescription: "HAUTLAB usa tu ubicación para validar el check-in y check-out en la clínica."
-        NSLocationAlwaysAndWhenInUseUsageDescription: "Durante un turno activo, HAUTLAB usa una geocerca para registrar entradas y salidas de la clínica. El seguimiento se detiene al finalizar el turno."
+        NSLocationAlwaysAndWhenInUseUsageDescription: "Durante un turno activo, HAUTLAB usa una geocerca para registrar entradas y salidas de la clínica. No conserva tus coordenadas y la geocerca se detiene al finalizar el turno."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.hautlab.staff
