@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
 import {
   DEFAULT_WHATSAPP_SYSTEM_PROMPT,
   getWhatsAppPromptSettings,
@@ -27,21 +28,21 @@ function noStoreJson(value: unknown, init?: ResponseInit) {
 
 export async function GET() {
   const access = await getAdminAccess();
-  if (!access.allowed) {
-    return noStoreJson({ error: "unauthorized" }, { status: 401 });
+  if (!canManageRestrictedAdmin(access)) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
   }
 
   const settings = await getWhatsAppPromptSettings();
   return noStoreJson({
     ...settings,
     defaultPrompt: DEFAULT_WHATSAPP_SYSTEM_PROMPT.trim(),
-    canEdit: Boolean(access.isOwner || access.organizationRole === "org:admin"),
+    canEdit: true,
   });
 }
 
 export async function PUT(request: Request) {
   const access = await getAdminAccess();
-  const canEdit = Boolean(access.isOwner || access.organizationRole === "org:admin");
+  const canEdit = canManageRestrictedAdmin(access);
   if (!canEdit) return noStoreJson({ error: "forbidden" }, { status: 403 });
   if (!isSameOriginRequest(request)) {
     return noStoreJson({ error: "invalid_origin" }, { status: 403 });
