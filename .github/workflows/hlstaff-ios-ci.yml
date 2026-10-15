@@ -12,6 +12,9 @@ on:
       - "ios/HAUTLABStaff/**"
       - ".github/workflows/hlstaff-ios-ci.yml"
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-15
