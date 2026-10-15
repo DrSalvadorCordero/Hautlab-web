@@ -4,6 +4,7 @@ import {
   listAttendanceSchedules,
   listAttendanceShifts
 } from "@/lib/attendance-db";
+import { canExportRestrictedOperationalData } from "@/lib/admin-permissions";
 import { attendanceCsv, buildAttendanceReport } from "@/lib/attendance-report";
 
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ function safeDate(value: string | null, fallback: Date) {
 
 export async function GET(request: Request) {
   const access = await getAttendanceAccess();
-  if (!access.canManage) {
+  if (!canExportRestrictedOperationalData(access)) {
     return Response.json({ error: "forbidden" }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
 
