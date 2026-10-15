@@ -8,6 +8,7 @@ import {
 import { loadWhatsAppAssistantContext } from "@/lib/whatsapp-context";
 import { HAUTLAB_RESPONSE_POLICY } from "@/lib/commercial-policy";
 import { applyWhatsAppReplyLengthGuardrail, WHATSAPP_REPLY_MAX_CHARS } from "@/lib/whatsapp-reply-length";
+import { applyWhatsAppLocationGuardrail } from "@/lib/whatsapp-location-guard";
 import { calculateSalesQuote, formatMoney } from "@/lib/sales-brain";
 
 export const runtime = "nodejs";
@@ -808,7 +809,8 @@ function enforcePatientReplyLanguage<T extends { reply: string }>(decision: T, m
       ),
     );
 
-    const localizedDecision = enforcePatientReplyLanguage(decision, message);
+    const languageSafeDecision = enforcePatientReplyLanguage(decision, message);
+    const localizedDecision = applyWhatsAppLocationGuardrail(languageSafeDecision, message);
     const conciseDecision = applyWhatsAppReplyLengthGuardrail(localizedDecision);
     if (localizedDecision.reply.length > WHATSAPP_REPLY_MAX_CHARS) {
       console.info("hautlab_reply_length_guardrail", {
