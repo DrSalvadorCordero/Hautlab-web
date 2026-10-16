@@ -16,12 +16,12 @@ Variables privadas requeridas en Vercel:
 ```text
 HAUTLAB_CONTENT_GITHUB_TOKEN
 HAUTLAB_CONTENT_REPOSITORY=DrSalvadorCordero/Hautlab-web
-HAUTLAB_CONTENT_BRANCH=main
+HAUTLAB_CONTENT_BRANCH=content/cabina-publishing
 ```
 
 `HAUTLAB_CONTENT_GITHUB_TOKEN` debe ser un token fine-grained limitado exclusivamente al repositorio y con permisos mínimos para Contents. Nunca debe llevar el prefijo `NEXT_PUBLIC_` ni compartirse por chat.
 
-Para Preview puede utilizarse una rama de contenido diferente mediante `HAUTLAB_CONTENT_BRANCH`. En producción debe apuntar a `main`.
+`HAUTLAB_CONTENT_BRANCH` debe señalar una rama dedicada no protegida para preparar cambios. Las rutas de publicación rechazan `main`, `master`, valores vacíos y referencias equivalentes. Producción no publica directamente a `main`: el contenido pasa por PR, CI y revisión antes de integrarse. La rama configurada debe existir antes de usar el editor.
 
 ## Imágenes
 
