@@ -4,6 +4,7 @@ import {
   canExportRestrictedOperationalData,
   canManageRestrictedAdmin,
 } from "../lib/admin-permissions.ts";
+import { safeContentPublishingBranch } from "../lib/content-publishing-policy.ts";
 
 test("validated owner can manage restricted admin surfaces", () => {
   assert.equal(canManageRestrictedAdmin({ allowed: true, isOwner: true, organizationRole: null }), true);
@@ -70,5 +71,23 @@ test("export fails closed without a validated session", () => {
       organizationRole: "org:admin",
     }),
     false,
+  );
+});
+
+test("content publishing rejects protected default branches", () => {
+  assert.equal(safeContentPublishingBranch("main"), null);
+  assert.equal(safeContentPublishingBranch(" refs/heads/main "), null);
+  assert.equal(safeContentPublishingBranch("MASTER"), null);
+});
+
+test("content publishing requires an explicit branch", () => {
+  assert.equal(safeContentPublishingBranch(undefined), null);
+  assert.equal(safeContentPublishingBranch("   "), null);
+});
+
+test("content publishing accepts a dedicated review branch", () => {
+  assert.equal(
+    safeContentPublishingBranch("refs/heads/content/cabina-publishing"),
+    "content/cabina-publishing",
   );
 });
