@@ -1,12 +1,14 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
+import { safeContentPublishingBranch } from "@/lib/content-publishing-policy";
 import { exceedsContentLength, isSameOriginRequest } from "@/lib/server/admin-request-security";
 
 export const runtime = "nodejs";
 
 const repository = process.env.HAUTLAB_CONTENT_REPOSITORY ?? "DrSalvadorCordero/Hautlab-web";
-const branch = process.env.HAUTLAB_CONTENT_BRANCH ?? "main";
+const branch = safeContentPublishingBranch(process.env.HAUTLAB_CONTENT_BRANCH);
 const token = process.env.HAUTLAB_CONTENT_GITHUB_TOKEN?.trim();
 const maxBytes = 5 * 1024 * 1024;
 const allowedMimeTypes = new Map([
@@ -69,9 +71,11 @@ async function githubRequest(path: string, init?: RequestInit) {
 
 export async function POST(request: Request) {
   const access = await getAdminAccess();
-  const canPublish = access.isOwner || access.organizationRole === "org:admin";
-  if (!canPublish) return noStoreJson({ error: "forbidden" }, { status: 403 });
+  if (!canManageRestrictedAdmin(access)) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
+  }
   if (!isSameOriginRequest(request)) return noStoreJson({ error: "invalid_origin" }, { status: 403 });
+  if (!branch) return noStoreJson({ error: "publishing_branch_unsafe" }, { status: 503 });
   if (!token) return noStoreJson({ error: "publishing_not_configured" }, { status: 503 });
   if (exceedsContentLength(request, maxBytes, true)) {
     return noStoreJson({ error: "image_too_large" }, { status: 413 });
