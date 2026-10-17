@@ -41,13 +41,13 @@ export default async function RequestPatientCare() {
           <>
             <h1 className="mt-5 font-serif text-4xl">Solicita tu acceso exclusivo.</h1>
             <p className="mt-5 text-sm leading-7 text-muted">
-              Tu correo verificado es <strong className="text-bone">{enrollment.identity.email}</strong>.
-              HAUTLAB revisará la solicitud antes de permitirte consultar indicaciones médicas.
+              Ya verificaste tu correo: <strong className="text-bone">{enrollment.identity.email}</strong>.
+              Confirma tu nombre y envía tu solicitud. HAUTLAB verificará tu identidad antes de mostrar indicaciones médicas.
             </p>
             <form action={requestCareEnrollment} className="mt-7 space-y-5">
               <label className="block text-xs text-muted">
                 Nombre completo como aparece en tu expediente
-                <input name="displayName" required minLength={2} maxLength={120} autoComplete="name"
+                <input name="displayName" required minLength={2} maxLength={120} autoComplete="name" defaultValue={enrollment.identity.displayName}
                   className="mt-2 w-full rounded-xl border border-line bg-background p-3 text-sm text-bone outline-none focus:border-champagne" />
               </label>
               <label className="flex items-start gap-3 text-xs leading-6 text-muted">
