@@ -88,7 +88,7 @@ export async function getPrivateCarePatient() {
     "&status=eq.active&select=id,email,display_name,status,clerk_user_id,consent_at,consent_version,created_at&limit=1"
   );
   const patient = records[0] ?? null;
-  if (!patient || (patient.clerk_user_id && patient.clerk_user_id !== identity.clerkId)) return null;
+  if (!patient || patient.clerk_user_id !== identity.clerkId) return null;
   return { patient, clerkId: identity.clerkId };
 }
 
