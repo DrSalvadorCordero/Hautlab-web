@@ -10,7 +10,7 @@ export function CareInvitationIssuer() {
   const [state, action, pending] = useActionState(issueCareInvitation, initial);
   const [copied, setCopied] = useState(false);
   const message = state.code
-    ? "HAUTLAB Private Care: registra tu correo en https://www.hautlabmx.com/private-care/empezar y usa este código personal (vigente 48 horas, de un solo uso): " + state.code
+    ? "HAUTLAB Private Care: registra tu correo en https://hautlabmx.com/private-care/empezar y usa este código personal (vigente 48 horas, de un solo uso): " + state.code
     : "";
   return (
     <div className="rounded-[1.7rem] border border-line bg-white/[0.035] p-6 sm:p-8">
