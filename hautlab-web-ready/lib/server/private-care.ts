@@ -19,6 +19,7 @@ export type PrivateCareAccessRequest = {
   status: "pending" | "approved" | "rejected";
   requested_at: string; reviewed_at: string | null; patient_id: string | null;
 };
+export type PrivateCareInvitation = { id: string; display_name: string; expires_at: string; redeemed_at: string | null; revoked_at: string | null };
 export type PrivateCareReceipt = { item_key: string; read_at: string };
 export type PrivateCareFollowup = {
   id: string; patient_id: string; plan_id: string; reported_state: "better" | "same" | "worse";
@@ -88,7 +89,7 @@ export async function getPrivateCarePatient() {
     "&status=eq.active&select=id,email,display_name,status,clerk_user_id,consent_at,consent_version,created_at&limit=1"
   );
   const patient = records[0] ?? null;
-  if (!patient || (patient.clerk_user_id && patient.clerk_user_id !== identity.clerkId)) return null;
+  if (!patient || patient.clerk_user_id !== identity.clerkId) return null;
   return { patient, clerkId: identity.clerkId };
 }
 
@@ -134,7 +135,7 @@ export async function patientCareSnapshot() {
 
 export async function ownerCareSnapshot() {
   await requireCareOwner();
-  const [patients, plans, followups, requests] = await Promise.all([
+  const [patients, plans, followups, requests, invitations] = await Promise.all([
     careDb<PrivateCarePatient[]>(
       "private_care_patients?select=id,email,display_name,status,consent_at,consent_version,created_at&order=created_at.desc&limit=100"
     ),
@@ -147,8 +148,9 @@ export async function ownerCareSnapshot() {
     careDb<PrivateCareAccessRequest[]>(
       "private_care_access_requests?select=id,email,clerk_user_id,display_name,status,requested_at,reviewed_at,patient_id&order=requested_at.desc&limit=100"
     ),
+    careDb<PrivateCareInvitation[]>("private_care_invitations?select=id,display_name,expires_at,redeemed_at,revoked_at&order=created_at.desc&limit=60"),
   ]);
-  return { patients, plans, followups, requests };
+  return { patients, plans, followups, requests, invitations };
 }
 
 export function validateCarePhases(phases: PrivateCarePhase[]) {

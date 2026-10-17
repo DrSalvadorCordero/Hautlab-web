@@ -19,7 +19,7 @@ export default function PrivateCareRegistration() {
             routing="path"
             path="/private-care/registro"
             signInUrl="/private-care/iniciar-sesion"
-            fallbackRedirectUrl="/private-care/solicitar"
+            fallbackRedirectUrl="/private-care/activar"
             appearance={{elements:{rootBox:"mx-auto w-full",cardBox:"w-full shadow-calm"}}}
           />
         ) : (

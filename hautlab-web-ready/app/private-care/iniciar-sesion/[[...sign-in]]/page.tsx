@@ -16,7 +16,7 @@ export default function PrivateCareSignIn() {
           <SignIn
             routing="path"
             path="/private-care/iniciar-sesion"
-            fallbackRedirectUrl="/private-care"
+            fallbackRedirectUrl="/private-care/activar"
             appearance={{elements:{rootBox:"mx-auto w-full",cardBox:"w-full shadow-calm"}}}
           />
         ) : <p role="alert" className="rounded-2xl border border-line p-6 text-sm text-muted">El acceso privado está temporalmente deshabilitado.</p>}

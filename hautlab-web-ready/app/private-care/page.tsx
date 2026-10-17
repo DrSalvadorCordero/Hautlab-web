@@ -49,7 +49,7 @@ export default async function PrivateCareHome({ searchParams }: {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">Puedes registrarte con el correo que elijas, verificarlo y solicitar acceso. HAUTLAB confirmará tu identidad antes de mostrar cualquier indicación médica. Un código compartido nunca abre expedientes.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/private-care/empezar" className="inline-flex min-h-12 items-center rounded-full bg-champagne px-6 py-3 text-sm font-medium text-background">Comenzar</Link>
-              <Link href="/private-care/solicitar" className="inline-flex min-h-12 items-center rounded-full border border-line px-5 py-3 text-sm text-bone hover:border-champagne">Ya me registré</Link>
+              <Link href="/private-care/activar" className="inline-flex min-h-12 items-center rounded-full border border-line px-5 py-3 text-sm text-bone hover:border-champagne">Ya tengo mi código</Link>
             </div>
           </section>
         ) : !snapshot.patient.consent_at ? (

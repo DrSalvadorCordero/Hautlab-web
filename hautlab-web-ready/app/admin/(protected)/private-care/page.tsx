@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, ClipboardList, LockKeyhole, ShieldCheck, UserPlus } from "lucide-react";
 import { getAdminAccess } from "@/lib/admin-access";
 import { ownerCareSnapshot } from "@/lib/server/private-care";
+import { CareInvitationIssuer } from "@/components/private-care/care-invitation-issuer";
 import {
   archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess,
-  approveCareEnrollment, rejectCareEnrollment
+  approveCareEnrollment, rejectCareEnrollment, revokeCareInvitation
 } from "@/app/private-care/actions";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function PrivateCareAdminPage({
   const access = await getAdminAccess();
   if (!access.isOwner) redirect("/admin/experiencia");
   const { ok, error } = await searchParams;
-  const { patients, plans, followups, requests } = await ownerCareSnapshot();
+  const { patients, plans, followups, requests, invitations } = await ownerCareSnapshot();
   const patientNames = new Map(patients.map(p => [p.id, p.display_name]));
   const planNames = new Map(plans.map(p => [p.id, p.title]));
   return (
@@ -59,6 +60,30 @@ export default async function PrivateCareAdminPage({
         </p>
         {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
         {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
+      </section>
+
+      <CareInvitationIssuer />
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">Códigos de activación emitidos</h2>
+        <p className="mt-2 text-xs leading-6 text-muted">No se guardan códigos en texto claro. Puedes revocar cualquier invitación no utilizada.</p>
+        <div className="mt-5 space-y-3">
+          {invitations.length ? invitations.map(invite => {
+            const available = !invite.redeemed_at && !invite.revoked_at && new Date(invite.expires_at).getTime() > Date.now();
+            return (
+              <div key={invite.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line p-4">
+                <div>
+                  <p className="text-sm font-medium text-bone">{invite.display_name}</p>
+                  <p className="mt-1 text-xs text-muted">{invite.redeemed_at ? "Utilizado" : invite.revoked_at ? "Revocado" : available ? "Vigente" : "Expirado"} · Vence {new Date(invite.expires_at).toLocaleString("es-MX", {timeZone: "America/Merida"})}</p>
+                </div>
+                {available && <form action={revokeCareInvitation}>
+                  <input type="hidden" name="invitationId" value={invite.id} />
+                  <button type="submit" className={outline}>Revocar código</button>
+                </form>}
+              </div>
+            );
+          }) : <p className="text-sm text-muted">Aún no se han emitido códigos.</p>}
+        </div>
       </section>
 
       <section className="grid gap-5 lg:grid-cols-2">

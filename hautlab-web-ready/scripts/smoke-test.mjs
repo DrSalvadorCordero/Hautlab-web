@@ -110,6 +110,17 @@ async function main() {
   record(/noindex/i.test(careStartHtml), "Private Care invitation remains excluded from indexing");
   record(!careStartHtml.includes("Adrián Loya"), "Private Care invitation includes no patient identity");
 
+  const activationResponse = await request("/private-care/activar");
+  record([200, 302, 307, 308].includes(activationResponse.status), "Private Care activation route is protected");
+  if (activationResponse.status === 200) {
+    const activationHtml = await activationResponse.text();
+    record(/noindex/i.test(activationHtml), "Private Care activation is never indexed");
+    record(!activationHtml.includes("Adrián Loya"), "Activation exposes no patient identity in HTML");
+  } else {
+    const url = activationResponse.headers.get("location") ?? "";
+    record(url.includes("/private-care/iniciar-sesion"), "Unauthenticated activation redirects to patient sign in");
+  }
+
   const careRegistrationResponse = await request("/private-care/registro");
   const registrationHtml = await careRegistrationResponse.text();
   record(careRegistrationResponse.status === 200, "Private Care self-registration is reachable");

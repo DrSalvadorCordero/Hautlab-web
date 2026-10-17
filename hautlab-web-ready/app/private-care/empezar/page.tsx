@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function StartPrivateCare() {
   const configured = isClerkConfigured();
   const signedIn = configured ? Boolean((await auth()).userId) : false;
-  const next = signedIn ? "/private-care/solicitar" : "/private-care/registro";
+  const next = signedIn ? "/private-care/activar" : "/private-care/registro";
 
   return (
     <main id="contenido-principal" className="min-h-[75svh] bg-background px-4 py-12 text-bone sm:py-20">
@@ -31,7 +31,7 @@ export default async function StartPrivateCare() {
         </h1>
         <p className="mt-7 max-w-xl text-base leading-8 text-muted">
           Activa tu cuenta desde el celular. Tú eliges el correo electrónico
-          y HAUTLAB verificará tu identidad antes de abrir tus indicaciones médicas.
+          y Tu identidad se confirma con un código entregado por HAUTLAB mediante un canal previamente verificado.
         </p>
 
         <div className="mt-9 flex flex-wrap items-center gap-4">
@@ -55,8 +55,8 @@ export default async function StartPrivateCare() {
         <section className="mt-14 grid gap-3 sm:grid-cols-3" aria-label="Pasos de acceso">
           {[
             { n: "01", title: "Regístrate", desc: "Utiliza tu propio correo y verifica tu dirección." },
-            { n: "02", title: "Solicita acceso", desc: "Confirma tu nombre y envía la solicitud." },
-            { n: "03", title: "Consulta tu plan", desc: "Tu médico valida tu identidad y publica tus indicaciones." },
+            { n: "02", title: "Valida tu identidad", desc: "Usa tu código personal de un solo uso, si lo recibiste." },
+            { n: "03", title: "Consulta tu plan", desc: "Tu cuenta se habilita automáticamente; solo verás planes ya aprobados." },
           ].map((step) => (
             <div key={step.n} className="rounded-2xl border border-line bg-white/[.025] p-6">
               <p className="text-xs tracking-[.2em] text-champagne">{step.n}</p>
@@ -69,7 +69,7 @@ export default async function StartPrivateCare() {
         <aside className="mt-7 flex items-start gap-3 rounded-2xl border border-line p-5">
           <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-champagne" aria-hidden="true" />
           <p className="text-xs leading-6 text-muted">
-            Crear una cuenta no da acceso automático a un expediente.
+            Crear una cuenta sin código válido no da acceso a ningún expediente.
             Solo el paciente identificado puede ver sus indicaciones aprobadas.
           </p>
         </aside>
