@@ -1,3 +1,5 @@
+import nextConfig from "../next.config.mjs";
+
 const baseUrl = process.env.SMOKE_BASE_URL || "http://127.0.0.1:3000";
 const productionOrigin = "https://www.hautlabmx.com";
 const failures = [];
@@ -44,7 +46,31 @@ async function checkRedirect(path, expectedPath, allowedStatuses = [307, 308]) {
   record(actualPath === expectedPath, `${path} redirige a ${expectedPath}`);
 }
 
+async function checkClerkHostRouting() {
+  const rules = await nextConfig.redirects();
+  const wwwAuth = (path, destination) => rules.some(rule =>
+    rule.source === path &&
+    rule.destination === destination &&
+    rule.has?.some(condition => condition.type === "host" && condition.value === "www.hautlabmx.com")
+  );
+
+  record(wwwAuth("/admin", "https://hautlabmx.com/admin"), "Admin root redirects to Clerk-supported apex");
+  record(wwwAuth("/admin/:path*", "https://hautlabmx.com/admin/:path*"), "All admin sign-in paths stay on apex");
+  record(wwwAuth("/private-care", "https://hautlabmx.com/private-care"), "Private Care root redirects to Clerk-supported apex");
+  record(wwwAuth("/private-care/:path*", "https://hautlabmx.com/private-care/:path*"), "All patient registration and activation paths stay on apex");
+
+  const apexPublic = rules.find(rule =>
+    rule.has?.some(condition => condition.type === "host" && condition.value === "hautlabmx.com") &&
+    rule.destination === "https://www.hautlabmx.com/:path"
+  );
+  record(
+    Boolean(apexPublic?.source.includes("admin(?:/|$)") && apexPublic.source.includes("private-care(?:/|$)") && apexPublic.source.includes("__clerk")),
+    "Apex canonical redirect excludes auth routes and Clerk Frontend API"
+  );
+}
+
 async function main() {
+  await checkClerkHostRouting();
   const sitemapResponse = await request("/sitemap.xml");
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
