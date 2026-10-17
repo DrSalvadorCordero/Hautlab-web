@@ -141,6 +141,34 @@ export async function reviewCareReport(form: FormData) {
   okOwner();
 }
 
+
+export async function setCarePatientAccess(form: FormData) {
+  const actor = await requireCareOwner();
+  const patientId = validId(textValue(form, "patientId", 50));
+  const status = textValue(form, "status", 20);
+  if (!patientId || !["active", "suspended"].includes(status)) invalidOwner();
+  await careDb<unknown>("private_care_patients?id=eq." + patientId, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status, updated_by_clerk_id: actor, updated_at: new Date().toISOString() }),
+  });
+  okOwner();
+}
+
+export async function revokeCareConsent() {
+  const access = await getPrivateCarePatient();
+  if (!access) redirect(patientPath + "?error=acceso");
+  await careDb<unknown>("private_care_patients?id=eq." + access.patient.id + "&status=eq.active", {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      consent_version: null, consent_at: null,
+      consent_actor_clerk_id: null, updated_by_clerk_id: access.clerkId,
+      updated_at: new Date().toISOString(),
+    }),
+  });
+  revalidatePath(patientPath);
+  redirect(patientPath);
+}
+
 export async function acceptCareConsent(form: FormData) {
   if (textValue(form, "consent", 8) !== "acepto") redirect(patientPath + "?error=consentimiento");
   const access = await getPrivateCarePatient();
