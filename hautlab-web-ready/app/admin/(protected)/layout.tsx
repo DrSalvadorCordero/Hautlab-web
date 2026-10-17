@@ -36,5 +36,5 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
   }
   const canManage = Boolean(access.isOwner || access.organizationRole === "org:admin");
   const role = access.isOwner ? "Propietario" : canManage ? "Administrador" : "Personal";
-  return <AdminShell email={access.email} role={role} canManage={canManage}>{children}</AdminShell>;
+  return <AdminShell email={access.email} role={role} canManage={canManage} isOwner={access.isOwner}>{children}</AdminShell>;
 }
