@@ -102,6 +102,19 @@ async function main() {
     record(privateCareLocation.includes("/private-care/iniciar-sesion"), "Unauthenticated patient redirects to private sign-in");
   }
 
+  const careRegistrationResponse = await request("/private-care/registro");
+  const registrationHtml = await careRegistrationResponse.text();
+  record(careRegistrationResponse.status === 200, "Private Care self-registration is reachable");
+  record(/noindex/i.test(registrationHtml), "Private Care registration is not indexed");
+  record(!registrationHtml.includes("Adrián Loya"), "Registration page does not leak patient data");
+
+  const accessRequestResponse = await request("/private-care/solicitar");
+  record([200, 302, 307, 308].includes(accessRequestResponse.status), "Private Care requests fail closed without a verified session");
+  if (accessRequestResponse.status === 200) {
+    const requestHtml = await accessRequestResponse.text();
+    record(!requestHtml.includes("Adrián Loya"), "Enrollment request does not expose patient records");
+  }
+
   const privateCareSignInResponse = await request("/private-care/iniciar-sesion");
   record(privateCareSignInResponse.status === 200, "Private Care sign-in route is reachable");
 
