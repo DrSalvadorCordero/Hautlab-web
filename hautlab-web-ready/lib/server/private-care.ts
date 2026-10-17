@@ -20,6 +20,11 @@ export type PrivateCareAccessRequest = {
   requested_at: string; reviewed_at: string | null; patient_id: string | null;
 };
 export type PrivateCareInvitation = { id: string; display_name: string; expires_at: string; redeemed_at: string | null; revoked_at: string | null };
+export type PrivateCarePreparedPlan = {
+  id: string; invitation_id: string; title: string; summary: string;
+  phases: PrivateCarePhase[]; status: "draft" | "approved";
+  approved_at: string | null; approved_by_clerk_id: string | null;
+};
 export type PrivateCareReceipt = { item_key: string; read_at: string };
 export type PrivateCareFollowup = {
   id: string; patient_id: string; plan_id: string; reported_state: "better" | "same" | "worse";
@@ -135,7 +140,7 @@ export async function patientCareSnapshot() {
 
 export async function ownerCareSnapshot() {
   await requireCareOwner();
-  const [patients, plans, followups, requests, invitations] = await Promise.all([
+  const [patients, plans, followups, requests, invitations, preparedPlans] = await Promise.all([
     careDb<PrivateCarePatient[]>(
       "private_care_patients?select=id,email,display_name,status,consent_at,consent_version,created_at&order=created_at.desc&limit=100"
     ),
@@ -149,8 +154,11 @@ export async function ownerCareSnapshot() {
       "private_care_access_requests?select=id,email,clerk_user_id,display_name,status,requested_at,reviewed_at,patient_id&order=requested_at.desc&limit=100"
     ),
     careDb<PrivateCareInvitation[]>("private_care_invitations?select=id,display_name,expires_at,redeemed_at,revoked_at&order=created_at.desc&limit=60"),
+    careDb<PrivateCarePreparedPlan[]>(
+      "private_care_prepared_plans?select=id,invitation_id,title,summary,phases,status,approved_at,approved_by_clerk_id&order=created_at.desc&limit=60"
+    ),
   ]);
-  return { patients, plans, followups, requests, invitations };
+  return { patients, plans, followups, requests, invitations, preparedPlans };
 }
 
 export function validateCarePhases(phases: PrivateCarePhase[]) {
