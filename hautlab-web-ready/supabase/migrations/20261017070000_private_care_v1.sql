@@ -48,7 +48,7 @@ create function public.private_care_publish_plan(p_plan_id uuid, p_actor text)
 returns void
 language plpgsql security definer
 set search_path = public, pg_temp
-as $
+as $private_care_publish$
 declare
   v_patient uuid;
 begin
@@ -74,7 +74,7 @@ begin
     where id = p_plan_id and status = 'draft';
   if not found then raise exception 'plan_already_modified'; end if;
 end;
-$;
+$private_care_publish$;
 
 revoke all on function public.private_care_publish_plan(uuid, text) from public, anon, authenticated;
 grant execute on function public.private_care_publish_plan(uuid, text) to service_role;
