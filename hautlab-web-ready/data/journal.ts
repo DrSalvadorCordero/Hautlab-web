@@ -12,6 +12,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "dermatitis-seborreica-por-que-vuelve",
+    title: "Dermatitis seborreica: por qué vuelve y qué significa controlarla",
+    description:
+      "Cara, cuero cabelludo y recaídas: diferencia entre tratar el brote y mantener el control, riesgos del uso repetido de corticoides e irritación por productos.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-17",
+    readingTime: "9 min"
+  },
+  {
     slug: "acne-vs-rosacea-como-distinguir",
     title: "Acné vs rosácea: cómo distinguir brotes que se parecen",
     description: "Comedones, flushing, eritema y pápulas: claves para diferenciar acné y rosácea, reconocer coexistencia y saber cuándo consultar.",
