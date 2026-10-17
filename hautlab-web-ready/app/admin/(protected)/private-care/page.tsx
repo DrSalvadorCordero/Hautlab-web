@@ -5,7 +5,7 @@ import { CheckCircle2, ClipboardList, LockKeyhole, ShieldCheck, UserPlus } from 
 import { getAdminAccess } from "@/lib/admin-access";
 import { ownerCareSnapshot } from "@/lib/server/private-care";
 import {
-  archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport
+  archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess
 } from "@/app/private-care/actions";
 
 export const dynamic = "force-dynamic";
@@ -70,6 +70,31 @@ export default async function PrivateCareAdminPage({
             <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Reportes por revisar (últimos 30)</dt><dd className="text-bone">{followups.filter(x=>x.review_status==="new").length}</dd></div>
           </dl>
           <p className="mt-5 text-xs leading-6 text-quiet">Un plan borrador nunca es visible para el paciente. Publicar es una acción clínica explícita.</p>
+        </div>
+      </section>
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">Pacientes con acceso</h2>
+        <div className="mt-5 space-y-3">
+          {patients.length ? patients.map(patient => (
+            <article key={patient.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line p-5">
+              <div>
+                <h3 className="text-sm font-medium text-bone">{patient.display_name}</h3>
+                <p className="mt-1 text-xs text-muted">{patient.email}</p>
+                <p className="mt-2 text-xs text-quiet">
+                  {patient.status === "active" ? "Acceso permitido" : "Acceso suspendido"} ·
+                  {patient.consent_at ? " Consentimiento registrado" : " Consentimiento pendiente"}
+                </p>
+              </div>
+              <form action={setCarePatientAccess}>
+                <input name="patientId" type="hidden" value={patient.id} />
+                <input name="status" type="hidden" value={patient.status === "active" ? "suspended" : "active"}/>
+                <button type="submit" className={outline}>
+                  {patient.status === "active" ? "Suspender acceso" : "Restablecer acceso"}
+                </button>
+              </form>
+            </article>
+          )) : <p className="text-sm text-muted">Aún no hay pacientes inscritos.</p>}
         </div>
       </section>
 
