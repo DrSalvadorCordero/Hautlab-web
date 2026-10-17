@@ -26,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${siteConfig.url}/cabina/karen-cruz`, lastModified: coreContentDates.karen, changeFrequency: "monthly", priority: 0.7 },
     { url: `${siteConfig.url}/contacto`, lastModified: coreContentDates.contact, changeFrequency: "monthly", priority: 0.6 },
     { url: `${siteConfig.url}/publicaciones`, lastModified: coreContentDates.publications, changeFrequency: "yearly", priority: 0.7 },
-    { url: `${siteConfig.url}/journal`, lastModified: new Date("2026-09-29T12:00:00.000Z"), changeFrequency: "weekly", priority: 0.75 },
+    { url: `${siteConfig.url}/journal`, lastModified: new Date(`${journalArticles[0]?.preparedAt ?? "2026-09-29"}T12:00:00.000Z`), changeFrequency: "weekly", priority: 0.75 },
     { url: `${siteConfig.url}/pagos`, lastModified: coreContentDates.payments, changeFrequency: "monthly", priority: 0.5 },
     { url: `${siteConfig.url}/experiencia`, lastModified: "2026-10-12", changeFrequency: "monthly", priority: 0.65 },
     { url: `${siteConfig.url}/agenda`, lastModified: "2026-10-12", changeFrequency: "weekly", priority: 0.75 },
