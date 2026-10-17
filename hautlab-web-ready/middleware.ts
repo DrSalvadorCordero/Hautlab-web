@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
-const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)", "/private-care((?!/iniciar-sesion).*)"]);
+const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)", "/private-care((?!/(?:iniciar-sesion|registro)(?:/|$)).*)"]);
 const isClerkRoute = createRouteMatcher([
   "/admin/:path*",
   "/private-care/:path*",
