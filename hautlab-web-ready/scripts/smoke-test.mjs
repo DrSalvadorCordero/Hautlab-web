@@ -89,6 +89,22 @@ async function main() {
   const experienceHtml = await experienceResponse.text();
   record(experienceHtml.includes('href="/experiencia/mi-plan"'), "HAUTLAB Experience enlaza el Care Plan de demostración");
 
+  // Private Care is not a public clinical-data route, even when Clerk is unavailable.
+  const privateCareResponse = await request("/private-care");
+  record([200, 302, 307, 308].includes(privateCareResponse.status), "Private Care fails closed or shows restricted access");
+  if (privateCareResponse.status === 200) {
+    const privateCareHtml = await privateCareResponse.text();
+    record(/noindex/i.test(privateCareHtml), "Private Care is excluded from indexing");
+    record(!privateCareHtml.includes("Adrián Loya"), "Private Care does not ship named patients in static HTML");
+    record(!privateCareHtml.includes("va.vercel-scripts.com"), "Private Care does not mount public analytics");
+  } else {
+    const privateCareLocation = privateCareResponse.headers.get("location") || "";
+    record(privateCareLocation.includes("/private-care/iniciar-sesion"), "Unauthenticated patient redirects to private sign-in");
+  }
+
+  const privateCareSignInResponse = await request("/private-care/iniciar-sesion");
+  record(privateCareSignInResponse.status === 200, "Private Care sign-in route is reachable");
+
   const homeResponse = await request("/");
   const homeHtml = await homeResponse.text();
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
