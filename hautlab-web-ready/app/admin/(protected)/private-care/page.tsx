@@ -21,7 +21,7 @@ const field = "w-full min-h-11 rounded-xl border border-line bg-background p-3 t
 const btn = "inline-flex min-h-11 items-center justify-center rounded-full bg-champagne px-5 py-2 text-sm font-medium text-background transition hover:opacity-90";
 const outline = "inline-flex min-h-10 items-center justify-center rounded-full border border-line px-4 py-2 text-xs text-bone transition hover:border-champagne";
 const panel = "rounded-[1.7rem] border border-line bg-white/[0.035] p-6 sm:p-8";
-const inviteUrl = "https://www.hautlabmx.com/private-care/empezar";
+const inviteUrl = "https://hautlabmx.com/private-care/empezar";
 const inviteMessage = "Hola, te comparto tu acceso personal a HAUTLAB Private Care. Regístrate con el correo que elijas, verifícalo y envía tu solicitud aquí: " + inviteUrl + ". Yo verificaré tu identidad antes de habilitar tu plan.";
 const whatsappInviteUrl = "https://wa.me/?text=" + encodeURIComponent(inviteMessage);
 
