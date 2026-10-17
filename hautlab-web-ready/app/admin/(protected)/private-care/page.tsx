@@ -1,0 +1,202 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { CheckCircle2, ClipboardList, LockKeyhole, ShieldCheck, UserPlus } from "lucide-react";
+import { getAdminAccess } from "@/lib/admin-access";
+import { ownerCareSnapshot } from "@/lib/server/private-care";
+import {
+  archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess
+} from "@/app/private-care/actions";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const metadata: Metadata = {
+  title: "Private Care · Panel clínico HAUTLAB",
+  robots: { index: false, follow: false, nocache: true }, referrer: "no-referrer",
+};
+
+const field = "w-full min-h-11 rounded-xl border border-line bg-background p-3 text-sm text-bone outline-none focus:border-champagne";
+const btn = "inline-flex min-h-11 items-center justify-center rounded-full bg-champagne px-5 py-2 text-sm font-medium text-background transition hover:opacity-90";
+const outline = "inline-flex min-h-10 items-center justify-center rounded-full border border-line px-4 py-2 text-xs text-bone transition hover:border-champagne";
+const panel = "rounded-[1.7rem] border border-line bg-white/[0.035] p-6 sm:p-8";
+
+export default async function PrivateCareAdminPage({
+  searchParams,
+}: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+  const access = await getAdminAccess();
+  if (!access.isOwner) redirect("/admin/experiencia");
+  const { ok, error } = await searchParams;
+  const { patients, plans, followups } = await ownerCareSnapshot();
+  const patientNames = new Map(patients.map(p => [p.id, p.display_name]));
+  const planNames = new Map(plans.map(p => [p.id, p.title]));
+  return (
+    <div className="space-y-7 pb-16">
+      <section className={panel}>
+        <p className="text-xs uppercase tracking-[.24em] text-champagne">HAUTLAB Experience · Private Care</p>
+        <h1 className="mt-4 max-w-3xl font-serif text-4xl tracking-[-.05em] text-bone sm:text-5xl">Planes bajo tu supervisión.</h1>
+        <p className="mt-5 max-w-3xl text-sm leading-7 text-muted">
+          Da acceso exclusivamente a una cuenta con correo verificado, prepara indicaciones por fases y
+          publícalas únicamente después de revisarlas. Las revisiones crean nuevas versiones.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs text-muted"><ShieldCheck className="h-4 w-4 text-champagne"/> Solo propietario</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs text-muted"><LockKeyhole className="h-4 w-4 text-champagne"/> Sin publicación automática</span>
+          <Link href="/private-care" className="text-xs text-champagne underline underline-offset-4">Portal del paciente</Link>
+        </div>
+        {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
+        {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-2">
+        <div className={panel}>
+          <div className="flex items-center gap-3"><UserPlus className="h-5 w-5 text-champagne"/><h2 className="text-xl font-medium text-bone">1 · Autorizar paciente</h2></div>
+          <p className="mt-3 text-sm leading-6 text-muted">Registra únicamente a pacientes que deban recibir acceso. El correo debe coincidir con su cuenta verificada.</p>
+          <form action={enrollCarePatient} className="mt-6 space-y-4">
+            <label className="block text-xs text-muted">Nombre para mostrar
+              <input name="name" required minLength={2} maxLength={120} autoComplete="off" className={"mt-2 "+field} placeholder="Nombre del paciente"/>
+            </label>
+            <label className="block text-xs text-muted">Correo personal verificado
+              <input name="email" required type="email" maxLength={254} autoComplete="off" className={"mt-2 "+field} placeholder="paciente@correo.com"/>
+            </label>
+            <button className={btn} type="submit">Autorizar acceso</button>
+          </form>
+        </div>
+        <div className={panel}>
+          <div className="flex items-center gap-3"><ClipboardList className="h-5 w-5 text-champagne"/><h2 className="text-xl font-medium text-bone">Estado del programa</h2></div>
+          <dl className="mt-6 divide-y divide-line text-sm">
+            <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Pacientes inscritos</dt><dd className="text-bone">{patients.length}</dd></div>
+            <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Planes pendientes de aprobación</dt><dd className="text-bone">{plans.filter(x=>x.status==="draft").length}</dd></div>
+            <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Planes publicados</dt><dd className="text-bone">{plans.filter(x=>x.status==="published").length}</dd></div>
+            <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Reportes por revisar (últimos 30)</dt><dd className="text-bone">{followups.filter(x=>x.review_status==="new").length}</dd></div>
+          </dl>
+          <p className="mt-5 text-xs leading-6 text-quiet">Un plan borrador nunca es visible para el paciente. Publicar es una acción clínica explícita.</p>
+        </div>
+      </section>
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">Pacientes con acceso</h2>
+        <div className="mt-5 space-y-3">
+          {patients.length ? patients.map(patient => (
+            <article key={patient.id} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line p-5">
+              <div>
+                <h3 className="text-sm font-medium text-bone">{patient.display_name}</h3>
+                <p className="mt-1 text-xs text-muted">{patient.email}</p>
+                <p className="mt-2 text-xs text-quiet">
+                  {patient.status === "active" ? "Acceso permitido" : "Acceso suspendido"} ·
+                  {patient.consent_at ? " Consentimiento registrado" : " Consentimiento pendiente"}
+                </p>
+              </div>
+              <form action={setCarePatientAccess}>
+                <input name="patientId" type="hidden" value={patient.id} />
+                <input name="status" type="hidden" value={patient.status === "active" ? "suspended" : "active"}/>
+                <button type="submit" className={outline}>
+                  {patient.status === "active" ? "Suspender acceso" : "Restablecer acceso"}
+                </button>
+              </form>
+            </article>
+          )) : <p className="text-sm text-muted">Aún no hay pacientes inscritos.</p>}
+        </div>
+      </section>
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">2 · Redactar un plan individual</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
+          Cada línea de una fase se convierte en una instrucción. No incluyas información que el paciente no deba consultar.
+          Este formulario crea un borrador, no lo publica.
+        </p>
+        {patients.length ? (
+          <form action={createCarePlan} className="mt-7 space-y-5">
+            <label className="block text-xs text-muted">Paciente
+              <select name="patientId" required className={"mt-2 "+field} defaultValue="">
+                <option value="" disabled>Selecciona un paciente</option>
+                {patients.filter(p=>p.status==="active").map(p=><option key={p.id} value={p.id}>{p.display_name} · {p.email}</option>)}
+              </select>
+            </label>
+            <label className="block text-xs text-muted">Título clínico
+              <input name="title" required maxLength={140} className={"mt-2 "+field} placeholder="Seguimiento de dermatitis facial"/>
+            </label>
+            <label className="block text-xs text-muted">Resumen aprobado en valoración
+              <textarea name="summary" required maxLength={1200} rows={3} className={"mt-2 "+field} placeholder="Objetivo y criterios para adaptar el tratamiento."/>
+            </label>
+            <div className="grid gap-5 md:grid-cols-2">
+              {[1,2,3,4].map(n=>(
+                <div key={n} className="rounded-2xl border border-line p-5">
+                  <p className="mb-4 text-xs uppercase tracking-[.15em] text-champagne">Fase {n} {n > 2 ? "· opcional" : ""}</p>
+                  <label className="block text-xs text-muted">Nombre de la fase
+                    <input name={"phase"+n+"Title"} required={n<=2} maxLength={100} className={"mt-2 "+field} placeholder={n===1?"Recuperar barrera cutánea":"Control y seguimiento"}/>
+                  </label>
+                  <label className="mt-4 block text-xs text-muted">Indicaciones (una por línea)
+                    <textarea name={"phase"+n+"Items"} required={n<=2} rows={5} maxLength={6400} className={"mt-2 "+field} placeholder={"Aplicar solamente lo indicado.\nSolicitar revisión ante empeoramiento."}/>
+                  </label>
+                </div>
+              ))}
+            </div>
+            <button type="submit" className={btn}>Guardar borrador clínico</button>
+          </form>
+        ) : <p className="mt-6 text-sm text-muted">Autoriza al primer paciente para poder crear un plan.</p>}
+      </section>
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">3 · Revisar y publicar</h2>
+        <p className="mt-3 text-sm text-muted">Lee las instrucciones completas antes de aprobar. La siguiente versión reemplaza atómicamente la anterior.</p>
+        <div className="mt-6 space-y-4">
+          {plans.length ? plans.map(plan=>(
+            <article key={plan.id} className="rounded-2xl border border-line bg-background/45 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-muted">{patientNames.get(plan.patient_id) ?? "Paciente"} · Versión {plan.revision}</p>
+                  <h3 className="mt-1 text-base font-medium text-bone">{plan.title}</h3>
+                </div>
+                <span className="rounded-full border border-line px-3 py-1 text-xs text-muted">{plan.status==="published"?"Publicado":plan.status==="draft"?"Borrador":"Archivado"}</span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-muted">{plan.summary}</p>
+              <ol className="mt-4 space-y-4 border-t border-line pt-4">
+                {plan.phases.map((phase,idx)=>(
+                  <li key={idx}>
+                    <p className="text-sm font-medium text-bone">{idx+1}. {phase.title}</p>
+                    <ul className="ml-5 mt-2 list-disc space-y-1 text-xs leading-6 text-muted">
+                      {phase.items.map((item,j)=><li key={j}>{item}</li>)}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+              {plan.status==="draft" && (
+                <form action={publishCarePlan} className="mt-5">
+                  <input type="hidden" name="planId" value={plan.id}/>
+                  <button type="submit" className={btn}>He revisado y apruebo publicar</button>
+                </form>
+              )}
+              {plan.status==="published" && (
+                <form action={archiveCarePlan} className="mt-5">
+                  <input type="hidden" name="planId" value={plan.id}/>
+                  <button type="submit" className={outline}>Retirar acceso a este plan</button>
+                </form>
+              )}
+            </article>
+          )) : <p className="text-sm text-muted">Aún no hay planes.</p>}
+        </div>
+      </section>
+
+      <section className={panel}>
+        <h2 className="flex items-center gap-2 text-xl font-medium text-bone"><CheckCircle2 className="h-5 w-5 text-champagne"/> 4 · Evolución recibida</h2>
+        <div className="mt-6 space-y-3">
+          {followups.length ? followups.map(item=>(
+            <article key={item.id} className="rounded-2xl border border-line p-5">
+              <div className="flex flex-wrap justify-between gap-3">
+                <div><p className="text-sm font-medium text-bone">{patientNames.get(item.patient_id) ?? "Paciente"}</p>
+                  <p className="mt-1 text-xs text-muted">{planNames.get(item.plan_id) ?? "Plan"} · {item.reported_state==="better"?"Mejor":item.reported_state==="same"?"Sin cambios":"Peor"} · {new Date(item.created_at).toLocaleString("es-MX",{timeZone:"America/Merida"})}</p></div>
+                <span className="text-xs text-muted">{item.review_status==="new"?"Pendiente de revisión":"Revisado"}</span>
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-bone">{item.message}</p>
+              {item.review_status==="new" && <form action={reviewCareReport} className="mt-4">
+                <input name="reportId" type="hidden" value={item.id}/>
+                <button className={outline} type="submit">Marcar como revisado</button>
+              </form>}
+            </article>
+          )):<p className="text-sm text-muted">Todavía no hay reportes de evolución.</p>}
+        </div>
+        <p className="mt-5 text-xs leading-6 text-quiet">Marcar como revisado no equivale a responder al paciente ni a emitir una nueva indicación.</p>
+      </section>
+    </div>
+  );
+}

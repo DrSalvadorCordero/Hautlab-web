@@ -38,8 +38,11 @@ export async function getAdminAccess(): Promise<AdminAccess> {
   }
 
   const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? null;
-  const isOwner = Boolean(email && getOwnerEmails().includes(email));
+  const primaryEmail = user?.primaryEmailAddress;
+  const email = primaryEmail?.emailAddress?.toLowerCase() ?? null;
+  // A claimed-but-unverified email must never grant access to patient records.
+  const verified = primaryEmail?.verification?.status === "verified";
+  const isOwner = Boolean(verified && email && getOwnerEmails().includes(email));
   const hasOrganizationAccess = Boolean(
     session.orgId &&
       session.orgRole &&

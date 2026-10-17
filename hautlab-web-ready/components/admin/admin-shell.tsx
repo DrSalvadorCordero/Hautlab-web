@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { BadgeDollarSign, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
+import { BadgeDollarSign, HeartPulse, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
 
 const baseNavigation = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, managerOnly: false },
@@ -13,6 +13,7 @@ const baseNavigation = [
   { href: "/admin/growth", label: "Growth OS", icon: TrendingUp, managerOnly: true },
   { href: "/admin/ventas", label: "Sales Brain", icon: BadgeDollarSign, managerOnly: true },
   { href: "/admin/cabina", label: "Cabina", icon: Sparkles, managerOnly: true },
+  { href: "/admin/private-care", label: "Private Care", icon: HeartPulse, managerOnly: true, ownerOnly: true },
   { href: "/admin/usuarios", label: "Usuarios", icon: Users, managerOnly: true },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings, managerOnly: true }
 ];
@@ -21,14 +22,16 @@ export function AdminShell({
   children,
   email,
   role,
-  canManage
+  canManage,
+  isOwner
 }: {
   children: React.ReactNode;
   email: string | null;
   role: string;
   canManage: boolean;
+  isOwner: boolean;
 }) {
-  const navigation = baseNavigation.filter((item) => canManage || !item.managerOnly);
+  const navigation = baseNavigation.filter((item) => (!item.ownerOnly || isOwner) && (canManage || !item.managerOnly));
 
   return (
     <div className="min-h-screen bg-[#0b0a09] text-bone">

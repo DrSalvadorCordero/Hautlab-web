@@ -51,7 +51,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const [requestHeaders, cookieStore] = await Promise.all([headers(), cookies()]);
   const isEnglish = requestHeaders.get("x-hautlab-locale") === "en";
   const pathname = requestHeaders.get("x-hautlab-pathname") ?? "";
-  const isInternalArea = pathname.startsWith("/admin");
+  const isPatientArea = pathname === "/private-care" || pathname.startsWith("/private-care/");
+  const isInternalArea = pathname.startsWith("/admin") || isPatientArea;
   const initialConsent = parseConsentValue(cookieStore.get(CONSENT_COOKIE_NAME)?.value);
 
   const jsonLd = {
@@ -169,8 +170,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           </>
         )}
-        <Analytics />
-        <SpeedInsights />
+        {!isPatientArea && <Analytics />}
+        {!isPatientArea && <SpeedInsights />}
       </body>
     </html>
   );
