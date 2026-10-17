@@ -43,8 +43,9 @@ export async function careDb<T>(path: string, init: RequestInit = {}): Promise<T
     // Never leak database payloads containing patient data or internal SQL details.
     throw new Error("private_care_storage_error_" + response.status);
   }
-  if (response.status === 204) return [] as T;
-  return (await response.json()) as T;
+  const body = await response.text();
+  // PostgREST often returns HTTP 201 with an intentionally empty body for return=minimal.
+  return body ? JSON.parse(body) as T : [] as T;
 }
 
 export function normalizePatientEmail(value: string) {
