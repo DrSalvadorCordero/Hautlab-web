@@ -105,6 +105,20 @@ export async function claimCareInvitation(
   redirect(patientPath);
 }
 
+export async function revokeCareInvitation(form: FormData) {
+  await requireCareOwner();
+  const invitationId = validId(textValue(form, "invitationId", 50));
+  if (!invitationId) invalidOwner();
+  await careDb<unknown>(
+    "private_care_invitations?id=eq." + invitationId + "&redeemed_at=is.null&revoked_at=is.null",
+    {
+      method: "PATCH", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ revoked_at: new Date().toISOString() }),
+    }
+  );
+  okOwner();
+}
+
 export async function requestCareEnrollment(form: FormData) {
   const identity = await verifiedCareIdentity();
   if (!identity) redirect("/private-care/iniciar-sesion");
