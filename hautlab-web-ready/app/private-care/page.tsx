@@ -46,8 +46,11 @@ export default async function PrivateCareHome({ searchParams }: {
           <section className={card}>
             <LockKeyhole className="h-7 w-7 text-champagne"/>
             <h2 className="mt-5 font-serif text-3xl">Acceso individual pendiente</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">No hay un plan autorizado para la cuenta actual o aún no has iniciado sesión. Solicita al equipo de HAUTLAB una invitación al correo de tu cuenta verificada. Un código compartido no abre expedientes.</p>
-            <Link href="/private-care/iniciar-sesion" className="mt-6 inline-flex rounded-full border border-line px-5 py-3 text-sm text-bone hover:border-champagne">Iniciar sesión</Link>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">Puedes registrarte con el correo que elijas, verificarlo y solicitar acceso. HAUTLAB confirmará tu identidad antes de mostrar cualquier indicación médica. Un código compartido nunca abre expedientes.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/private-care/registro" className="inline-flex rounded-full bg-champagne px-5 py-3 text-sm font-medium text-background">Crear mi cuenta</Link>
+              <Link href="/private-care/solicitar" className="inline-flex rounded-full border border-line px-5 py-3 text-sm text-bone hover:border-champagne">Consultar mi solicitud</Link>
+            </div>
           </section>
         ) : !snapshot.patient.consent_at ? (
           <section className={card}>

@@ -6,12 +6,18 @@ import { isClerkConfigured } from "@/lib/auth-config";
 export type PrivateCarePhase = { title: string; items: string[] };
 export type PrivateCarePatient = {
   id: string; email: string; display_name: string; status: "active" | "suspended";
+  clerk_user_id?: string | null;
   consent_at: string | null; consent_version: string | null; created_at: string;
 };
 export type PrivateCarePlan = {
   id: string; patient_id: string; title: string; summary: string; phases: PrivateCarePhase[];
   status: "draft" | "published" | "archived"; revision: number;
   published_at: string | null; created_at: string;
+};
+export type PrivateCareAccessRequest = {
+  id: string; email: string; clerk_user_id: string; display_name: string;
+  status: "pending" | "approved" | "rejected";
+  requested_at: string; reviewed_at: string | null; patient_id: string | null;
 };
 export type PrivateCareReceipt = { item_key: string; read_at: string };
 export type PrivateCareFollowup = {
@@ -61,7 +67,7 @@ export async function requireCareOwner() {
   return access.userId;
 }
 
-async function verifiedIdentity() {
+export async function verifiedCareIdentity() {
   if (!isClerkConfigured()) return null;
   const session = await auth();
   if (!session.userId) return null;
@@ -74,14 +80,26 @@ async function verifiedIdentity() {
 }
 
 export async function getPrivateCarePatient() {
-  const identity = await verifiedIdentity();
+  const identity = await verifiedCareIdentity();
   if (!identity) return null;
   const records = await careDb<PrivateCarePatient[]>(
     "private_care_patients?email=eq." + encodeURIComponent(identity.email) +
-    "&status=eq.active&select=id,email,display_name,status,consent_at,consent_version,created_at&limit=1"
+    "&status=eq.active&select=id,email,display_name,status,clerk_user_id,consent_at,consent_version,created_at&limit=1"
   );
   const patient = records[0] ?? null;
-  return patient ? { patient, clerkId: identity.clerkId } : null;
+  if (!patient || (patient.clerk_user_id && patient.clerk_user_id !== identity.clerkId)) return null;
+  return { patient, clerkId: identity.clerkId };
+}
+
+export async function getCareAccessRequest() {
+  const identity = await verifiedCareIdentity();
+  if (!identity) return null;
+  const records = await careDb<PrivateCareAccessRequest[]>(
+    "private_care_access_requests?clerk_user_id=eq." + encodeURIComponent(identity.clerkId) +
+    "&email=eq." + encodeURIComponent(identity.email) +
+    "&select=id,email,clerk_user_id,display_name,status,requested_at,reviewed_at,patient_id&limit=1"
+  );
+  return { identity, request: records[0] ?? null };
 }
 
 export async function getPublishedCarePlan(patientId: string) {
@@ -115,7 +133,7 @@ export async function patientCareSnapshot() {
 
 export async function ownerCareSnapshot() {
   await requireCareOwner();
-  const [patients, plans, followups] = await Promise.all([
+  const [patients, plans, followups, requests] = await Promise.all([
     careDb<PrivateCarePatient[]>(
       "private_care_patients?select=id,email,display_name,status,consent_at,consent_version,created_at&order=created_at.desc&limit=100"
     ),
@@ -125,8 +143,11 @@ export async function ownerCareSnapshot() {
     careDb<PrivateCareFollowup[]>(
       "private_care_followups?select=id,patient_id,plan_id,reported_state,message,review_status,created_at&order=created_at.desc&limit=30"
     ),
+    careDb<PrivateCareAccessRequest[]>(
+      "private_care_access_requests?select=id,email,clerk_user_id,display_name,status,requested_at,reviewed_at,patient_id&order=requested_at.desc&limit=100"
+    ),
   ]);
-  return { patients, plans, followups };
+  return { patients, plans, followups, requests };
 }
 
 export function validateCarePhases(phases: PrivateCarePhase[]) {

@@ -55,3 +55,15 @@ Next.js \`/private-care\` responses should send \`Cache-Control: private, no-sto
 ## Pilot readiness
 
 Infrastructure and code can be deployed without real patients. **Do not describe individual access or clinical delivery as end-to-end validated until the verified patient sign-in and owner publishing path are manually exercised.** Register the first clinical patient and publish a reviewed plan only after that gate.
+
+## Registro por correo elegido por el paciente
+
+- Entrada: `/private-care/registro`. El paciente elige su correo en Clerk, verifica su dirección y continúa en `/private-care/solicitar`.
+- En la solicitud escribe su nombre y acepta el aviso de privacidad correspondiente al registro. El servidor deriva el correo **únicamente** del correo principal verificado en Clerk. Ni la URL ni el formulario pueden sustituir esa dirección.
+- La solicitud queda `pending` en `private_care_access_requests`. No crea un plan ni habilita datos médicos.
+- El propietario revisa `/admin/private-care`, verifica la identidad contra el expediente por un canal independiente y aprueba explícitamente.
+- La aprobación transaccional crea/vincula la fila de paciente al identificador de Clerk y evita aprobar una cuenta distinta con el mismo correo.
+- Una solicitud rechazada exige contacto directo con HAUTLAB; la pantalla no permite envíos repetidos automáticos.
+- Cada cuenta solo accede a su propio correo verificado y, si está vinculada, a su `clerk_user_id`. El consentimiento para la consulta de indicaciones ocurre después de ser autorizada.
+- Registros no verificados, pendientes, rechazados o con acceso suspendido nunca abren planes clínicos.
+- Comprobación pendiente con dos cuentas verificadas reales: aislamiento entre pacientes, aprobación y activación completa en iPhone. La CI no sustituye esta prueba.

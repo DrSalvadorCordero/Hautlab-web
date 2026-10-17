@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import {
   careDb,
   getPrivateCarePatient,
+  verifiedCareIdentity,
+  getCareAccessRequest,
   getPublishedCarePlan,
   normalizePatientEmail,
   requireCareOwner,
@@ -32,6 +34,66 @@ function okOwner() {
 }
 function invalidOwner(): never {
   redirect(ownerPath + "?error=validacion");
+}
+
+export async function requestCareEnrollment(form: FormData) {
+  const identity = await verifiedCareIdentity();
+  if (!identity) redirect("/private-care/iniciar-sesion");
+  if (textValue(form, "privacy", 12) !== "acepto") redirect(patientPath + "?error=privacidad");
+  const displayName = textValue(form, "displayName", 120);
+  if (displayName.length < 2 || displayName.length > 120) redirect(patientPath + "?error=validacion");
+
+  const access = await getPrivateCarePatient();
+  if (access) redirect(patientPath);
+
+  const current = await getCareAccessRequest();
+  if (current?.request) redirect(patientPath + "?solicitud=existente");
+
+  const emailClaim = await careDb<Array<{ id: string }>>(
+    "private_care_access_requests?email=eq." + encodeURIComponent(identity.email) + "&select=id&limit=1"
+  );
+  if (emailClaim.length) redirect(patientPath + "?error=contacto");
+
+  await careDb<unknown>("private_care_access_requests", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      clerk_user_id: identity.clerkId,
+      email: identity.email,
+      display_name: displayName,
+      status: "pending",
+    }),
+  });
+  revalidatePath(patientPath);
+  revalidatePath(ownerPath);
+  redirect(patientPath + "?solicitud=recibida");
+}
+
+export async function approveCareEnrollment(form: FormData) {
+  const actor = await requireCareOwner();
+  const requestId = validId(textValue(form, "requestId", 50));
+  if (!requestId || textValue(form, "identityChecked", 12) !== "confirmado") invalidOwner();
+  await careDb<unknown>("rpc/private_care_approve_access_request", {
+    method: "POST",
+    body: JSON.stringify({ p_request_id: requestId, p_actor: actor }),
+  });
+  okOwner();
+}
+
+export async function rejectCareEnrollment(form: FormData) {
+  const actor = await requireCareOwner();
+  const requestId = validId(textValue(form, "requestId", 50));
+  if (!requestId) invalidOwner();
+  await careDb<unknown>("private_care_access_requests?id=eq." + requestId + "&status=eq.pending", {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      status: "rejected",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by_clerk_id: actor,
+    }),
+  });
+  okOwner();
 }
 
 export async function enrollCarePatient(form: FormData) {

@@ -5,7 +5,8 @@ import { CheckCircle2, ClipboardList, LockKeyhole, ShieldCheck, UserPlus } from 
 import { getAdminAccess } from "@/lib/admin-access";
 import { ownerCareSnapshot } from "@/lib/server/private-care";
 import {
-  archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess
+  archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess,
+  approveCareEnrollment, rejectCareEnrollment
 } from "@/app/private-care/actions";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function PrivateCareAdminPage({
   const access = await getAdminAccess();
   if (!access.isOwner) redirect("/admin/experiencia");
   const { ok, error } = await searchParams;
-  const { patients, plans, followups } = await ownerCareSnapshot();
+  const { patients, plans, followups, requests } = await ownerCareSnapshot();
   const patientNames = new Map(patients.map(p => [p.id, p.display_name]));
   const planNames = new Map(plans.map(p => [p.id, p.title]));
   return (
@@ -64,12 +65,51 @@ export default async function PrivateCareAdminPage({
         <div className={panel}>
           <div className="flex items-center gap-3"><ClipboardList className="h-5 w-5 text-champagne"/><h2 className="text-xl font-medium text-bone">Estado del programa</h2></div>
           <dl className="mt-6 divide-y divide-line text-sm">
+            <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Solicitudes pendientes</dt><dd className="text-bone">{requests.filter(x=>x.status==="pending").length}</dd></div>
             <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Pacientes inscritos</dt><dd className="text-bone">{patients.length}</dd></div>
             <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Planes pendientes de aprobación</dt><dd className="text-bone">{plans.filter(x=>x.status==="draft").length}</dd></div>
             <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Planes publicados</dt><dd className="text-bone">{plans.filter(x=>x.status==="published").length}</dd></div>
             <div className="flex justify-between gap-3 py-3"><dt className="text-muted">Reportes por revisar (últimos 30)</dt><dd className="text-bone">{followups.filter(x=>x.review_status==="new").length}</dd></div>
           </dl>
           <p className="mt-5 text-xs leading-6 text-quiet">Un plan borrador nunca es visible para el paciente. Publicar es una acción clínica explícita.</p>
+        </div>
+      </section>
+
+      <section className={panel}>
+        <div className="flex items-center gap-3">
+          <UserPlus className="h-5 w-5 text-champagne"/>
+          <h2 className="text-xl font-medium text-bone">Solicitudes de registro verificadas</h2>
+        </div>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
+          El paciente registra el correo que prefiera y lo verifica en su cuenta. Este registro no
+          confirma por sí mismo su identidad clínica. Antes de aprobar, comprueba por un canal
+          independiente que es la persona de tu expediente. Ninguna solicitud abre un tratamiento automáticamente.
+        </p>
+        <div className="mt-6 space-y-4">
+          {requests.filter(request=>request.status==="pending").map(request=>(
+            <article key={request.id} className="rounded-2xl border border-line bg-background/50 p-5">
+              <p className="text-base font-medium text-bone">{request.display_name}</p>
+              <p className="mt-2 break-all text-sm text-muted">{request.email}</p>
+              <p className="mt-2 text-xs text-quiet">
+                Solicitado el {new Date(request.requested_at).toLocaleString("es-MX",{timeZone:"America/Merida"})} · Correo verificado por el proveedor de identidad
+              </p>
+              <form action={approveCareEnrollment} className="mt-5 flex flex-wrap items-end gap-4">
+                <input type="hidden" name="requestId" value={request.id}/>
+                <label className="flex max-w-xl items-start gap-3 text-xs leading-6 text-bone">
+                  <input required type="checkbox" name="identityChecked" value="confirmado" className="mt-1 h-4 w-4 accent-[#c5a46d]"/>
+                  Confirmo haber identificado personalmente al paciente y comprobado su correspondencia con el expediente clínico.
+                </label>
+                <button type="submit" className={btn}>Autorizar cuenta</button>
+              </form>
+              <form action={rejectCareEnrollment} className="mt-4">
+                <input type="hidden" name="requestId" value={request.id}/>
+                <button type="submit" className={outline}>Rechazar solicitud</button>
+              </form>
+            </article>
+          ))}
+          {requests.every(request=>request.status!=="pending") && (
+            <p className="text-sm text-muted">No hay solicitudes pendientes de revisión.</p>
+          )}
         </div>
       </section>
 
