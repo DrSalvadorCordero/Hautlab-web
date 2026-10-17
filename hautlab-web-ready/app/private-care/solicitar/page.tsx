@@ -62,6 +62,7 @@ export default async function RequestPatientCare() {
             </form>
           </>
         )}
+        <Link href="/private-care/activar" className="mt-6 inline-flex rounded-full border border-champagne/50 px-5 py-3 text-sm text-bone hover:border-champagne">Ya tengo mi código personal</Link>
         <div className="mt-8 flex items-start gap-3 border-t border-line pt-5 text-xs leading-6 text-quiet">
           <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-champagne" />
           Verificar el correo no implica autorización clínica. La identidad debe confirmarse por el profesional.
