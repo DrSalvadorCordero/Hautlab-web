@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, ClipboardList, LockKeyhole, ShieldCheck, UserPlus } from "lucide-react";
 import { getAdminAccess } from "@/lib/admin-access";
 import { ownerCareSnapshot } from "@/lib/server/private-care";
+import { CareInvitationIssuer } from "@/components/private-care/care-invitation-issuer";
 import {
   archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess,
   approveCareEnrollment, rejectCareEnrollment
@@ -60,6 +61,8 @@ export default async function PrivateCareAdminPage({
         {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
         {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
       </section>
+
+      <CareInvitationIssuer />
 
       <section className="grid gap-5 lg:grid-cols-2">
         <div className={panel}>
