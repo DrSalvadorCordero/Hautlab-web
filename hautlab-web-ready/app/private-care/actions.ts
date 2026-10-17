@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -34,6 +35,74 @@ function okOwner() {
 }
 function invalidOwner(): never {
   redirect(ownerPath + "?error=validacion");
+}
+
+
+export type CareInvitationResult = { code: string | null; error: string | null };
+export async function issueCareInvitation(
+  _previous: CareInvitationResult,
+  form: FormData
+): Promise<CareInvitationResult> {
+  const actor = await requireCareOwner();
+  const name = textValue(form, "displayName", 120);
+  const certified = textValue(form, "verifiedClinically", 14);
+  if (name.length < 2 || name.length > 120 || certified !== "confirmado") {
+    return { code: null, error: "Confirma la identidad por un canal clínico previamente registrado." };
+  }
+  // 192 bits of entropy: cannot be guessed by brute force. Never store or log plaintext.
+  const secret = randomBytes(24).toString("hex");
+  const hash = createHash("sha256").update(secret, "utf8").digest("hex");
+  try {
+    await careDb<unknown>("private_care_invitations", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        display_name: name,
+        token_hash: hash,
+        created_by_clerk_id: actor,
+        expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString()
+      }),
+    });
+    revalidatePath(ownerPath);
+    return { code: secret.match(/.{1,6}/g)?.join("-") ?? secret, error: null };
+  } catch {
+    return { code: null, error: "No se pudo generar el acceso. Intenta de nuevo." };
+  }
+}
+
+export type CareActivationResult = { error: string | null };
+export async function claimCareInvitation(
+  _previous: CareActivationResult,
+  form: FormData
+): Promise<CareActivationResult> {
+  const identity = await verifiedCareIdentity();
+  if (!identity) return { error: "Primero inicia sesión y verifica tu correo." };
+  if (textValue(form, "privacy", 12) !== "acepto") {
+    return { error: "Revisa y acepta el aviso de privacidad para activar tu cuenta." };
+  }
+  const raw = textValue(form, "code", 100).replace(/[\s-]/g, "").toLowerCase();
+  if (!/^[a-f0-9]{48}$/.test(raw)) {
+    return { error: "El código no es válido o ya expiró. Solicita uno nuevo a HAUTLAB." };
+  }
+  // A second account must not capture an already registered patient's clinical plan.
+  const existing = await getPrivateCarePatient();
+  if (existing) return { error: "Tu cuenta ya tiene acceso. Abre tu espacio privado." };
+
+  const hash = createHash("sha256").update(raw, "utf8").digest("hex");
+  try {
+    await careDb<unknown>("rpc/private_care_claim_invitation", {
+      method: "POST",
+      body: JSON.stringify({
+        p_token_hash: hash,
+        p_email: identity.email,
+        p_clerk_user_id: identity.clerkId,
+      }),
+    });
+  } catch {
+    // No existence oracle: never reveal whether a specific code, patient or email exists.
+    return { error: "No fue posible activar el acceso. Verifica el código o contacta a HAUTLAB." };
+  }
+  revalidatePath(patientPath);
+  redirect(patientPath);
 }
 
 export async function requestCareEnrollment(form: FormData) {
