@@ -76,7 +76,8 @@ export async function verifiedCareIdentity() {
   if (!primaryEmail || primaryEmail.verification?.status !== "verified") return null;
   const email = normalizePatientEmail(primaryEmail.emailAddress);
   if (!email) return null;
-  return { clerkId: session.userId, email };
+  const displayName = (user?.fullName ?? [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim().slice(0, 120);
+  return { clerkId: session.userId, email, displayName };
 }
 
 export async function getPrivateCarePatient() {

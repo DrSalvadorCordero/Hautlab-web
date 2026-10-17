@@ -102,6 +102,14 @@ async function main() {
     record(privateCareLocation.includes("/private-care/iniciar-sesion"), "Unauthenticated patient redirects to private sign-in");
   }
 
+  const careStartResponse = await request("/private-care/empezar");
+  const careStartHtml = await careStartResponse.text();
+  record(careStartResponse.status === 200, "Private Care single-link onboarding responds 200");
+  record(careStartHtml.includes("Tu cuidado, en un solo lugar."), "Private Care onboarding explains the single-link process");
+  record(careStartHtml.includes("Crear mi acceso") || careStartHtml.includes("registro no está disponible"), "Private Care entry offers registration or safe unavailability");
+  record(/noindex/i.test(careStartHtml), "Private Care invitation remains excluded from indexing");
+  record(!careStartHtml.includes("Adrián Loya"), "Private Care invitation includes no patient identity");
+
   const careRegistrationResponse = await request("/private-care/registro");
   const registrationHtml = await careRegistrationResponse.text();
   record(careRegistrationResponse.status === 200, "Private Care self-registration is reachable");
