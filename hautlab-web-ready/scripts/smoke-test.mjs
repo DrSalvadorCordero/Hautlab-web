@@ -77,6 +77,18 @@ async function main() {
     }
   }
 
+  const carePlanResponse = await request("/experiencia/mi-plan");
+  const carePlanHtml = await carePlanResponse.text();
+  record(carePlanResponse.status === 200, "/experiencia/mi-plan responde 200");
+  record(carePlanHtml.includes("Care Plan"), "Care Plan presenta el módulo interactivo");
+  record(carePlanHtml.includes("Calmar la piel"), "Care Plan muestra botones de fases");
+  record(carePlanHtml.includes("noindex"), "Care Plan de demostración no es indexable");
+  record(!carePlanHtml.includes("Adrián Loya"), "Care Plan no expone identidad de pacientes");
+
+  const experienceResponse = await request("/experiencia");
+  const experienceHtml = await experienceResponse.text();
+  record(experienceHtml.includes('href="/experiencia/mi-plan"'), "HAUTLAB Experience enlaza el Care Plan de demostración");
+
   const homeResponse = await request("/");
   const homeHtml = await homeResponse.text();
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
