@@ -30,7 +30,7 @@ function okOwner() {
   revalidatePath(ownerPath);
   redirect(ownerPath + "?ok=1");
 }
-function invalidOwner() {
+function invalidOwner(): never {
   redirect(ownerPath + "?error=validacion");
 }
 
