@@ -20,6 +20,9 @@ const field = "w-full min-h-11 rounded-xl border border-line bg-background p-3 t
 const btn = "inline-flex min-h-11 items-center justify-center rounded-full bg-champagne px-5 py-2 text-sm font-medium text-background transition hover:opacity-90";
 const outline = "inline-flex min-h-10 items-center justify-center rounded-full border border-line px-4 py-2 text-xs text-bone transition hover:border-champagne";
 const panel = "rounded-[1.7rem] border border-line bg-white/[0.035] p-6 sm:p-8";
+const inviteUrl = "https://www.hautlabmx.com/private-care/empezar";
+const inviteMessage = "Hola, te comparto tu acceso personal a HAUTLAB Private Care. Regístrate con el correo que elijas, verifícalo y envía tu solicitud aquí: " + inviteUrl + ". Yo verificaré tu identidad antes de habilitar tu plan.";
+const whatsappInviteUrl = "https://wa.me/?text=" + encodeURIComponent(inviteMessage);
 
 export default async function PrivateCareAdminPage({
   searchParams,
@@ -44,6 +47,16 @@ export default async function PrivateCareAdminPage({
           <span className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs text-muted"><LockKeyhole className="h-4 w-4 text-champagne"/> Sin publicación automática</span>
           <Link href="/private-care" className="text-xs text-champagne underline underline-offset-4">Portal del paciente</Link>
         </div>
+        <div className="mt-7 flex flex-wrap items-center gap-3">
+          <a href={whatsappInviteUrl} target="_blank" rel="noopener noreferrer"
+            className={btn}>Compartir invitación por WhatsApp</a>
+          <Link href="/private-care/empezar" target="_blank" rel="noopener noreferrer"
+            className={outline}>Ver la experiencia del paciente</Link>
+        </div>
+        <p className="mt-3 text-xs leading-6 text-quiet">
+          La invitación es genérica: no incluye diagnóstico, expediente ni información clínica.
+          El acceso individual se concede solo después de comprobar la identidad.
+        </p>
         {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
         {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
       </section>
