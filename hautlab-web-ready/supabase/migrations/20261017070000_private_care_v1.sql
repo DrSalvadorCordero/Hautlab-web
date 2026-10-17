@@ -37,6 +37,48 @@ create table public.private_care_plans (
   check (status != 'published' or (reviewed_by_clerk_id is not null and published_at is not null))
 );
 
+
+create unique index private_care_plan_revision_unique
+  on public.private_care_plans(patient_id, revision);
+create unique index private_care_one_published_plan
+  on public.private_care_plans(patient_id) where status = 'published';
+
+-- Publish is an atomic clinician approval; older versions cannot reappear by mistake.
+create function public.private_care_publish_plan(p_plan_id uuid, p_actor text)
+returns void
+language plpgsql security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_patient uuid;
+begin
+  if p_actor is null or char_length(p_actor) < 3 then
+    raise exception 'missing_clinician_identity';
+  end if;
+  select patient_id into v_patient
+    from public.private_care_plans
+    where id = p_plan_id and status = 'draft';
+  if not found then raise exception 'plan_not_draft'; end if;
+
+  perform 1 from public.private_care_patients
+    where id = v_patient and status = 'active' for update;
+  if not found then raise exception 'patient_not_active'; end if;
+
+  update public.private_care_plans
+    set status = 'archived', updated_by_clerk_id = p_actor, updated_at = now()
+    where patient_id = v_patient and status = 'published';
+
+  update public.private_care_plans
+    set status = 'published', reviewed_by_clerk_id = p_actor,
+        published_at = now(), updated_by_clerk_id = p_actor, updated_at = now()
+    where id = p_plan_id and status = 'draft';
+  if not found then raise exception 'plan_already_modified'; end if;
+end;
+$;
+
+revoke all on function public.private_care_publish_plan(uuid, text) from public, anon, authenticated;
+grant execute on function public.private_care_publish_plan(uuid, text) to service_role;
+
 create index private_care_plans_patient_status_idx
   on public.private_care_plans(patient_id, status, published_at desc);
 
@@ -100,7 +142,7 @@ begin
   else
     v_patient_id := new.patient_id;
     v_plan_id := new.plan_id;
-    v_actor := new.actor_clerk_id;
+    v_actor := case when TG_OP = 'UPDATE' then new.reviewed_by_clerk_id else new.actor_clerk_id end;
   end if;
   insert into public.private_care_audit(patient_id, plan_id, action, actor_clerk_id)
     values (v_patient_id, v_plan_id, TG_TABLE_NAME || ':' || lower(TG_OP), v_actor);
@@ -114,7 +156,7 @@ create trigger private_care_plan_audit after insert or update on public.private_
   for each row execute function public.private_care_audit_change();
 create trigger private_care_read_audit after insert on public.private_care_read_receipts
   for each row execute function public.private_care_audit_change();
-create trigger private_care_followup_audit after insert on public.private_care_followups
+create trigger private_care_followup_audit after insert or update on public.private_care_followups
   for each row execute function public.private_care_audit_change();
 
 -- Clinical records never leave through Supabase's browser roles.
