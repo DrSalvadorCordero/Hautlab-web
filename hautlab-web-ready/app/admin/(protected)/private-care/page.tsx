@@ -7,7 +7,7 @@ import { ownerCareSnapshot } from "@/lib/server/private-care";
 import { CareInvitationIssuer } from "@/components/private-care/care-invitation-issuer";
 import {
   archiveCarePlan, createCarePlan, enrollCarePatient, publishCarePlan, reviewCareReport, setCarePatientAccess,
-  approveCareEnrollment, rejectCareEnrollment, revokeCareInvitation
+  approveCareEnrollment, rejectCareEnrollment, revokeCareInvitation, approvePreparedCarePlan
 } from "@/app/private-care/actions";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export default async function PrivateCareAdminPage({
   const access = await getAdminAccess();
   if (!access.isOwner) redirect("/admin/experiencia");
   const { ok, error } = await searchParams;
-  const { patients, plans, followups, requests, invitations } = await ownerCareSnapshot();
+  const { patients, plans, followups, requests, invitations, preparedPlans } = await ownerCareSnapshot();
   const patientNames = new Map(patients.map(p => [p.id, p.display_name]));
   const planNames = new Map(plans.map(p => [p.id, p.title]));
   return (
@@ -83,6 +83,62 @@ export default async function PrivateCareAdminPage({
               </div>
             );
           }) : <p className="text-sm text-muted">Aún no se han emitido códigos.</p>}
+        </div>
+      </section>
+
+      <section className={panel}>
+        <h2 className="text-xl font-medium text-bone">Planes clínicos preparados para invitaciones</h2>
+        <p className="mt-3 text-sm leading-7 text-muted">
+          Los borradores están asociados al código de invitación, no a un correo supuesto.
+          Lee las indicaciones y apruébalas únicamente si siguen vigentes.
+          Si apruebas antes de que el paciente active su cuenta, el sistema publicará
+          este plan al verificar el código y registrar su consentimiento.
+        </p>
+        <div className="mt-6 space-y-5">
+          {preparedPlans.length ? preparedPlans.map(prepared => {
+            const invitation = invitations.find(item => item.id === prepared.invitation_id);
+            const inviteActive = Boolean(invitation && !invitation.redeemed_at && !invitation.revoked_at
+              && new Date(invitation.expires_at).getTime() > Date.now());
+            return (
+              <article key={prepared.id} className="rounded-2xl border border-line bg-background/45 p-5">
+                <p className="text-xs uppercase tracking-[.17em] text-champagne">
+                  {invitation?.display_name ?? "Invitación privada"} · {prepared.status === "approved" ? "Aprobado por médico" : "Borrador pendiente de revisión"}
+                </p>
+                <h3 className="mt-3 text-lg font-medium text-bone">{prepared.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-muted">{prepared.summary}</p>
+                <ol className="mt-5 space-y-5 border-t border-line pt-5">
+                  {prepared.phases.map((phase,i)=>(
+                    <li key={i}>
+                      <p className="text-sm font-medium text-bone">Fase {i+1}: {phase.title}</p>
+                      <ul className="ml-5 mt-2 list-disc space-y-2 text-xs leading-6 text-muted">
+                        {phase.items.map((item,j)=><li key={j}>{item}</li>)}
+                      </ul>
+                    </li>
+                  ))}
+                </ol>
+                {prepared.status === "draft" && inviteActive && (
+                  <form action={approvePreparedCarePlan} className="mt-6 space-y-4 border-t border-line pt-5">
+                    <input type="hidden" name="preparedPlanId" value={prepared.id}/>
+                    <label className="flex items-start gap-3 text-xs leading-6 text-bone">
+                      <input type="checkbox" required name="clinicianReviewed" value="confirmado"
+                        className="mt-1 h-4 w-4 accent-[#c5a46d]"/>
+                      Revisé personalmente todas las indicaciones, confirmé que corresponden
+                      al paciente de la invitación y autorizo publicar esta versión cuando active su cuenta.
+                    </label>
+                    <button type="submit" className={btn}>Revisado: autorizar publicación al activar</button>
+                  </form>
+                )}
+                {prepared.status === "approved" && (
+                  <p className="mt-5 text-xs text-emerald-200">
+                    Aprobado para su activación. No se hará visible sin verificación de cuenta y consentimiento.
+                  </p>
+                )}
+                {!inviteActive && prepared.status === "draft" && (
+                  <p className="mt-4 text-xs text-amber-200">La invitación ya no está disponible. Emite una nueva para preparar otro acceso.</p>
+                )}
+              </article>
+            );
+          }) : <p className="text-sm text-muted">No hay planes preparados en espera de activación.</p>}
         </div>
       </section>
 

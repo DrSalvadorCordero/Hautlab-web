@@ -13,6 +13,7 @@ import {
   requireCareOwner,
   validateCarePhases,
   type PrivateCarePatient,
+  type PrivateCarePreparedPlan,
   type PrivateCarePhase,
   type PrivateCarePlan,
   type PrivateCareFollowup,
@@ -39,6 +40,35 @@ function invalidOwner(): never {
 
 
 export type CareInvitationResult = { code: string | null; error: string | null };
+export async function approvePreparedCarePlan(form: FormData) {
+  const actor = await requireCareOwner();
+  const planId = validId(textValue(form, "preparedPlanId", 50));
+  if (!planId || textValue(form, "clinicianReviewed", 12) !== "confirmado") invalidOwner();
+  const plans = await careDb<PrivateCarePreparedPlan[]>(
+    "private_care_prepared_plans?id=eq." + planId +
+    "&status=eq.draft&select=id,invitation_id,title,summary,phases,status,approved_at,approved_by_clerk_id&limit=1"
+  );
+  const plan = plans[0];
+  if (!plan || !validateCarePhases(plan.phases)) invalidOwner();
+  const invitations = await careDb<Array<{ id: string }>>(
+    "private_care_invitations?id=eq." + plan.invitation_id +
+    "&redeemed_at=is.null&revoked_at=is.null&expires_at=gt." + encodeURIComponent(new Date().toISOString()) +
+    "&select=id&limit=1"
+  );
+  if (!invitations.length) redirect(ownerPath + "?error=invitacion");
+  await careDb<unknown>(
+    "private_care_prepared_plans?id=eq." + plan.id + "&status=eq.draft", {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        status: "approved", approved_by_clerk_id: actor,
+        approved_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }),
+    }
+  );
+  okOwner();
+}
+
 export async function issueCareInvitation(
   _previous: CareInvitationResult,
   form: FormData
