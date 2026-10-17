@@ -22,6 +22,7 @@ export type PrivateCareAccessRequest = {
 export type PrivateCareInvitation = { id: string; display_name: string; expires_at: string; redeemed_at: string | null; revoked_at: string | null };
 export type PrivateCarePreparedPlan = {
   id: string; invitation_id: string; title: string; summary: string;
+  internal_notes: string;
   phases: PrivateCarePhase[]; status: "draft" | "approved";
   approved_at: string | null; approved_by_clerk_id: string | null;
 };
@@ -155,10 +156,22 @@ export async function ownerCareSnapshot() {
     ),
     careDb<PrivateCareInvitation[]>("private_care_invitations?select=id,display_name,expires_at,redeemed_at,revoked_at&order=created_at.desc&limit=60"),
     careDb<PrivateCarePreparedPlan[]>(
-      "private_care_prepared_plans?select=id,invitation_id,title,summary,phases,status,approved_at,approved_by_clerk_id&order=created_at.desc&limit=60"
+      "private_care_prepared_plans?select=id,invitation_id,title,summary,internal_notes,phases,status,approved_at,approved_by_clerk_id&order=created_at.desc&limit=60"
     ),
   ]);
   return { patients, plans, followups, requests, invitations, preparedPlans };
+}
+
+// Clinical draft labels and internal remarks must never be copied into patient-facing content.
+export function hasInternalDraftMarker(value: string): boolean {
+  return /(borrador|notas? internas?|pendiente de revisi[oó]n m[eé]dica)/i.test(value);
+}
+
+export function containsPatientVisibleInternalNotes(plan: {
+  title: string; summary: string; phases: PrivateCarePhase[];
+}): boolean {
+  return [plan.title, plan.summary, ...plan.phases.flatMap(phase => [phase.title, ...phase.items])]
+    .some(hasInternalDraftMarker);
 }
 
 export function validateCarePhases(phases: PrivateCarePhase[]) {

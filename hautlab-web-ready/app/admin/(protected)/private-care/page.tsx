@@ -59,7 +59,7 @@ export default async function PrivateCareAdminPage({
           El acceso individual se concede solo después de comprobar la identidad.
         </p>
         {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
-        {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
+        {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error === "notas_internas" ? "El contenido para el paciente contiene marcas de borrador o notas internas. Sepáralas antes de autorizar." : "Verifica los datos o revisa si el paciente ya existe."}</p>}
       </section>
 
       <CareInvitationIssuer />
@@ -105,7 +105,21 @@ export default async function PrivateCareAdminPage({
                   {invitation?.display_name ?? "Invitación privada"} · {prepared.status === "approved" ? "Aprobado por médico" : "Borrador pendiente de revisión"}
                 </p>
                 <h3 className="mt-3 text-lg font-medium text-bone">{prepared.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted">{prepared.summary}</p>
+                <div className="mt-4 rounded-xl border border-line/80 p-4">
+                  <p className="text-xs uppercase tracking-[.15em] text-champagne">Resumen para el paciente</p>
+                  <p className="mt-2 text-sm leading-7 text-muted">{prepared.summary}</p>
+                </div>
+                {prepared.internal_notes && (
+                  <details className="mt-3 rounded-xl border border-amber-900/30 p-4">
+                    <summary className="cursor-pointer text-xs font-medium uppercase tracking-[.12em] text-amber-200">
+                      Notas médicas internas · Solo para ti
+                    </summary>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted">{prepared.internal_notes}</p>
+                    <p className="mt-3 text-xs leading-6 text-quiet">
+                      Estas notas no se envían al paciente ni forman parte de su resumen o plan publicado.
+                    </p>
+                  </details>
+                )}
                 <ol className="mt-5 space-y-5 border-t border-line pt-5">
                   {prepared.phases.map((phase,i)=>(
                     <li key={i}>
