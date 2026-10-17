@@ -12,6 +12,15 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "rinomodelacion-acido-hialuronico-limites-riesgos",
+    title: "Rinomodelación con ácido hialurónico: límites, riesgos y alternativas",
+    description: "Qué puede y qué no puede cambiar un relleno nasal, riesgos vasculares y oculares, señales de alarma y alternativas a la rinomodelación.",
+    category: "Medicina estética",
+    axis: "Proporción",
+    preparedAt: "2026-10-16",
+    readingTime: "10 min"
+  },
+  {
     slug: "acne-vs-rosacea-como-distinguir",
     title: "Acné vs rosácea: cómo distinguir brotes que se parecen",
     description: "Comedones, flushing, eritema y pápulas: claves para diferenciar acné y rosácea, reconocer coexistencia y saber cuándo consultar.",
