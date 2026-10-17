@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   careDb,
+  containsPatientVisibleInternalNotes,
   getPrivateCarePatient,
   verifiedCareIdentity,
   getCareAccessRequest,
@@ -46,10 +47,11 @@ export async function approvePreparedCarePlan(form: FormData) {
   if (!planId || textValue(form, "clinicianReviewed", 12) !== "confirmado") invalidOwner();
   const plans = await careDb<PrivateCarePreparedPlan[]>(
     "private_care_prepared_plans?id=eq." + planId +
-    "&status=eq.draft&select=id,invitation_id,title,summary,phases,status,approved_at,approved_by_clerk_id&limit=1"
+    "&status=eq.draft&select=id,invitation_id,title,summary,internal_notes,phases,status,approved_at,approved_by_clerk_id&limit=1"
   );
   const plan = plans[0];
   if (!plan || !validateCarePhases(plan.phases)) invalidOwner();
+  if (containsPatientVisibleInternalNotes(plan)) redirect(ownerPath + "?error=notas_internas");
   const invitations = await careDb<Array<{ id: string }>>(
     "private_care_invitations?id=eq." + plan.invitation_id +
     "&redeemed_at=is.null&revoked_at=is.null&expires_at=gt." + encodeURIComponent(new Date().toISOString()) +
@@ -275,6 +277,7 @@ export async function publishCarePlan(form: FormData) {
   );
   const plan = plans[0];
   if (!plan || !validateCarePhases(plan.phases)) invalidOwner();
+  if (containsPatientVisibleInternalNotes(plan)) redirect(ownerPath + "?error=notas_internas");
 
   // Single DB transaction archives the previous published version and approves the new one.
   await careDb<unknown>("rpc/private_care_publish_plan", {
