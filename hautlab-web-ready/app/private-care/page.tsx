@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
 import { AlertTriangle, Check, Circle, LockKeyhole, ShieldCheck } from "lucide-react";
-import { acceptCareConsent, acknowledgeCareItem, reportCareEvolution } from "@/app/private-care/actions";
+import { acceptCareConsent, acknowledgeCareItem, reportCareEvolution, revokeCareConsent } from "@/app/private-care/actions";
 import { patientCareSnapshot } from "@/lib/server/private-care";
 import { isClerkConfigured } from "@/lib/auth-config";
 
@@ -148,6 +148,13 @@ export default async function PrivateCareHome({ searchParams }: {
           <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-red-200"/>
           <p className="text-xs leading-6 text-muted">Si presentas dolor ocular, alteración de la visión, dificultad respiratoria o empeoramiento intenso, busca atención médica urgente. No esperes respuesta por este portal.</p>
         </aside>
+        {snapshot?.patient.consent_at && (
+          <form action={revokeCareConsent} className="mt-7">
+            <button type="submit" className="text-xs text-muted underline underline-offset-4 hover:text-bone">
+              Retirar consentimiento de uso del portal
+            </button>
+          </form>
+        )}
         <p className="mt-8 text-xs text-quiet">HAUTLAB Private Care · Acceso personal no transferible · <Link href="/aviso-de-privacidad" className="underline underline-offset-4">Privacidad</Link></p>
       </div>
     </main>
