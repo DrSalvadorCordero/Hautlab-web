@@ -18,3 +18,12 @@ Los pacientes pueden recibir una invitación clínica cuando todavía no tienen 
 - Ninguna consulta del paciente recupera planes preparados ni borradores.
 - Pruebas SQL transaccionales con rollback verifican que un plan no aprobado se copia como borrador y uno aprobado se copia como publicado, con auditoría.
 - Antes de emplearlo en atención clínica se debe validar el recorrido completo desde una cuenta real verificada (invitación, canje, consentimiento y aislamiento entre pacientes).
+
+## Separación de información médica interna y visible
+
+- `private_care_prepared_plans.internal_notes` almacena exclusivamente el razonamiento, el contexto diagnóstico, los textos `borrador` y los pendientes del médico. El campo no existe en `private_care_plans`, que es la tabla utilizada por el portal del paciente.
+- `summary`, `title` y `phases` son campos *potencialmente visibles* cuando el plan sea aprobado y la invitación canjeada. Nunca deben incluir anotaciones internas.
+- En el panel del propietario, las notas internas se muestran en una sección separada y expandible. El médico visualiza también el estado borrador/ aprobado y confirma personalmente su vigencia.
+- Los controles del servidor bloquean intentos de aprobar/publicar planes que contengan marcadores explícitos de trabajo interno como `borrador` o `pendiente de revisión médica` en los campos visibles.
+- La protección de datos sensibles se prueba en Supabase con transacciones revertidas: canjear una invitación con un plan aprobado copia únicamente las instrucciones aprobadas, sin las notas internas.
+- La aceptación del consentimiento sigue siendo necesaria para leer cualquier plan publicado.
