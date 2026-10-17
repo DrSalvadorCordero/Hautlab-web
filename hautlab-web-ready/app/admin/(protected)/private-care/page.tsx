@@ -59,7 +59,7 @@ export default async function PrivateCareAdminPage({
           El acceso individual se concede solo después de comprobar la identidad.
         </p>
         {ok && <p role="status" className="mt-4 text-sm text-emerald-300">Operación registrada.</p>}
-        {error && <p role="alert" className="mt-4 text-sm text-amber-200">Verifica los datos o revisa si el paciente ya existe.</p>}
+        {error && <p role="alert" className="mt-4 text-sm text-amber-200">{error === "notas_internas" ? "El contenido para el paciente contiene marcas de borrador o notas internas. Sepáralas antes de autorizar." : "Verifica los datos o revisa si el paciente ya existe."}</p>}
       </section>
 
       <CareInvitationIssuer />
