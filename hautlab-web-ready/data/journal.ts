@@ -7,6 +7,7 @@ export type JournalArticle = {
   category: string;
   axis: JournalAxis;
   preparedAt: string;
+  publishedAt?: string;
   readingTime: string;
 };
 
@@ -19,6 +20,7 @@ export const journalArticles: JournalArticle[] = [
     category: "Dermatología clínica",
     axis: "Piel",
     preparedAt: "2026-10-17",
+    publishedAt: "2026-10-18",
     readingTime: "9 min"
   },
   {
