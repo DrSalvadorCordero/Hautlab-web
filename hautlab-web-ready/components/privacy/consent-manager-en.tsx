@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { analyticsConfig } from "@/lib/analytics-config";
+import { analyticsConfig, isPublicAnalyticsPath, publicAnalyticsLocation } from "@/lib/analytics-config";
 import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
 import { buildAttributedWhatsAppUrl } from "@/lib/client/growth-attribution";
 
@@ -170,10 +171,12 @@ function disableTracking() {
 }
 
 export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentValue | null }) {
+  const pathname = usePathname();
+  const currentPath = pathname ?? "/en";
   const [consent, setConsent] = useState<ConsentValue | null>(initialConsent);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(initialConsent === null);
-  const tracked = useRef(false);
+  const tracked = useRef<string | null>(null);
 
   useEffect(() => {
     disableTracking();
@@ -190,20 +193,23 @@ export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentVa
   }, []);
 
   useEffect(() => {
-    if (!ready || consent !== "accepted") return;
+    if (!ready || consent !== "accepted" || !isPublicAnalyticsPath(currentPath)) {
+      tracked.current = null;
+      return;
+    }
 
     const gtag = enableGoogle();
     const fbq = enableMeta();
 
-    if (!tracked.current) {
+    if (tracked.current !== currentPath) {
       gtag("event", "page_view", {
-        page_path: window.location.pathname,
+        page_path: currentPath,
         page_title: document.title,
-        page_location: window.location.href,
+        page_location: publicAnalyticsLocation(window.location.origin, currentPath),
         page_language: "en"
       });
       fbq("track", "PageView");
-      tracked.current = true;
+      tracked.current = currentPath;
     }
 
     const trackClick = (event: MouseEvent) => {
@@ -244,7 +250,7 @@ export function ConsentManagerEn({ initialConsent }: { initialConsent: ConsentVa
 
     document.addEventListener("click", trackClick, true);
     return () => document.removeEventListener("click", trackClick, true);
-  }, [consent, ready]);
+  }, [consent, ready, currentPath]);
 
   function saveConsent(value: ConsentValue) {
     persistConsent(value);
