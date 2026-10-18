@@ -6,6 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { analyticsConfig, isPublicAnalyticsPath, publicAnalyticsLocation } from "@/lib/analytics-config";
+import { HAUTLAB_CONSENT_CHANGED } from "@/components/analytics/consented-public-telemetry";
 import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
 import { buildAttributedWhatsAppUrl } from "@/lib/client/growth-attribution";
 
@@ -369,6 +370,7 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
     }
 
     setConsent(value);
+    window.dispatchEvent(new Event(HAUTLAB_CONSENT_CHANGED));
     setOpen(false);
   }
 
