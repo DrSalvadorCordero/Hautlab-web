@@ -1,6 +1,23 @@
 # HAUTLAB Journal — Editorial roadmap
 
-Updated: 2026-09-29
+Updated: 2026-10-17
+
+## Current register — 17 October 2026
+
+The main editorial index has **10 article entries** spanning Piel, Proporción, Expresión and Fundamentos.
+The prepared dates in `data/journal.ts` are editorial preparation dates, **not evidence of medical approval**.
+Some entries already in `main` still carry an explicit review-pending notice; their status must be reconciled before any new claim of medical review.
+
+**Article reviewed and approved for publication — 18 October 2026:**
+`dermatitis-seborreica-por-que-vuelve` — *Dermatitis seborreica: por qué vuelve y qué significa controlarla*.
+Medical approval provided directly by Dr. Salvador Cordero on 18 October 2026.
+Distinct search intent: recurrence, face vs scalp, irritation versus disease activity, maintenance and steroid-sparing care.
+Includes questions and answers, evidence notes (AAD, DermNet, Cochrane and 2026 JEADV expert consensus), schema Article/FAQ/Breadcrumb, canonical, related content and consultation CTA.
+
+**Publication review:** The physician has approved this article for publication.
+References were checked against AAD, Cochrane and the 2026 JEADV EADV consensus.
+The article now carries the review date and `reviewedBy` structured data; `noindex` and draft text were removed.
+CI, preview and deployment must pass before claiming live publication. No real patient names, cases, prescriptions or identifiable images belong in the public Journal.
 
 ## Editorial rule
 
@@ -33,9 +50,9 @@ Editorial axes: **Piel / Proporción / Expresión / Fundamentos**.
    - Intent: sudden shedding vs patterned loss.
    - Scope: recognition and consultation threshold; no universal lab panel.
 
-2. **Dermatitis seborreica: por qué vuelve y qué significa realmente “controlarla”**
+2. **Dermatitis seborreica: por qué vuelve y qué significa realmente “controlarla”** — *Physician-approved 2026-10-18; publication ready*.
    - Intent: recurrence, scalp/face, maintenance.
-   - Avoid: product-list article.
+   - Avoid: product-list article; no personal patient cases or prescription.
 
 3. **Barrera cutánea: cuándo una rutina “activa” se vuelve parte del problema**
    - Intent: irritation, retinoids/acids/exfoliation, recovery.
