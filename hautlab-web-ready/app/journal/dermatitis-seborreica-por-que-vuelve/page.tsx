@@ -15,8 +15,6 @@ export const metadata: Metadata = {
   description:
     "Por qué recae la dermatitis seborreica de cara y cuero cabelludo, qué cambia entre un brote y el mantenimiento, y cuándo la irritación obliga a revisar el diagnóstico.",
   alternates: { canonical: pageUrl },
-  // Draft stays noindex until the clinician has reviewed and approved this article.
-  robots: { index: false, follow: false },
   openGraph: {
     title: article.title,
     description: article.description,
@@ -104,7 +102,9 @@ export default function SeborrheicDermatitisJournalPage() {
         description: article.description,
         inLanguage: "es-MX",
         dateCreated: article.preparedAt,
-        dateModified: article.preparedAt,
+        dateModified: "2026-10-18",
+        datePublished: "2026-10-18",
+        reviewedBy: { "@id": siteConfig.url + "#doctor" },
         author: { "@id": siteConfig.url + "#clinic" },
         publisher: { "@id": siteConfig.url + "#clinic" },
         isPartOf: { "@id": siteConfig.url + "#website" },
@@ -147,7 +147,7 @@ export default function SeborrheicDermatitisJournalPage() {
             </h1>
             <p className="mt-7 max-w-3xl text-lg leading-8 text-muted">{article.description}</p>
             <p className="mt-8 text-xs leading-6 text-quiet">
-              Preparado: 17 de octubre de 2026 · Revisión médica pendiente
+              Preparado: 17 de octubre de 2026 · Revisión médica: 18 de octubre de 2026
             </p>
           </div>
         </section>
@@ -364,8 +364,9 @@ export default function SeborrheicDermatitisJournalPage() {
                 de la eficacia.
               </p>
               <p className="mt-6 text-xs leading-6 text-quiet">
-                Revisión médica pendiente. Material informativo para público general;
-                no reproduce un expediente ni constituye una prescripción individual.
+                Revisado por el Dr. Salvador Cordero el 18 de octubre de 2026.
+                Material informativo para público general; no reproduce expedientes
+                ni constituye una prescripción individual.
               </p>
             </Card>
           </div>
