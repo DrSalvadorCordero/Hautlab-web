@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ConsentedPublicTelemetry } from "@/components/analytics/consented-public-telemetry";
 import { cookies, headers } from "next/headers";
 import { Inter, Playfair_Display } from "next/font/google";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
@@ -170,8 +169,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           </>
         )}
-        {!isInternalArea && <Analytics />}
-        {!isInternalArea && <SpeedInsights />}
+        {!isInternalArea && <ConsentedPublicTelemetry />}
       </body>
     </html>
   );
