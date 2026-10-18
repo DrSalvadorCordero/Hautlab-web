@@ -7,10 +7,22 @@ export type JournalArticle = {
   category: string;
   axis: JournalAxis;
   preparedAt: string;
+  publishedAt?: string;
   readingTime: string;
 };
 
 export const journalArticles: JournalArticle[] = [
+  {
+    slug: "dermatitis-seborreica-por-que-vuelve",
+    title: "Dermatitis seborreica: por qué vuelve y qué significa controlarla",
+    description:
+      "Cara, cuero cabelludo y recaídas: diferencia entre tratar el brote y mantener el control, riesgos del uso repetido de corticoides e irritación por productos.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-17",
+    publishedAt: "2026-10-18",
+    readingTime: "9 min"
+  },
   {
     slug: "rinomodelacion-acido-hialuronico-limites-riesgos",
     title: "Rinomodelación con ácido hialurónico: límites, riesgos y alternativas",
