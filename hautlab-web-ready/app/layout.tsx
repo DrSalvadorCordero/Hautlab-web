@@ -170,8 +170,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           </>
         )}
-        {!isPatientArea && <Analytics />}
-        {!isPatientArea && <SpeedInsights />}
+        {!isInternalArea && <Analytics />}
+        {!isInternalArea && <SpeedInsights />}
       </body>
     </html>
   );
