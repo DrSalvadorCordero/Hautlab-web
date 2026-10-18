@@ -74,7 +74,7 @@ const SAFE_HEALTH_REASONS = new Set([
 function safeHealthReason(detail?: string): string {
   if (!detail) return "none";
   if (SAFE_HEALTH_REASONS.has(detail)) return detail;
-  if (/^availability_(?:ok|verified):slots=\\d+$/.test(detail)) {
+  if (/^availability_(?:ok|verified):slots=\d+$/.test(detail)) {
     return detail.startsWith("availability_ok:") ? "availability_ok" : "availability_verified";
   }
   return "unclassified";
