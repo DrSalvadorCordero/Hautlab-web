@@ -1369,3 +1369,17 @@ export function isNimboReadyForAutobooking(config: NimboIntegrationConfig) {
       config.consultation_duration_minutes,
   );
 }
+
+// Dedicated clinical-note transport. Never export tokens or a generic authenticated proxy.
+export async function nimboClinicalRequest(
+  path: string, body?: { medical_note: { person_id: string; consultation_id: string; account_id: string; comment: string; note_type: "consultation"; created_at: null; voice_note_url: null } },
+) {
+  if (process.env.NIMBO_NOTES_ENABLED !== "true") throw new Error("notes_disabled");
+  const config = await getNimboConfig();
+  if (!config.enabled || !config.base_url || !config.doctor_account_id || !config.organization_id) throw new Error("notes_not_configured");
+  if (config.base_url !== process.env.NIMBO_NOTES_BASE_URL) throw new Error("notes_environment_mismatch");
+  const readAllowed = /^(people\/\d+|consultations\/\d+|medical_notes\?consultation_id=\d+&page=\d+&per_page=100)$/.test(path);
+  if (body ? path !== "medical_notes" : !readAllowed) throw new Error("notes_path_denied");
+  if (body && process.env.NIMBO_NOTES_WRITES_ENABLED !== "true") throw new Error("notes_writes_disabled");
+  return nimboFetch(config, path, { method: body ? "POST" : "GET", redirect: "error", ...(body ? { body: JSON.stringify(body) } : {}) });
+}

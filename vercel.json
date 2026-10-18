@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "node -e \"const u=process.env.VERCEL_PROJECT_PRODUCTION_URL||''; process.exit(/(^|\\.)hautlabmx\\.com$|^hautlabmxcom\\.vercel\\.app$/.test(u)?1:0)\""
+  "ignoreCommand": "node -e \"const u=process.env.VERCEL_PROJECT_PRODUCTION_URL||''; process.exit(/(^|\\.)hautlabmx\\.com$|^hautlabmxcom\\.vercel\\.app$/.test(u)?1:0)\"",
+  "git": {
+    "deploymentEnabled": {
+      "feat/nimbo-clinical-note-approval": false
+    }
+  }
 }
