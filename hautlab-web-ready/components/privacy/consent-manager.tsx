@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { analyticsConfig, generalTrackingPaths } from "@/lib/analytics-config";
+import { analyticsConfig, isPublicAnalyticsPath, publicAnalyticsLocation } from "@/lib/analytics-config";
+import { HAUTLAB_CONSENT_CHANGED } from "@/components/analytics/consented-public-telemetry";
 import { CONSENT_COOKIE_NAME, parseConsentValue, type ConsentValue } from "@/lib/consent";
 import { buildAttributedWhatsAppUrl } from "@/lib/client/growth-attribution";
 
@@ -207,7 +208,7 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
   useEffect(() => {
     if (!ready) return;
 
-    const isGeneralPage = generalTrackingPaths.has(currentPath);
+    const isGeneralPage = isPublicAnalyticsPath(currentPath);
 
     if (consent !== "accepted" || !isGeneralPage) {
       setGoogleConsent("denied");
@@ -231,7 +232,7 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
     if (lastTrackedPath.current !== currentPath) {
       sendGoogleEvent("page_view", {
         page_title: document.title,
-        page_location: window.location.href
+        page_location: publicAnalyticsLocation(window.location.origin, currentPath)
       });
       fbq("track", "PageView");
       lastTrackedPath.current = currentPath;
@@ -369,6 +370,7 @@ export function ConsentManager({ initialConsent }: { initialConsent: ConsentValu
     }
 
     setConsent(value);
+    window.dispatchEvent(new Event(HAUTLAB_CONSENT_CHANGED));
     setOpen(false);
   }
 

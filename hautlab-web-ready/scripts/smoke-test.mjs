@@ -173,6 +173,8 @@ async function main() {
   record(hasLanguageAlternate(homeHtml, "x-default", productionOrigin), "la portada declara x-default");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
+  record(!homeHtml.includes("va.vercel-scripts.com"), "Vercel Web Analytics no carga antes de aceptar cookies");
+  record(!homeHtml.includes("www.googletagmanager.com/gtag/js"), "Google Analytics no carga antes de aceptar cookies");
   record(!homeHtml.includes("Physician"), "el schema no infla la acreditación profesional");
   record(homeHtml.includes("MedicalClinic"), "la portada identifica la clínica con schema");
 
