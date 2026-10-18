@@ -7,7 +7,8 @@
       "fix/*": false,
       "chore/*": false,
       "docs/*": false,
-      "dependabot/*": false
+      "dependabot/*": false,
+      "feat/nimbo-clinical-note-approval": false
     }
   },
   "ignoreCommand": "node -e \"const u=process.env.VERCEL_PROJECT_PRODUCTION_URL||''; process.exit(/(^|\\.)hautlabmx\\.com$|^hautlabmxcom\\.vercel\\.app$/.test(u)?1:0)\"",
