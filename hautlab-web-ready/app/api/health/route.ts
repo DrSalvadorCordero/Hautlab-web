@@ -57,6 +57,29 @@ function check(status: Check["status"], detail?: string, latencyMs?: number): Ch
   return { status, ...(detail ? { detail } : {}), ...(latencyMs !== undefined ? { latencyMs } : {}), checkedAt: new Date().toISOString() };
 }
 
+// Only known, fixed operational labels may reach shared production logs.
+// Nimbo errors can contain upstream text and must never be logged verbatim.
+const SAFE_HEALTH_REASONS = new Set([
+  "nextjs_runtime", "webhook_configured", "verify_token_missing",
+  "openai_configured", "openai_key_missing", "supabase_configured",
+  "supabase_configuration_missing", "automation_emergency_stop_active",
+  "automation_not_in_automatic_mode", "multiple_recent_outbound_failures",
+  "multiple_recent_operator_alert_failures", "automatic_conversation_overdue",
+  "no_recent_operational_anomalies_detected",
+  "whatsapp_operational_probe_unavailable", "autobooking_not_ready",
+  "availability_not_verified", "availability_probe_failed",
+  "availability_probe_stale_or_invalid",
+]);
+
+function safeHealthReason(detail?: string): string {
+  if (!detail) return "none";
+  if (SAFE_HEALTH_REASONS.has(detail)) return detail;
+  if (/^availability_(?:ok|verified):slots=\d+$/.test(detail)) {
+    return detail.startsWith("availability_ok:") ? "availability_ok" : "availability_verified";
+  }
+  return "unclassified";
+}
+
 export async function GET(request: NextRequest) {
   const started = Date.now();
   const deep = shouldRunDeepHealthProbe({
@@ -131,6 +154,11 @@ export async function GET(request: NextRequest) {
     deployment: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? null,
     components: isAuthorized ? components : Object.fromEntries(Object.entries(components).map(([key, value]) => [key, { status: value.status, checkedAt: value.checkedAt }])),
   };
-  console.info("hautlab_health_probe", { status, deep: deep && isAuthorized, components: Object.fromEntries(Object.entries(components).map(([k,v]) => [k,v.status])) });
+  console.info("hautlab_health_probe", {
+    status,
+    deep: deep && isAuthorized,
+    components: Object.fromEntries(Object.entries(components).map(([name, value]) => [name, value.status])),
+    reasons: Object.fromEntries(Object.entries(components).map(([name, value]) => [name, safeHealthReason(value.detail)])),
+  });
   return NextResponse.json(body, { status: status === "down" ? 503 : 200, headers: { "Cache-Control": "no-store, max-age=0" } });
 }
