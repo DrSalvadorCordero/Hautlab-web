@@ -255,3 +255,23 @@ export async function listAttendanceAudits(input: { userId?: string; limit?: num
   });
   return databaseRequest<AttendanceAuditRow[]>(`attendance_audit?${query}`);
 }
+
+export async function logAttendanceExport(input: {
+  actorUserId: string;
+  rangeFrom: string;
+  rangeTo: string;
+  exportedProfileCount: number;
+  exportedShiftCount: number;
+}) {
+  return databaseRequest<unknown>("attendance_export_audit", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      actor_user_id: input.actorUserId,
+      range_from: input.rangeFrom,
+      range_to: input.rangeTo,
+      exported_profile_count: input.exportedProfileCount,
+      exported_shift_count: input.exportedShiftCount
+    })
+  });
+}
