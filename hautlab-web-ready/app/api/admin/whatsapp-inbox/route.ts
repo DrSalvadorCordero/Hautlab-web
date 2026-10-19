@@ -148,6 +148,8 @@ const inboxConversationSelect =
 async function listOperationalInboxConversations() {
   const rows: InboxConversationRow[] = [];
   const pageSize = 500;
+  // Include recent inbound-only conversations even if no handoff flag exists.
+  const overdueCutoff = encodeURIComponent(new Date(Date.now() - 72 * 60 * 60_000).toISOString());
   let cursor: string | null = null;
 
   for (;;) {
@@ -155,7 +157,7 @@ async function listOperationalInboxConversations() {
       ? `&id=gt.${encodeURIComponent(cursor)}`
       : "";
     const page: InboxConversationRow[] = await supabaseJson<InboxConversationRow[]>(
-      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation))${cursorFilter}&order=id.asc&limit=${pageSize}`,
+      `wa_conversations?select=${inboxConversationSelect}&closed_at=is.null&outcome=is.null&or=(clinical_risk.eq.true,risk_level.eq.urgent,bot_paused.eq.true,handoff_status.in.(pending,assigned),assigned_to.not.is.null,appointment_status.in.(collecting,pending_confirmation),last_patient_message_at.gte.${overdueCutoff})${cursorFilter}&order=id.asc&limit=${pageSize}`,
     );
     rows.push(...page);
     if (page.length < pageSize) break;
