@@ -320,20 +320,48 @@ export default function CabinaPage() {
         </div>
       </section>
 
-      <section className="border-b border-line bg-soft/25 py-20 lg:py-28">
+      <section aria-labelledby="cabina-archivo-heading" className="border-b border-line bg-soft/25 py-14 sm:py-20 lg:py-24">
         <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
-          <p className="text-xs uppercase tracking-[0.2em] text-champagne">Archivo visual</p><h2 className="mt-4 max-w-4xl font-serif text-[clamp(2.7rem,5vw,4.8rem)] leading-[.94] tracking-[-.055em] text-bone">Fotografía real, clínica y editorial, sin recurrir a clichés de spa.</h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {cabinaContent.gallery.map((item) => (
-              <div key={item.id} className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] border border-line bg-white/[0.02]">
+          <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,.75fr)] md:items-end md:gap-10">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-champagne">Archivo visual</p>
+              <h2 id="cabina-archivo-heading" className="mt-4 max-w-3xl font-serif text-[clamp(2.25rem,8vw,4.8rem)] leading-[1.02] tracking-[-.055em] text-bone">Precisión en cada detalle.</h2>
+            </div>
+            <p className="max-w-lg text-sm leading-7 text-muted md:pb-1 md:text-base">
+              Un recorrido editorial por la atención, los protocolos y la atmósfera de HAUTLAB.
+            </p>
+          </div>
+
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-3">
+            {cabinaContent.gallery.map((item, index) => (
+              <figure
+                key={item.id}
+                className={`group relative overflow-hidden rounded-[1.25rem] border border-line bg-[#171512] ${
+                  index === 0
+                    ? "col-span-2 aspect-[5/4] lg:row-span-2 lg:aspect-auto lg:min-h-[460px]"
+                    : index === cabinaContent.gallery.length - 1
+                      ? "col-span-2 aspect-[16/9] lg:col-span-1 lg:aspect-[4/3]"
+                      : "aspect-[4/5] sm:aspect-[4/3]"
+                }`}
+              >
                 {item.path ? (
-                  <Image src={item.path} alt={item.label} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover" />
+                  <Image
+                    src={item.path}
+                    alt={item.label}
+                    fill
+                    sizes={index === 0 ? "(max-width: 1024px) 100vw, 66vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw"}
+                    className="object-cover transition-transform duration-700 motion-safe:group-hover:scale-[1.03]"
+                  />
                 ) : (
-                  <div className="absolute inset-0 grid place-items-center p-5 text-center"><div><ImageIcon className="mx-auto h-5 w-5 text-champagne" /><p className="mt-3 text-xs leading-5 text-muted">{item.label}</p></div></div>
+                  <div className="absolute inset-0 grid place-items-center text-muted"><ImageIcon className="h-6 w-6" /></div>
                 )}
-              </div>
+                <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent px-4 pb-4 pt-12 text-[11px] font-medium uppercase tracking-[0.14em] text-bone sm:px-5 sm:pb-5">
+                  {item.label}
+                </figcaption>
+              </figure>
             ))}
           </div>
+          <p className="mt-5 text-xs leading-5 text-quiet">Imágenes editoriales de referencia. No representan resultados clínicos.</p>
         </div>
       </section>
 

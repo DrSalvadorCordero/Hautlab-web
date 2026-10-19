@@ -40,14 +40,36 @@
   "reviews": [],
   "reviewsPlaceholder": "Las opiniones verificadas de pacientes de la Cabina Dermatocosmética serán publicadas próximamente.",
   "gallery": [
-    { "id": "karen-portrait", "label": "Retrato profesional de Karen", "path": "/visuals/cabina/karen-portrait.webp" },
-    { "id": "cabin-preparation", "label": "Karen preparando la cabina", "path": "/visuals/cabina/cabin-preparation.webp" },
-    { "id": "non-invasive-protocol", "label": "Karen realizando un protocolo no invasivo", "path": "/visuals/cabina/non-invasive-protocol.webp" },
-    { "id": "space-details", "label": "Detalles del espacio", "path": "/visuals/cabina/space-details.webp" },
-    { "id": "organized-products", "label": "Productos organizados", "path": "/visuals/cabina/organized-products.webp" },
-    { "id": "prepared-bed", "label": "Camilla preparada", "path": "/visuals/cabina/prepared-bed.webp" },
-    { "id": "hautlab-signage", "label": "Fachada o señalización de HAUTLAB", "path": "/visuals/cabina/hautlab-signage.webp" },
-    { "id": "medical-backing", "label": "Imagen del Dr. Salvador Cordero para respaldo médico", "path": "/visuals/dr-salvador-cordero-portrait-final.webp" }
+    {
+      "id": "karen-portrait",
+      "label": "Atención dermatocosmética",
+      "path": "/visuals/cabina/karen-portrait.webp"
+    },
+    {
+      "id": "non-invasive-protocol",
+      "label": "Cuidado facial",
+      "path": "/visuals/cabina/non-invasive-protocol.webp"
+    },
+    {
+      "id": "space-details",
+      "label": "Entorno de atención",
+      "path": "/visuals/cabina/space-details.webp"
+    },
+    {
+      "id": "organized-products",
+      "label": "Preparación de protocolos",
+      "path": "/visuals/cabina/organized-products.webp"
+    },
+    {
+      "id": "prepared-bed",
+      "label": "Espacio preparado",
+      "path": "/visuals/cabina/prepared-bed.webp"
+    },
+    {
+      "id": "hautlab-signage",
+      "label": "Identidad HAUTLAB",
+      "path": "/visuals/cabina/hautlab-signage.webp"
+    }
   ],
-  "updatedAt": "2026-07-22"
+  "updatedAt": "2026-10-19"
 }
