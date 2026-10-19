@@ -68,6 +68,21 @@ export const treatmentFamilies = [
 
 export const testimonials = [
   {
+    name: "M. B.",
+    detail: "Encuesta de satisfacción",
+    quote: "Excelente médico, muy buena atención."
+  },
+  {
+    name: "E. A.",
+    detail: "Encuesta de satisfacción",
+    quote: "Excelente atención del Dr."
+  },
+  {
+    name: "I. P.",
+    detail: "Encuesta de satisfacción",
+    quote: "Me encantó el tratamiento."
+  },
+  {
     name: "Jeff",
     detail: "Patient feedback",
     quote: "The three facial areas did very well. If you didn’t know they were there before, you wouldn’t know."
