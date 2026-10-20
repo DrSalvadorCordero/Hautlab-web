@@ -1,0 +1,30 @@
+name: WhatsApp dedupe PostgreSQL concurrency
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  postgres-concurrency:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic-test-only
+          POSTGRES_DB: dedupe_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Concurrent reservations on independent connections (synthetic data)
+        env:
+          HAUTLAB_TEST_POSTGRES_URL: postgresql://postgres:synthetic-test-only@127.0.0.1:5432/dedupe_test
+        run: node --test hautlab-web-ready/scripts/whatsapp-claim-postgres.test.mjs

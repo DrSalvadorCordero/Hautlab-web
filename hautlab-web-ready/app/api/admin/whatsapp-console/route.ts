@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
 import {
   exceedsContentLength,
   isSameOriginRequest,
@@ -127,8 +128,8 @@ function noStoreJson(value: unknown, init?: ResponseInit) {
 
 export async function GET() {
   const access = await getAdminAccess();
-  if (!access.allowed) {
-    return noStoreJson({ error: "unauthorized" }, { status: 401 });
+  if (!canManageRestrictedAdmin(access)) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
   }
 
   try {
@@ -205,7 +206,7 @@ export async function GET() {
     ]);
 
     return noStoreJson({
-      canEdit: Boolean(access.isOwner || access.organizationRole === "org:admin"),
+      canEdit: true,
       routerModel: process.env.HAUTLAB_ROUTER_MODEL?.trim() || "gpt-5-mini",
       safetyInstructions: WHATSAPP_SAFETY_INSTRUCTIONS.trim(),
       settings: settings[0] ?? {
@@ -228,7 +229,7 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   const access = await getAdminAccess();
-  const canEdit = Boolean(access.isOwner || access.organizationRole === "org:admin");
+  const canEdit = canManageRestrictedAdmin(access);
   if (!canEdit) return noStoreJson({ error: "forbidden" }, { status: 403 });
   if (!isSameOriginRequest(request)) {
     return noStoreJson({ error: "invalid_origin" }, { status: 403 });

@@ -16,6 +16,7 @@ export type OperationalStateInput = {
   appointment_status: string | null;
   appointment_requested_at: string | null;
   last_patient_message_at: string | null;
+  last_team_message_at?: string | null;
   last_message_at: string | null;
   closed_at: string | null;
   outcome: string | null;
@@ -53,6 +54,23 @@ export function deriveConversationOperationalState(
     Boolean(row.assigned_to)
   ) {
     return "human_pending";
+  }
+
+  // An unanswered incoming message is a human follow-up even if the
+  // handoff workflow never set its status. Only score recent conversations;
+  // do not resurrect old leads or send automated messages here.
+  if (row.last_team_message_at !== undefined) {
+    const inboundAt = Date.parse(row.last_patient_message_at ?? "");
+    const outboundAt = Date.parse(row.last_team_message_at ?? "");
+    const age = now - inboundAt;
+    if (
+      Number.isFinite(inboundAt) &&
+      age >= 15 * 60_000 &&
+      age <= 72 * 60 * 60_000 &&
+      (!Number.isFinite(outboundAt) || inboundAt > outboundAt)
+    ) {
+      return "human_pending";
+    }
   }
 
   if (

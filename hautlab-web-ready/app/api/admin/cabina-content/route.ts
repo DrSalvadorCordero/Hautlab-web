@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { cabinaContent, cabinaPayloadSchema } from "@/lib/cabina-content";
 import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
+import { safeContentPublishingBranch } from "@/lib/content-publishing-policy";
 import { exceedsContentLength, isSameOriginRequest } from "@/lib/server/admin-request-security";
 
 export const runtime = "nodejs";
 
 const repository = process.env.HAUTLAB_CONTENT_REPOSITORY ?? "DrSalvadorCordero/Hautlab-web";
-const branch = process.env.HAUTLAB_CONTENT_BRANCH ?? "main";
+const branch = safeContentPublishingBranch(process.env.HAUTLAB_CONTENT_BRANCH);
 const token = process.env.HAUTLAB_CONTENT_GITHUB_TOKEN?.trim();
 const root = "hautlab-web-ready/data";
 const maxBodyBytes = 64 * 1024;
@@ -47,9 +49,12 @@ async function responseJson<T>(response: Response, label: string) {
   return (await response.json()) as T;
 }
 
-async function createContentCommit(contents: Array<{ path: string; content: string }>) {
+async function createContentCommit(
+  targetBranch: string,
+  contents: Array<{ path: string; content: string }>
+) {
   const ref = await responseJson<{ object?: { sha?: string } }>(
-    await githubRequest(`git/ref/heads/${branch}`),
+    await githubRequest(`git/ref/heads/${targetBranch}`),
     "content_ref_read"
   );
   const parentSha = ref.object?.sha;
@@ -99,7 +104,7 @@ async function createContentCommit(contents: Array<{ path: string; content: stri
   if (!commit.sha) throw new Error("content_new_commit_sha_missing");
 
   await responseJson(
-    await githubRequest(`git/refs/heads/${branch}`, {
+    await githubRequest(`git/refs/heads/${targetBranch}`, {
       method: "PATCH",
       body: JSON.stringify({ sha: commit.sha, force: false })
     }),
@@ -114,16 +119,18 @@ export async function GET() {
   const { services, faq, ...core } = cabinaContent;
   return noStoreJson({
     content: { core, services, faq },
-    publishingConfigured: Boolean(token),
+    publishingConfigured: Boolean(token && branch),
     branch
   });
 }
 
 export async function PUT(request: Request) {
   const access = await getAdminAccess();
-  const canPublish = access.isOwner || access.organizationRole === "org:admin";
-  if (!canPublish) return noStoreJson({ error: "forbidden" }, { status: 403 });
+  if (!canManageRestrictedAdmin(access)) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
+  }
   if (!isSameOriginRequest(request)) return noStoreJson({ error: "invalid_origin" }, { status: 403 });
+  if (!branch) return noStoreJson({ error: "publishing_branch_unsafe" }, { status: 503 });
   if (!token) return noStoreJson({ error: "publishing_not_configured" }, { status: 503 });
   if (exceedsContentLength(request, maxBodyBytes)) {
     return noStoreJson({ error: "payload_too_large" }, { status: 413 });
@@ -146,7 +153,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await createContentCommit([
+    await createContentCommit(branch, [
       { path: files.core, content: jsonText(parsed.data.core) },
       { path: files.services, content: jsonText(parsed.data.services) },
       { path: files.faq, content: jsonText(parsed.data.faq) }

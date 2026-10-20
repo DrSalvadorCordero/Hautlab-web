@@ -149,3 +149,24 @@ test("human handoff remains paused until an operator explicitly resumes it", () 
   assert.match(source, /const mode = await currentAutomationMode\(conversation\.id\)/);
   assert.doesNotMatch(source, /resumeAfterHumanReplyIfSafe|canResumeAfterHumanReply/);
 });
+
+
+test("outbound automatic replies are protected by an atomic per-inbound claim", () => {
+  const source = readFileSync(new URL("../lib/whatsapp-orchestrator.ts", import.meta.url), "utf8");
+  assert.match(source, /rpc\/wa_claim_auto_reply/);
+  assert.match(source, /return sendClaimedReply\(/);
+  assert.match(source, /if \(!input\.metaMessageId\) return;/);
+  assert.match(source, /wa_auto_reply_claims\?id=eq\./);
+  assert.match(source, /sent_at: new Date\(\)\.toISOString\(\)/);
+  assert.equal((source.match(/sendWhatsAppText\(/g) ?? []).length, 8);
+  assert.equal((source.match(/sendWhatsAppUnclaimedText\(/g) ?? []).length, 2);
+});
+
+// Distinct questions may legitimately receive the same price or scheduling text.
+test("new turns are not discarded by a reply-body time window", () => {
+  const source = readFileSync(new URL("../lib/whatsapp-orchestrator.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /recentlySentIdenticalAutomatedReply/);
+  const store = source.slice(source.indexOf("async function storeSentMessage("), source.indexOf("function effectiveMode("));
+  assert.ok(store.indexOf("if (!input.metaMessageId) return;") < store.indexOf("last_team_message_at:"));
+  assert.equal((source.match(/last_team_message_at: new Date\(\)\.toISOString\(\)/g) ?? []).length, 1);
+});

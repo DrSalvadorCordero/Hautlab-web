@@ -96,6 +96,31 @@ function normalizeMessage(value: unknown): MetaMessage | null {
   return null;
 }
 
+type MetaProviderPayload = {
+  messages?: Array<{ id?: string }>;
+  error?: { code?: unknown; error_subcode?: unknown; fbtrace_id?: unknown };
+  fbtrace_id?: unknown;
+};
+
+function safeMetaNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function safeMetaTrace(value: unknown): string | null {
+  // A Meta trace ID is operational metadata, not a phone or message identifier.
+  return typeof value === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(value) ? value : null;
+}
+
+function metaSendLog(outcome: "accepted" | "rejected" | "missing_message_id" | "transport_error", httpStatus: number | null, payload?: MetaProviderPayload) {
+  return {
+    outcome,
+    httpStatus,
+    errorCode: safeMetaNumber(payload?.error?.code),
+    errorSubcode: safeMetaNumber(payload?.error?.error_subcode),
+    fbtraceId: safeMetaTrace(payload?.error?.fbtrace_id ?? payload?.fbtrace_id),
+  };
+}
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const secret = await getRelaySecret();
@@ -127,37 +152,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "whatsapp_not_configured" }, { status: 503 });
   }
 
-  const response = await fetch(
-    `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messaging_product: "whatsapp", to, ...message }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
       },
-      body: JSON.stringify({ messaging_product: "whatsapp", to, ...message }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    },
-  );
+    );
+  } catch (error) {
+    // Never log the exception: URLs, headers or bodies may contain sensitive data.
+    console.error("whatsapp_meta_send", metaSendLog("transport_error", null));
+    throw error;
+  }
 
-  const providerPayload = (await response.json().catch(() => ({}))) as {
-    messages?: Array<{ id?: string }>;
-    error?: { code?: unknown };
-  };
-
+  const providerPayload = (await response.json().catch(() => ({}))) as MetaProviderPayload;
   if (!response.ok) {
-    console.error("[whatsapp-send-relay] provider send failed", {
-      status: response.status,
-      code: providerPayload.error?.code ?? null,
-    });
+    console.error("whatsapp_meta_send", metaSendLog("rejected", response.status, providerPayload));
     return NextResponse.json({ error: "provider_send_failed" }, { status: 502 });
   }
 
   const messageId = providerPayload.messages?.[0]?.id ?? null;
   if (!messageId) {
+    console.error("whatsapp_meta_send", metaSendLog("missing_message_id", response.status, providerPayload));
     return NextResponse.json({ error: "provider_message_id_missing" }, { status: 502 });
   }
+
+  console.info("whatsapp_meta_send", metaSendLog("accepted", response.status, providerPayload));
 
   return NextResponse.json(
     { sent: true, messageId },

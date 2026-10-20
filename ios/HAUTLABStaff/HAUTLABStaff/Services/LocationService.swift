@@ -67,13 +67,11 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         activeRegion = region
         manager.startMonitoring(for: region)
         manager.requestState(for: region)
-        manager.startMonitoringSignificantLocationChanges()
     }
 
     func stopGeofence() {
         if let activeRegion { manager.stopMonitoring(for: activeRegion) }
         activeRegion = nil
-        manager.stopMonitoringSignificantLocationChanges()
         isInsideGeofence = nil
     }
 

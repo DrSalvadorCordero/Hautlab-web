@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { isClerkConfigured } from "@/lib/auth-config";
 import { geoHeaders } from "@/lib/geo-personalization";
 
-const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)"]);
+const isProtectedRoute = createRouteMatcher(["/admin((?!/iniciar-sesion).*)", "/private-care((?!/(?:iniciar-sesion|registro|empezar)(?:/|$)).*)"]);
 const isClerkRoute = createRouteMatcher([
   "/admin/:path*",
+  "/private-care/:path*",
   "/api/admin/:path*",
   "/__clerk/:path*",
 ]);
@@ -24,7 +25,7 @@ const configuredMiddleware = clerkMiddleware(
       const { userId } = await auth();
 
       if (!userId) {
-        const signInUrl = new URL("/admin/iniciar-sesion", request.url);
+        const signInUrl = new URL(request.nextUrl.pathname.startsWith("/private-care") ? "/private-care/iniciar-sesion" : "/admin/iniciar-sesion", request.url);
         const returnTo = `${request.nextUrl.pathname}${request.nextUrl.search}`;
         signInUrl.searchParams.set("redirect_url", returnTo);
         return NextResponse.redirect(signInUrl);
@@ -55,5 +56,5 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 }
 
 export const config = {
-  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/api/:path*", "/__clerk/:path*"]
+  matcher: ["/", "/en", "/en/:path*", "/admin/:path*", "/private-care/:path*", "/api/:path*", "/__clerk/:path*"]
 };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
 import { getPaymentOrder } from "@/lib/payments/payment-db";
 import {
   inspectMercadoPagoOrderRecovery,
@@ -47,8 +48,8 @@ function publicOrder(
 
 export async function POST(request: NextRequest) {
   const access = await getAdminAccess();
-  if (!access.allowed) {
-    return noStoreJson({ error: "unauthorized" }, { status: 401 });
+  if (!canManageRestrictedAdmin(access)) {
+    return noStoreJson({ error: "forbidden" }, { status: 403 });
   }
   if (!isSameOriginRequest(request)) {
     return noStoreJson({ error: "invalid_origin" }, { status: 403 });

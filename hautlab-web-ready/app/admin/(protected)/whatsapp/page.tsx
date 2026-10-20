@@ -2,8 +2,13 @@ import { WhatsAppCommandConsole } from "@/components/admin/whatsapp-command-cons
 import { WhatsAppLiveInbox } from "@/components/admin/whatsapp-live-inbox";
 import { NimboIntegrationCard } from "@/components/admin/nimbo-integration-card";
 import { VoiceReceptionLab } from "@/components/admin/voice-reception-lab";
+import { getAdminAccess } from "@/lib/admin-access";
+import { canManageRestrictedAdmin } from "@/lib/admin-permissions";
 
-export default function WhatsAppAdminPage() {
+export default async function WhatsAppAdminPage() {
+  const access = await getAdminAccess();
+  const canManageCore = canManageRestrictedAdmin(access);
+
   return (
     <div className="space-y-10">
       <section>
@@ -19,13 +24,13 @@ export default function WhatsAppAdminPage() {
         </p>
       </section>
 
-      <VoiceReceptionLab />
+      {canManageCore ? <VoiceReceptionLab /> : null}
 
-      <NimboIntegrationCard />
+      {canManageCore ? <NimboIntegrationCard /> : null}
 
       <WhatsAppLiveInbox />
 
-      <section className="border-t border-line pt-9">
+      {canManageCore ? <section className="border-t border-line pt-9">
         <div className="mb-5">
           <p className="text-xs uppercase tracking-[0.2em] text-champagne">
             Configuración avanzada
@@ -40,7 +45,7 @@ export default function WhatsAppAdminPage() {
           </p>
         </div>
         <WhatsAppCommandConsole />
-      </section>
+      </section> : null}
     </div>
   );
 }

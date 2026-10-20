@@ -1,3 +1,5 @@
+import nextConfig from "../next.config.mjs";
+
 const baseUrl = process.env.SMOKE_BASE_URL || "http://127.0.0.1:3000";
 const productionOrigin = "https://www.hautlabmx.com";
 const failures = [];
@@ -44,7 +46,31 @@ async function checkRedirect(path, expectedPath, allowedStatuses = [307, 308]) {
   record(actualPath === expectedPath, `${path} redirige a ${expectedPath}`);
 }
 
+async function checkClerkHostRouting() {
+  const rules = await nextConfig.redirects();
+  const wwwAuth = (path, destination) => rules.some(rule =>
+    rule.source === path &&
+    rule.destination === destination &&
+    rule.has?.some(condition => condition.type === "host" && condition.value === "www.hautlabmx.com")
+  );
+
+  record(wwwAuth("/admin", "https://hautlabmx.com/admin"), "Admin root redirects to Clerk-supported apex");
+  record(wwwAuth("/admin/:path*", "https://hautlabmx.com/admin/:path*"), "All admin sign-in paths stay on apex");
+  record(wwwAuth("/private-care", "https://hautlabmx.com/private-care"), "Private Care root redirects to Clerk-supported apex");
+  record(wwwAuth("/private-care/:path*", "https://hautlabmx.com/private-care/:path*"), "All patient registration and activation paths stay on apex");
+
+  const apexPublic = rules.find(rule =>
+    rule.has?.some(condition => condition.type === "host" && condition.value === "hautlabmx.com") &&
+    rule.destination === "https://www.hautlabmx.com/:path"
+  );
+  record(
+    Boolean(apexPublic?.source.includes("admin(?:/|$)") && apexPublic.source.includes("private-care(?:/|$)") && apexPublic.source.includes("__clerk")),
+    "Apex canonical redirect excludes auth routes and Clerk Frontend API"
+  );
+}
+
 async function main() {
+  await checkClerkHostRouting();
   const sitemapResponse = await request("/sitemap.xml");
   record(sitemapResponse.status === 200, "/sitemap.xml responde 200");
   const sitemap = await sitemapResponse.text();
@@ -77,6 +103,66 @@ async function main() {
     }
   }
 
+  const carePlanResponse = await request("/experiencia/mi-plan");
+  const carePlanHtml = await carePlanResponse.text();
+  record(carePlanResponse.status === 200, "/experiencia/mi-plan responde 200");
+  record(carePlanHtml.includes("Care Plan"), "Care Plan presenta el módulo interactivo");
+  record(carePlanHtml.includes("Calmar la piel"), "Care Plan muestra botones de fases");
+  record(carePlanHtml.includes("noindex"), "Care Plan de demostración no es indexable");
+  record(!carePlanHtml.includes("Adrián Loya"), "Care Plan no expone identidad de pacientes");
+
+  const experienceResponse = await request("/experiencia");
+  const experienceHtml = await experienceResponse.text();
+  record(experienceHtml.includes('href="/experiencia/mi-plan"'), "HAUTLAB Experience enlaza el Care Plan de demostración");
+
+  // Private Care is not a public clinical-data route, even when Clerk is unavailable.
+  const privateCareResponse = await request("/private-care");
+  record([200, 302, 307, 308].includes(privateCareResponse.status), "Private Care fails closed or shows restricted access");
+  if (privateCareResponse.status === 200) {
+    const privateCareHtml = await privateCareResponse.text();
+    record(/noindex/i.test(privateCareHtml), "Private Care is excluded from indexing");
+    record(!privateCareHtml.includes("Adrián Loya"), "Private Care does not ship named patients in static HTML");
+    record(!privateCareHtml.includes("va.vercel-scripts.com"), "Private Care does not mount public analytics");
+  } else {
+    const privateCareLocation = privateCareResponse.headers.get("location") || "";
+    record(privateCareLocation.includes("/private-care/iniciar-sesion"), "Unauthenticated patient redirects to private sign-in");
+  }
+
+  const careStartResponse = await request("/private-care/empezar");
+  const careStartHtml = await careStartResponse.text();
+  record(careStartResponse.status === 200, "Private Care single-link onboarding responds 200");
+  record(careStartHtml.includes("Tu cuidado, en un solo lugar."), "Private Care onboarding explains the single-link process");
+  record(careStartHtml.includes("Crear mi acceso") || careStartHtml.includes("registro no está disponible"), "Private Care entry offers registration or safe unavailability");
+  record(/noindex/i.test(careStartHtml), "Private Care invitation remains excluded from indexing");
+  record(!careStartHtml.includes("Adrián Loya"), "Private Care invitation includes no patient identity");
+
+  const activationResponse = await request("/private-care/activar");
+  record([200, 302, 307, 308].includes(activationResponse.status), "Private Care activation route is protected");
+  if (activationResponse.status === 200) {
+    const activationHtml = await activationResponse.text();
+    record(/noindex/i.test(activationHtml), "Private Care activation is never indexed");
+    record(!activationHtml.includes("Adrián Loya"), "Activation exposes no patient identity in HTML");
+  } else {
+    const url = activationResponse.headers.get("location") ?? "";
+    record(url.includes("/private-care/iniciar-sesion"), "Unauthenticated activation redirects to patient sign in");
+  }
+
+  const careRegistrationResponse = await request("/private-care/registro");
+  const registrationHtml = await careRegistrationResponse.text();
+  record(careRegistrationResponse.status === 200, "Private Care self-registration is reachable");
+  record(/noindex/i.test(registrationHtml), "Private Care registration is not indexed");
+  record(!registrationHtml.includes("Adrián Loya"), "Registration page does not leak patient data");
+
+  const accessRequestResponse = await request("/private-care/solicitar");
+  record([200, 302, 307, 308].includes(accessRequestResponse.status), "Private Care requests fail closed without a verified session");
+  if (accessRequestResponse.status === 200) {
+    const requestHtml = await accessRequestResponse.text();
+    record(!requestHtml.includes("Adrián Loya"), "Enrollment request does not expose patient records");
+  }
+
+  const privateCareSignInResponse = await request("/private-care/iniciar-sesion");
+  record(privateCareSignInResponse.status === 200, "Private Care sign-in route is reachable");
+
   const homeResponse = await request("/");
   const homeHtml = await homeResponse.text();
   record(homeHtml.includes("Pregunta a HAUTLAB"), "el asistente virtual está montado en la página");
@@ -87,6 +173,8 @@ async function main() {
   record(hasLanguageAlternate(homeHtml, "x-default", productionOrigin), "la portada declara x-default");
   record(!homeHtml.includes("connect.facebook.net"), "Meta Pixel no se carga en HTML inicial");
   record(!homeHtml.includes("fbevents.js"), "fbevents.js no se carga antes del consentimiento");
+  record(!homeHtml.includes("va.vercel-scripts.com"), "Vercel Web Analytics no carga antes de aceptar cookies");
+  record(!homeHtml.includes("www.googletagmanager.com/gtag/js"), "Google Analytics no carga antes de aceptar cookies");
   record(!homeHtml.includes("Physician"), "el schema no infla la acreditación profesional");
   record(homeHtml.includes("MedicalClinic"), "la portada identifica la clínica con schema");
 

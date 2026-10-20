@@ -13,11 +13,37 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // The production Clerk Frontend API is bound to the apex host.
+      // Keep all authenticated pages and the proxy on the *same* host:
+      // proxy calls made on www return Clerk's host_invalid error.
       {
-        // Clerk Dashboard binds proxy configuration to the apex domain
-        // (https://hautlabmx.com/__clerk). Keep that path on the apex host;
-        // every other request continues to canonicalize to www.
-        source: "/:path((?!__clerk(?:/|$)).*)",
+        source: "/admin",
+        has: [{ type: "host", value: "www.hautlabmx.com" }],
+        destination: "https://hautlabmx.com/admin",
+        permanent: false
+      },
+      {
+        source: "/admin/:path*",
+        has: [{ type: "host", value: "www.hautlabmx.com" }],
+        destination: "https://hautlabmx.com/admin/:path*",
+        permanent: false
+      },
+      {
+        source: "/private-care",
+        has: [{ type: "host", value: "www.hautlabmx.com" }],
+        destination: "https://hautlabmx.com/private-care",
+        permanent: false
+      },
+      {
+        source: "/private-care/:path*",
+        has: [{ type: "host", value: "www.hautlabmx.com" }],
+        destination: "https://hautlabmx.com/private-care/:path*",
+        permanent: false
+      },
+      {
+        // Public marketing pages remain canonically on www.
+        // Authentication and the Clerk proxy must stay on the apex host.
+        source: "/:path((?!__clerk(?:/|$)|admin(?:/|$)|private-care(?:/|$)).*)",
         has: [{ type: "host", value: "hautlabmx.com" }],
         destination: "https://www.hautlabmx.com/:path",
         permanent: true
@@ -37,6 +63,14 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/private-care/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }
+        ]
+      },
       {
         source: "/:path*",
         headers: [

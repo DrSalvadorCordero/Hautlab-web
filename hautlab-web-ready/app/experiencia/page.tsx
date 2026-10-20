@@ -37,6 +37,16 @@ export default function ExperiencePage() {
           Selecciona la etapa que corresponde a tu situación. Esta orientación no sustituye una indicación médica individual ni confirma una cita.
         </p>
         <ExperiencePathways />
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link
+            href="/experiencia/mi-plan"
+            className="inline-flex min-h-12 items-center gap-2 rounded-full border border-champagne/40 px-5 py-3 text-sm font-medium text-bone transition hover:border-champagne hover:text-champagne"
+          >
+            Explorar Care Plan <span className="text-xs text-muted">(demostración)</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <p className="text-xs leading-6 text-quiet">Recorre un plan de cuidados interactivo sin introducir datos personales.</p>
+        </div>
       </section>
 
       <section className="border-t border-line bg-soft">
