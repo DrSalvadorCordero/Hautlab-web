@@ -5,10 +5,11 @@ import nextConfig from "../next.config.mjs";
 function matchesApexCanonicalRule(rule, pathname) {
   // The catch-all uses Next.js's :path(regex) syntax; inspect the actual
   // negative lookahead rather than relying on a substring in the source.
-  const sourceMatch = /^\\/:path\\(([\\s\\S]*)\\)$/.exec(rule.source);
-  assert.ok(sourceMatch, "canonical redirect must retain its named catch-all route");
-  const matcher = new RegExp(`^(?:${sourceMatch[1]})$`);
-  return matcher.test(pathname.replace(/^\\//, ""));
+  assert.ok(rule.source.startsWith("/:path(") && rule.source.endsWith(")"),
+    "canonical redirect must retain its named catch-all route");
+  const expression = rule.source.slice("/:path(".length, -1);
+  const matcher = new RegExp(`^(?:${expression})$`);
+  return matcher.test(pathname.startsWith("/") ? pathname.slice(1) : pathname);
 }
 
 test("authenticated admin API routes remain on the Clerk apex host", async () => {
