@@ -42,8 +42,8 @@ const nextConfig = {
       },
       {
         // Public marketing pages remain canonically on www.
-        // Authentication and the Clerk proxy must stay on the apex host.
-        source: "/:path((?!__clerk(?:/|$)|admin(?:/|$)|private-care(?:/|$)).*)",
+        // Authentication, Clerk proxy, and authenticated admin APIs must stay on apex.
+        source: "/:path((?!__clerk(?:/|$)|admin(?:/|$)|private-care(?:/|$)|api/admin(?:/|$)).*)",
         has: [{ type: "host", value: "hautlabmx.com" }],
         destination: "https://www.hautlabmx.com/:path",
         permanent: true
