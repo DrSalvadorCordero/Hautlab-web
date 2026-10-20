@@ -12,7 +12,7 @@
     "eval:whatsapp": "node scripts/whatsapp-eval.mjs",
     "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs scripts/nimbo-availability.test.mjs",
     "check:performance-budget": "node scripts/performance-budget.mjs",
-    "test:whatsapp-guards": "node --experimental-strip-types --test scripts/whatsapp-turn-interruption.test.mjs"
+    "test:whatsapp-guards": "node --experimental-strip-types --test scripts/whatsapp-turn-interruption.test.mjs scripts/whatsapp-send-bookkeeping.test.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "7.5.22",
