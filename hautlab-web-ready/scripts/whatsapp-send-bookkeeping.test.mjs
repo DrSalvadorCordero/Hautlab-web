@@ -74,3 +74,33 @@ test('a denied reply can still trigger one protected operator handoff', async ()
   );
   assert.equal(handoffs, 1);
 });
+
+
+test('both Meta and escalation failures remain inspectable without duplicate handoffs', async () => {
+  const operationError = Error('synthetic Meta transport ambiguous');
+  const handoffError = Error('synthetic operator escalation outage');
+  let handoffs = 0;
+  await assert.rejects(
+    withRequiredHandoff(
+      async () => { throw operationError; },
+      async () => { handoffs++; throw handoffError; },
+    ),
+    error => {
+      assert.ok(error instanceof AggregateError);
+      assert.equal(error.message, 'whatsapp_operation_and_handoff_failed');
+      assert.deepEqual(error.errors, [operationError, handoffError]);
+      return true;
+    },
+  );
+  assert.equal(handoffs, 1, 'must not attempt multiple operator handoffs');
+});
+
+test('successful reply still reports a failed mandatory handoff', async () => {
+  const handoffError = Error('synthetic escalation unavailable');
+  let handoffs = 0;
+  await assert.rejects(withRequiredHandoff(
+    async () => 'synthetic-reply-sent',
+    async () => { handoffs++; throw handoffError; },
+  ), error => error === handoffError);
+  assert.equal(handoffs, 1);
+});
