@@ -1,4 +1,5 @@
 import { sendClaimedReply } from "@/lib/whatsapp-claimed-send";
+import { persistSentReply, withRequiredHandoff } from "@/lib/whatsapp-send-bookkeeping";
 import { classifyNonBookingTurn } from "@/lib/whatsapp-turn-interruption";
 import { createHmac } from "node:crypto";
 import {
@@ -393,24 +394,29 @@ async function storeSentMessage(input: {
   senderType?: "ai" | "system";
   proposedBy?: string;
 }) {
-  if (!input.metaMessageId) return; // An atomic claim rejected this send.
-  await supabaseRequest("wa_messages", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      conversation_id: input.conversationId,
-      meta_message_id: input.metaMessageId,
-      direction: "outbound",
-      sender_type: input.senderType ?? "ai",
-      body: input.body,
-      message_type: "text",
-      status: "sent",
-      proposed_by: input.proposedBy ?? null,
-      sent_at: new Date().toISOString(),
+  await persistSentReply({
+    metaMessageId: input.metaMessageId,
+    save: () => supabaseRequest("wa_messages", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        conversation_id: input.conversationId,
+        meta_message_id: input.metaMessageId,
+        direction: "outbound",
+        sender_type: input.senderType ?? "ai",
+        body: input.body,
+        message_type: "text",
+        status: "sent",
+        proposed_by: input.proposedBy ?? null,
+        sent_at: new Date().toISOString(),
+      }),
     }),
-  });
-  await updateConversation(input.conversationId, {
-    last_team_message_at: new Date().toISOString(),
+    markAnswered: () => updateConversation(input.conversationId, {
+      last_team_message_at: new Date().toISOString(),
+    }),
+    // Sanitized operational signal. An already-persisted reply must not
+    // prevent an urgent clinical handoff if only its timestamp PATCH fails.
+    onTimestampError: () => console.error("[whatsapp-orchestrator] outbound timestamp update failed"),
   });
 }
 
@@ -1660,35 +1666,44 @@ async function deliverNimboFlow(input: {
   const currentMode = await currentAutomationMode(input.conversation.id);
   if (currentMode === "off" || currentMode === "manual") return true;
 
-  if (currentMode === "supervised") {
-    await storeDraft({
-      conversationId: input.conversation.id,
-      body: input.result.reply,
-      proposedBy: "nimbo-scheduler",
-    });
-  } else if (currentMode === "automatic") {
-    const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply, input.inboundMetaMessageId);
-    await storeSentMessage({
-      conversationId: input.conversation.id,
-      body: input.result.reply,
-      metaMessageId,
-      proposedBy: "nimbo-scheduler",
-    });
-  }
+  const deliverReply = async () => {
+    if (currentMode === "supervised") {
+      await storeDraft({
+        conversationId: input.conversation.id,
+        body: input.result.reply,
+        proposedBy: "nimbo-scheduler",
+      });
+    } else if (currentMode === "automatic") {
+      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply, input.inboundMetaMessageId);
+      await storeSentMessage({
+        conversationId: input.conversation.id,
+        body: input.result.reply,
+        metaMessageId,
+        proposedBy: "nimbo-scheduler",
+      });
+    }
+  };
 
   if (input.result.escalate) {
-    await updateConversation(input.conversation.id, {
-      stage: "human_review",
-      priority: "high",
-      human_review_reason:
-        input.result.reasonCode ?? "nimbo_human_review_required",
-      next_action: "human_review",
+    await withRequiredHandoff(deliverReply, async () => {
+      try {
+        await updateConversation(input.conversation.id, {
+          stage: "human_review",
+          priority: "high",
+          human_review_reason:
+            input.result.reasonCode ?? "nimbo_human_review_required",
+          next_action: "human_review",
+        });
+      } finally {
+        await triggerEscalation({
+          origin: input.origin,
+          conversationId: input.conversation.id,
+          operator: input.result.escalate!,
+        });
+      }
     });
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: input.conversation.id,
-      operator: input.result.escalate,
-    });
+  } else {
+    await deliverReply();
   }
 
   return true;
@@ -2061,18 +2076,22 @@ async function processTextMessage(input: {
     });
     const currentMode = await currentAutomationMode(conversation.id);
     if (currentMode === "off" || currentMode === "manual") return;
-    const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement, input.message.id);
-    await storeSentMessage({
-      conversationId: conversation.id,
-      body: acknowledgement,
-      metaMessageId,
-      senderType: "system",
-    });
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: conversation.id,
-      operator: "doctor",
-    });
+    await withRequiredHandoff(
+      async () => {
+        const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement, input.message.id);
+        await storeSentMessage({
+          conversationId: conversation.id,
+          body: acknowledgement,
+          metaMessageId,
+          senderType: "system",
+        });
+      },
+      () => triggerEscalation({
+        origin: input.origin,
+        conversationId: conversation.id,
+        operator: "doctor",
+      }),
+    );
     return;
   }
 
@@ -2320,21 +2339,24 @@ async function processTextMessage(input: {
     const currentMode = await currentAutomationMode(conversation.id);
     if (currentMode === "off" || currentMode === "manual") return;
     const operator: OperatorKey = decision.operator === "karen" ? "karen" : "doctor";
-    if (decision.reply) {
-      const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
-      await storeSentMessage({
+    await withRequiredHandoff(
+      async () => {
+        if (!decision.reply) return;
+        const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
+        await storeSentMessage({
+          conversationId: conversation.id,
+          body: decision.reply,
+          metaMessageId,
+          senderType: "system",
+          proposedBy: decision.model,
+        });
+      },
+      () => triggerEscalation({
+        origin: input.origin,
         conversationId: conversation.id,
-        body: decision.reply,
-        metaMessageId,
-        senderType: "system",
-        proposedBy: decision.model,
-      });
-    }
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: conversation.id,
-      operator,
-    });
+        operator,
+      }),
+    );
     return;
   }
 
