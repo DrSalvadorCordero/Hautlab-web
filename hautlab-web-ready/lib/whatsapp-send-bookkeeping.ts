@@ -22,9 +22,22 @@ export async function withRequiredHandoff<T>(
   operation: () => Promise<T>,
   handoff: () => Promise<void>,
 ): Promise<T> {
+  let result: T;
   try {
-    return await operation();
-  } finally {
-    await handoff();
+    result = await operation();
+  } catch (operationError) {
+    try {
+      await handoff();
+    } catch (handoffError) {
+      // Preserve the initial Meta/persistence failure and the failed escalation.
+      throw new AggregateError(
+        [operationError, handoffError],
+        "whatsapp_operation_and_handoff_failed",
+      );
+    }
+    throw operationError;
   }
+  // A successful automatic reply does not make a mandatory handoff optional.
+  await handoff();
+  return result;
 }
