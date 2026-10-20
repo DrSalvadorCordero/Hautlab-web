@@ -155,7 +155,9 @@ test("outbound automatic replies are protected by an atomic per-inbound claim", 
   const source = readFileSync(new URL("../lib/whatsapp-orchestrator.ts", import.meta.url), "utf8");
   assert.match(source, /rpc\/wa_claim_auto_reply/);
   assert.match(source, /return sendClaimedReply\(/);
-  assert.match(source, /if \(!input\.metaMessageId\) return;/);
+  assert.match(source, /await persistSentReply\(/);
+  const bookkeeping = readFileSync(new URL("../lib/whatsapp-send-bookkeeping.ts", import.meta.url), "utf8");
+  assert.match(bookkeeping, /if \(!deps\.metaMessageId\) return false;/);
   assert.match(source, /wa_auto_reply_claims\?id=eq\./);
   assert.match(source, /sent_at: new Date\(\)\.toISOString\(\)/);
   assert.equal((source.match(/sendWhatsAppText\(/g) ?? []).length, 8);
@@ -167,6 +169,7 @@ test("new turns are not discarded by a reply-body time window", () => {
   const source = readFileSync(new URL("../lib/whatsapp-orchestrator.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /recentlySentIdenticalAutomatedReply/);
   const store = source.slice(source.indexOf("async function storeSentMessage("), source.indexOf("function effectiveMode("));
-  assert.ok(store.indexOf("if (!input.metaMessageId) return;") < store.indexOf("last_team_message_at:"));
+  assert.match(store, /await persistSentReply\(/);
+  assert.ok(store.indexOf("metaMessageId: input.metaMessageId") < store.indexOf("last_team_message_at:"));
   assert.equal((source.match(/last_team_message_at: new Date\(\)\.toISOString\(\)/g) ?? []).length, 1);
 });
