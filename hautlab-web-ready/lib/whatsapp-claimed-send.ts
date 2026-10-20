@@ -15,7 +15,15 @@ export async function sendClaimedReply(deps: {
   messageId = await deps.send();
   if (!messageId) throw new Error("whatsapp_meta_send_unverified");
  } catch (error) {
-  await deps.review();
+  try {
+   await deps.review();
+  } catch (reviewError) {
+   // Retain both causes: transport may have succeeded despite its timeout.
+   throw new AggregateError(
+    [error, reviewError],
+    "whatsapp_claim_or_send_failed_and_review_failed",
+   );
+  }
   throw error;
  }
  try { await deps.confirm(claimId, messageId); }
