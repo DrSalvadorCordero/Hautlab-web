@@ -1,3 +1,5 @@
+import { sendClaimedReply } from "@/lib/whatsapp-claimed-send";
+import { persistSentReply, withRequiredHandoff } from "@/lib/whatsapp-send-bookkeeping";
 import { classifyNonBookingTurn } from "@/lib/whatsapp-turn-interruption";
 import { createHmac } from "node:crypto";
 import {
@@ -316,25 +318,6 @@ async function isLatestInboundMessage(
   return rows[0]?.meta_message_id === metaMessageId;
 }
 
-async function recentlySentIdenticalAutomatedReply(
-  conversationId: string,
-  reply: string,
-) {
-  try {
-    const since = new Date(Date.now() - 5 * 60_000).toISOString();
-    const rows = await supabaseRequest<Array<{ body: string | null }>>(
-      `wa_messages?conversation_id=eq.${encodeURIComponent(conversationId)}&direction=eq.outbound&sender_type=in.(ai,system)&created_at=gte.${encodeURIComponent(since)}&select=body&order=created_at.desc&limit=15`,
-    );
-    return rows.some((row) => row.body?.trim() === reply.trim());
-  } catch (error) {
-    console.error("[whatsapp-orchestrator] repeat-check unavailable", {
-      reason: error instanceof Error ? error.message : "unknown_error",
-    });
-    // Do not silently abandon a new customer turn on a temporary read error.
-    return false;
-  }
-}
-
 function whatsappBurstWindowMs() {
   const configured = Number(process.env.WHATSAPP_BURST_WINDOW_MS ?? "2200");
   if (!Number.isFinite(configured)) return 2200;
@@ -411,21 +394,29 @@ async function storeSentMessage(input: {
   senderType?: "ai" | "system";
   proposedBy?: string;
 }) {
-  if (!input.metaMessageId) return; // An atomic claim rejected this send.
-  await supabaseRequest("wa_messages", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      conversation_id: input.conversationId,
-      meta_message_id: input.metaMessageId,
-      direction: "outbound",
-      sender_type: input.senderType ?? "ai",
-      body: input.body,
-      message_type: "text",
-      status: "sent",
-      proposed_by: input.proposedBy ?? null,
-      sent_at: new Date().toISOString(),
+  await persistSentReply({
+    metaMessageId: input.metaMessageId,
+    save: () => supabaseRequest("wa_messages", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        conversation_id: input.conversationId,
+        meta_message_id: input.metaMessageId,
+        direction: "outbound",
+        sender_type: input.senderType ?? "ai",
+        body: input.body,
+        message_type: "text",
+        status: "sent",
+        proposed_by: input.proposedBy ?? null,
+        sent_at: new Date().toISOString(),
+      }),
     }),
+    markAnswered: () => updateConversation(input.conversationId, {
+      last_team_message_at: new Date().toISOString(),
+    }),
+    // Sanitized operational signal. An already-persisted reply must not
+    // prevent an urgent clinical handoff if only its timestamp PATCH fails.
+    onTimestampError: () => console.error("[whatsapp-orchestrator] outbound timestamp update failed"),
   });
 }
 
@@ -1666,7 +1657,8 @@ async function deliverNimboFlow(input: {
   origin: string;
   inboundMetaMessageId?: string;
 }) {
-  if (!input.result.handled) return false;
+  const result = input.result;
+  if (!result.handled) return false;
   if (
     input.inboundMetaMessageId &&
     !(await isLatestInboundMessage(input.conversation.id, input.inboundMetaMessageId))
@@ -1675,46 +1667,44 @@ async function deliverNimboFlow(input: {
   const currentMode = await currentAutomationMode(input.conversation.id);
   if (currentMode === "off" || currentMode === "manual") return true;
 
-  if (currentMode === "supervised") {
-    await storeDraft({
-      conversationId: input.conversation.id,
-      body: input.result.reply,
-      proposedBy: "nimbo-scheduler",
-    });
-  } else if (currentMode === "automatic") {
-    const isRepeated = await recentlySentIdenticalAutomatedReply(
-      input.conversation.id,
-      input.result.reply,
-    );
-    if (isRepeated) {
-      console.info("[whatsapp-orchestrator] suppressed repeated Nimbo reply");
-    } else {
-      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply, input.inboundMetaMessageId);
+  const deliverReply = async () => {
+    if (currentMode === "supervised") {
+      await storeDraft({
+        conversationId: input.conversation.id,
+        body: result.reply,
+        proposedBy: "nimbo-scheduler",
+      });
+    } else if (currentMode === "automatic") {
+      const metaMessageId = await sendWhatsAppText(input.phone, result.reply, input.inboundMetaMessageId);
       await storeSentMessage({
         conversationId: input.conversation.id,
-        body: input.result.reply,
+        body: result.reply,
         metaMessageId,
         proposedBy: "nimbo-scheduler",
       });
-      await updateConversation(input.conversation.id, {
-        last_team_message_at: new Date().toISOString(),
-      });
     }
-  }
+  };
 
-  if (input.result.escalate) {
-    await updateConversation(input.conversation.id, {
-      stage: "human_review",
-      priority: "high",
-      human_review_reason:
-        input.result.reasonCode ?? "nimbo_human_review_required",
-      next_action: "human_review",
+  if (result.escalate) {
+    await withRequiredHandoff(deliverReply, async () => {
+      try {
+        await updateConversation(input.conversation.id, {
+          stage: "human_review",
+          priority: "high",
+          human_review_reason:
+            result.reasonCode ?? "nimbo_human_review_required",
+          next_action: "human_review",
+        });
+      } finally {
+        await triggerEscalation({
+          origin: input.origin,
+          conversationId: input.conversation.id,
+          operator: result.escalate!,
+        });
+      }
     });
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: input.conversation.id,
-      operator: input.result.escalate,
-    });
+  } else {
+    await deliverReply();
   }
 
   return true;
@@ -1773,43 +1763,29 @@ async function sendWhatsAppText(
   inboundMetaMessageId: string | undefined,
 ): Promise<string | null> {
   if (!inboundMetaMessageId) throw new Error("whatsapp_inbound_id_missing");
-  const claimId = await supabaseRequest<string | null>("rpc/wa_claim_auto_reply", {
-    method: "POST",
-    body: JSON.stringify({
-      p_phone: to,
-      p_meta_message_id: inboundMetaMessageId,
+  return sendClaimedReply({
+    claim: () => supabaseRequest<string | null>("rpc/wa_claim_auto_reply", {
+      method: "POST",
+      body: JSON.stringify({ p_phone: to, p_meta_message_id: inboundMetaMessageId }),
     }),
-  });
-  if (!claimId) {
-    console.info("[whatsapp-orchestrator] blocked duplicate or stale outbound turn");
-    return null;
-  }
-
-  // Fail closed on ambiguous Meta responses: a possibly sent message must not
-  // be retried by another worker merely because confirmation could not persist.
-  const messageId = await sendWhatsAppUnclaimedText(to, body);
-  if (!messageId) throw new Error("whatsapp_meta_send_unverified");
-  try {
-    await supabaseRequest(
-      `wa_auto_reply_claims?id=eq.${encodeURIComponent(claimId)}`,
-      {
+    send: () => sendWhatsAppUnclaimedText(to, body),
+    confirm: async (claimId, messageId) => {
+      await supabaseRequest(`wa_auto_reply_claims?id=eq.${encodeURIComponent(claimId)}`, {
         method: "PATCH",
         headers: { Prefer: "return=minimal" },
-        body: JSON.stringify({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          outbound_meta_message_id: messageId,
-        }),
-      },
-    );
-  } catch (error) {
-    console.error("[whatsapp-orchestrator] reply claim confirmation failed", {
-      reason: error instanceof Error ? error.message : "unknown_error",
-    });
-    // Meta accepted the message. Preserve the reservation even if the
-    // bookkeeping PATCH failed; the normal sent-message path still runs.
-  }
-  return messageId;
+        body: JSON.stringify({ status: "sent", sent_at: new Date().toISOString(), outbound_meta_message_id: messageId }),
+      });
+    },
+    review: async () => {
+      // Preserve the reservation: retrying an ambiguous network outcome can duplicate delivery.
+      await supabaseRequest(`wa_conversations?phone=eq.${encodeURIComponent(to)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ bot_paused: true, stage: "human_review", next_action: "human_review", human_review_reason: "outbound_delivery_uncertain" }),
+      });
+    },
+    confirmationFailed: () => console.error("[whatsapp-orchestrator] reply claim confirmation failed"),
+  });
 }
 
 async function sendWhatsAppUnclaimedText(to: string, body: string) {
@@ -2079,9 +2055,6 @@ async function processTextMessage(input: {
         senderType: "system",
         proposedBy: "unsupported-message-recovery",
       });
-      await updateConversation(conversation.id, {
-        last_team_message_at: new Date().toISOString(),
-      });
     }
     return;
   }
@@ -2104,18 +2077,22 @@ async function processTextMessage(input: {
     });
     const currentMode = await currentAutomationMode(conversation.id);
     if (currentMode === "off" || currentMode === "manual") return;
-    const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement, input.message.id);
-    await storeSentMessage({
-      conversationId: conversation.id,
-      body: acknowledgement,
-      metaMessageId,
-      senderType: "system",
-    });
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: conversation.id,
-      operator: "doctor",
-    });
+    await withRequiredHandoff(
+      async () => {
+        const metaMessageId = await sendWhatsAppText(input.message.from, acknowledgement, input.message.id);
+        await storeSentMessage({
+          conversationId: conversation.id,
+          body: acknowledgement,
+          metaMessageId,
+          senderType: "system",
+        });
+      },
+      () => triggerEscalation({
+        origin: input.origin,
+        conversationId: conversation.id,
+        operator: "doctor",
+      }),
+    );
     return;
   }
 
@@ -2146,19 +2123,13 @@ async function processTextMessage(input: {
         body: nonBookingTurn.reply,
         proposedBy: "continuity-guard",
       });
-    } else if (
-      courtesyMode === "automatic" &&
-      !(await recentlySentIdenticalAutomatedReply(conversation.id, nonBookingTurn.reply))
-    ) {
+    } else if (courtesyMode === "automatic") {
       const metaMessageId = await sendWhatsAppText(input.message.from, nonBookingTurn.reply, input.message.id);
       await storeSentMessage({
         conversationId: conversation.id,
         body: nonBookingTurn.reply,
         metaMessageId,
         proposedBy: "continuity-guard",
-      });
-      await updateConversation(conversation.id, {
-        last_team_message_at: new Date().toISOString(),
       });
     }
     return;
@@ -2233,9 +2204,6 @@ async function processTextMessage(input: {
       metaMessageId,
       senderType: "system",
       proposedBy: "triage-fallback",
-    });
-    await updateConversation(conversation.id, {
-      last_team_message_at: new Date().toISOString(),
     });
     return;
   }
@@ -2372,21 +2340,24 @@ async function processTextMessage(input: {
     const currentMode = await currentAutomationMode(conversation.id);
     if (currentMode === "off" || currentMode === "manual") return;
     const operator: OperatorKey = decision.operator === "karen" ? "karen" : "doctor";
-    if (decision.reply) {
-      const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
-      await storeSentMessage({
+    await withRequiredHandoff(
+      async () => {
+        if (!decision.reply) return;
+        const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
+        await storeSentMessage({
+          conversationId: conversation.id,
+          body: decision.reply,
+          metaMessageId,
+          senderType: "system",
+          proposedBy: decision.model,
+        });
+      },
+      () => triggerEscalation({
+        origin: input.origin,
         conversationId: conversation.id,
-        body: decision.reply,
-        metaMessageId,
-        senderType: "system",
-        proposedBy: decision.model,
-      });
-    }
-    await triggerEscalation({
-      origin: input.origin,
-      conversationId: conversation.id,
-      operator,
-    });
+        operator,
+      }),
+    );
     return;
   }
 
@@ -2403,10 +2374,6 @@ async function processTextMessage(input: {
   }
 
   if (finalMode === "automatic") {
-    if (await recentlySentIdenticalAutomatedReply(conversation.id, decision.reply)) {
-      console.info("[whatsapp-orchestrator] suppressed repeated AI reply");
-      return;
-    }
     if (!(await isLatestInboundMessage(conversation.id, input.message.id))) return;
     const metaMessageId = await sendWhatsAppText(input.message.from, decision.reply, input.message.id);
     await storeSentMessage({
@@ -2414,9 +2381,6 @@ async function processTextMessage(input: {
       body: decision.reply,
       metaMessageId,
       proposedBy: decision.model,
-    });
-    await updateConversation(conversation.id, {
-      last_team_message_at: new Date().toISOString(),
     });
   }
 }

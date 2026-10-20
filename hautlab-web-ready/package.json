@@ -7,17 +7,20 @@
     "build": "node scripts/materialize-portrait-final.mjs && next build && npm run check:performance-budget",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit && node --experimental-strip-types --test scripts/operational-state.test.mjs && node --experimental-strip-types --test scripts/agenda-availability.test.mjs && node --experimental-strip-types --test scripts/analytics-paths.test.mjs && npm run test:nimbo-contract && node --test scripts/admin-permissions.test.mjs scripts/whatsapp-health.test.mjs scripts/whatsapp-reply-length.test.mjs scripts/whatsapp-location-guard.test.mjs && npm run test:whatsapp-guards",
+    "type-check": "tsc --noEmit && node --experimental-strip-types --test scripts/operational-state.test.mjs && node --experimental-strip-types --test scripts/agenda-availability.test.mjs && node --experimental-strip-types --test scripts/analytics-paths.test.mjs && npm run test:nimbo-contract && node --test scripts/admin-permissions.test.mjs scripts/whatsapp-health.test.mjs scripts/whatsapp-reply-length.test.mjs scripts/whatsapp-location-guard.test.mjs && npm run test:whatsapp-guards && npm run test:whatsapp-dedupe",
     "smoke-test": "node scripts/smoke-test.mjs",
     "eval:whatsapp": "node scripts/whatsapp-eval.mjs",
     "test:nimbo-contract": "node --test scripts/nimbo-contract.test.mjs scripts/nimbo-availability.test.mjs",
     "check:performance-budget": "node scripts/performance-budget.mjs",
-    "test:whatsapp-guards": "node --experimental-strip-types --test scripts/whatsapp-turn-interruption.test.mjs"
+    "test:whatsapp-guards": "node --experimental-strip-types --test scripts/whatsapp-turn-interruption.test.mjs",
+    "test:whatsapp-dedupe": "node --experimental-strip-types --test scripts/whatsapp-claimed-send.test.mjs scripts/whatsapp-claim-sql.test.mjs scripts/whatsapp-send-bookkeeping.test.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "7.5.22",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-slot": "1.1.0",
+    "@vercel/analytics": "2.0.1",
+    "@vercel/speed-insights": "2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
@@ -27,11 +30,10 @@
     "react-dom": "19.1.4",
     "react-hook-form": "^7.54.2",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.24.1",
-    "@vercel/speed-insights": "2.0.0",
-    "@vercel/analytics": "2.0.1"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
