@@ -1657,7 +1657,8 @@ async function deliverNimboFlow(input: {
   origin: string;
   inboundMetaMessageId?: string;
 }) {
-  if (!input.result.handled) return false;
+  const result = input.result;
+  if (!result.handled) return false;
   if (
     input.inboundMetaMessageId &&
     !(await isLatestInboundMessage(input.conversation.id, input.inboundMetaMessageId))
@@ -1670,35 +1671,35 @@ async function deliverNimboFlow(input: {
     if (currentMode === "supervised") {
       await storeDraft({
         conversationId: input.conversation.id,
-        body: input.result.reply,
+        body: result.reply,
         proposedBy: "nimbo-scheduler",
       });
     } else if (currentMode === "automatic") {
-      const metaMessageId = await sendWhatsAppText(input.phone, input.result.reply, input.inboundMetaMessageId);
+      const metaMessageId = await sendWhatsAppText(input.phone, result.reply, input.inboundMetaMessageId);
       await storeSentMessage({
         conversationId: input.conversation.id,
-        body: input.result.reply,
+        body: result.reply,
         metaMessageId,
         proposedBy: "nimbo-scheduler",
       });
     }
   };
 
-  if (input.result.escalate) {
+  if (result.escalate) {
     await withRequiredHandoff(deliverReply, async () => {
       try {
         await updateConversation(input.conversation.id, {
           stage: "human_review",
           priority: "high",
           human_review_reason:
-            input.result.reasonCode ?? "nimbo_human_review_required",
+            result.reasonCode ?? "nimbo_human_review_required",
           next_action: "human_review",
         });
       } finally {
         await triggerEscalation({
           origin: input.origin,
           conversationId: input.conversation.id,
-          operator: input.result.escalate!,
+          operator: result.escalate!,
         });
       }
     });
