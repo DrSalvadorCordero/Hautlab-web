@@ -46,3 +46,42 @@ test('independent legitimate turns each send',async()=>{
  await Promise.all([sendClaimedReply(a.deps),sendClaimedReply(b.deps)]);
  assert.equal(a.calls.sends+b.calls.sends,2);
 });
+
+
+test('original ambiguous Meta error survives a failed review PATCH without a resend', async () => {
+ const transportError = Error('synthetic ambiguous transport timeout');
+ const reviewError = Error('synthetic review database outage');
+ let sends = 0, reviews = 0;
+ const { deps } = fixture({
+  send: async () => { sends++; throw transportError; },
+  review: async () => { reviews++; throw reviewError; },
+ });
+ await assert.rejects(sendClaimedReply(deps), error => {
+  assert.ok(error instanceof AggregateError);
+  assert.equal(error.message, 'whatsapp_claim_or_send_failed_and_review_failed');
+  assert.equal(error.errors[0], transportError);
+  assert.equal(error.errors[1], reviewError);
+  return true;
+ });
+ assert.equal(sends, 1);
+ assert.equal(reviews, 1);
+ assert.equal(await sendClaimedReply(deps), null);
+ assert.equal(sends, 1, 'ambiguous delivery must never be retried automatically');
+});
+
+test('failed claim and review retain both database errors without sending', async () => {
+ const claimError = Error('synthetic claim outage');
+ const reviewError = Error('synthetic review outage');
+ let sends = 0;
+ const { deps } = fixture({
+  claim: async () => { throw claimError; },
+  send: async () => { sends++; return 'unexpected'; },
+  review: async () => { throw reviewError; },
+ });
+ await assert.rejects(sendClaimedReply(deps), error => {
+  assert.ok(error instanceof AggregateError);
+  assert.deepEqual(error.errors, [claimError, reviewError]);
+  return true;
+ });
+ assert.equal(sends, 0);
+});
