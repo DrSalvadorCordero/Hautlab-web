@@ -1,5 +1,5 @@
 -- Synthetic fixture for isolated PostgreSQL 17 only. NEVER run against HAUTLAB production.
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 create table public.wa_conversations (
   id bigint generated always as identity primary key,
   last_message_at timestamptz,
@@ -14,7 +14,7 @@ create table public.wa_messages (
   body text,
   created_at timestamptz not null default now()
 );
-\\ir ../supabase/migrations/20261021065000_fix_wa_inbound_timestamps.sql
+\ir ../supabase/migrations/20261021065000_fix_wa_inbound_timestamps.sql
 create trigger trg_touch_wa_conversation
 after insert on public.wa_messages
 for each row execute function public.touch_wa_conversation();
