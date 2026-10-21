@@ -15,8 +15,8 @@ function between(start, end) {
 
 test("conversation upsert cannot fabricate a new patient message", () => {
   const upsert = between("async function upsertConversation(", "async function insertInboundMessage(");
-  assert.doesNotMatch(upsert, /last_patient_message_at\\s*:/);
-  assert.doesNotMatch(upsert, /last_message_at\\s*:/);
+  assert.doesNotMatch(upsert, /last_patient_message_at\s*:/);
+  assert.doesNotMatch(upsert, /last_message_at\s*:/);
   assert.match(upsert, /resolution=merge-duplicates/);
 });
 
@@ -25,7 +25,7 @@ test("real inbound insert is uniquely deduplicated before plan side effects", ()
   const process = between("async function processTextMessage(", "export async function processWhatsAppWebhook(");
   assert.match(insert, /on_conflict=meta_message_id/);
   assert.match(insert, /resolution=ignore-duplicates,return=representation/);
-  assert.match(insert, /return rows\\.length > 0/);
+  assert.match(insert, /return rows\.length > 0/);
   const insertion = process.indexOf("const isNew = await insertInboundMessage(");
   const guard = process.indexOf("if (!isNew) return;");
   const plan = process.indexOf("if (planCode)");
@@ -34,10 +34,10 @@ test("real inbound insert is uniquely deduplicated before plan side effects", ()
 });
 
 test("insert trigger only advances real inbound patient activity and never regresses chronology", () => {
-  assert.match(migration, /create or replace function public\\.touch_wa_conversation\\(\\)/i);
-  assert.match(migration, /greatest\\(last_message_at, new\\.created_at\\)/);
-  assert.match(migration, /when new\\.direction = 'inbound' then greatest\\(last_patient_message_at, new\\.created_at\\)/);
+  assert.match(migration, /create or replace function public\.touch_wa_conversation\(\)/i);
+  assert.match(migration, /greatest\(last_message_at, new\.created_at\)/);
+  assert.match(migration, /when new\.direction = 'inbound' then greatest\(last_patient_message_at, new\.created_at\)/);
   assert.match(migration, /else last_patient_message_at/);
-  assert.doesNotMatch(migration, /\\bupdate public\\.wa_messages\\b/i);
-  assert.doesNotMatch(migration, /\\bdelete\\b/i);
+  assert.doesNotMatch(migration, /\bupdate public\.wa_messages\b/i);
+  assert.doesNotMatch(migration, /\bdelete\b/i);
 });
