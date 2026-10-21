@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="ttl desc">
+<title id="ttl">Ilustración anatómica de un quiste epidérmico</title>
+<desc id="desc">Sección esquemática de epidermis, dermis y tejido subcutáneo; una cápsula epitelial encapsula queratina debajo de una elevación cutánea, con posible orificio central.</desc>
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#19242A"/><stop offset="1" stop-color="#0D151A"/></linearGradient>
+<linearGradient id="skin" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#E0B8A4"/><stop offset=".5" stop-color="#C68F7F"/><stop offset="1" stop-color="#AD796F"/></linearGradient>
+<radialGradient id="cyst"><stop stop-color="#F9F0D8"/><stop offset=".7" stop-color="#E8D4A8"/><stop offset="1" stop-color="#D2AE81"/></radialGradient>
+<filter id="shadow"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="1200" height="760" rx="35" fill="url(#bg)"/>
+<text x="72" y="76" font-family="Arial,sans-serif" font-size="19" letter-spacing="5" fill="#C8AD83">01 — ANATOMÍA CUTÁNEA</text>
+<text x="72" y="128" font-family="Georgia,serif" font-size="45" fill="#F1EDE4">Debajo de la superficie.</text>
+<text x="72" y="163" font-family="Arial,sans-serif" font-size="19" fill="#A8B0B0">Representación esquemática · no a escala</text>
+<path d="M52 299 C170 299 256 298 355 294 C456 290 484 260 562 223 C642 185 744 186 815 226 C891 267 917 296 994 299 L1148 299 L1148 530 L52 530Z" fill="url(#skin)"/>
+<path d="M52 299 C170 299 256 298 355 294 C456 290 484 260 562 223 C642 185 744 186 815 226 C891 267 917 296 994 299 L1148 299" fill="none" stroke="#F5CFB7" stroke-width="17"/>
+<path d="M52 315 C210 320 293 314 380 312 C457 308 511 273 566 245 C643 209 739 212 810 245 C874 278 918 315 994 314 L1148 314" fill="none" stroke="#8D5F5A" stroke-width="5" opacity=".8"/>
+<rect x="52" y="530" width="1096" height="145" fill="#7D6650" rx="5"/>
+<g fill="#D6AC68" stroke="#947B55" stroke-width="2">
+<ellipse cx="129" cy="586" rx="54" ry="37"/><ellipse cx="240" cy="616" rx="57" ry="42"/><ellipse cx="355" cy="575" rx="51" ry="36"/><ellipse cx="464" cy="632" rx="54" ry="35"/><ellipse cx="562" cy="585" rx="45" ry="32"/><ellipse cx="678" cy="621" rx="53" ry="43"/><ellipse cx="800" cy="579" rx="54" ry="39"/><ellipse cx="925" cy="629" rx="56" ry="39"/><ellipse cx="1067" cy="586" rx="57" ry="39"/>
+</g>
+<ellipse cx="690" cy="434" rx="228" ry="127" fill="#1F2222" opacity=".35" filter="url(#shadow)"/>
+<ellipse cx="690" cy="418" rx="225" ry="133" fill="#F0C5A6" stroke="#764F4E" stroke-width="12"/>
+<ellipse cx="690" cy="418" rx="206" ry="115" fill="url(#cyst)" stroke="#FAE6C6" stroke-width="8"/>
+<g stroke="#BE9B71" fill="none" stroke-width="5" opacity=".56">
+<path d="M550 414 C594 351 738 335 815 394 C874 449 778 497 652 484 C545 474 531 437 595 406 C647 383 717 382 750 421 C767 450 700 453 672 428"/>
+<path d="M595 356 C639 340 727 341 769 366"/><path d="M579 458 C628 492 733 493 787 457"/>
+</g>
+<path d="M692 219 C680 241 675 268 689 293" fill="none" stroke="#8C5957" stroke-width="12" stroke-linecap="round"/>
+<ellipse cx="692" cy="218" rx="10" ry="6" fill="#704B4A"/>
+<g font-family="Arial,sans-serif" font-size="22" fill="#E9E4D9">
+<path d="M166 291 H354" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="354" cy="291" r="5" fill="#C8AD83"/>
+<text x="70" y="271">Epidermis</text>
+<path d="M166 407 H426" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="426" cy="407" r="5" fill="#C8AD83"/><text x="70" y="396">Dermis</text>
+<path d="M169 577 H297" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="297" cy="577" r="5" fill="#C8AD83"/><text x="70" y="560">Tejido subcutáneo</text>
+<path d="M734 209 L915 184 H1045" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="734" cy="209" r="5" fill="#C8AD83"/><text x="917" y="172">Punto central</text>
+<path d="M838 381 L945 356 H1093" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="838" cy="381" r="5" fill="#C8AD83"/><text x="943" y="344">Cápsula</text>
+<path d="M751 452 L927 480 H1090" fill="none" stroke="#C8AD83" stroke-width="2"/><circle cx="751" cy="452" r="5" fill="#C8AD83"/><text x="930" y="469">Queratina</text>
+</g>
+<text x="70" y="721" font-family="Arial,sans-serif" letter-spacing="7" font-size="18" fill="#C8AD83">HAUTLAB</text>
+<text x="1140" y="721" font-family="Arial,sans-serif" font-size="16" text-anchor="end" fill="#8C999C">ILUSTRACIÓN EDUCATIVA</text>
+</svg>

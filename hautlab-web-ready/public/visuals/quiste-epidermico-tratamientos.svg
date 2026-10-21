@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="tit desc">
+<title id="tit">Tres decisiones clínicas para un quiste epidérmico</title>
+<desc id="desc">Un quiste sin síntomas puede observarse. Un quiste inflamado requiere valoración antes de decidir tratamientos. Si está indicado, la extirpación de cápsula y contenido reduce la recurrencia, pero deja cicatriz.</desc>
+<defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#1B282F"/><stop offset="1" stop-color="#111B21"/></linearGradient></defs>
+<rect width="1200" height="700" rx="35" fill="url(#b)"/>
+<text x="65" y="72" fill="#C8AD83" font-family="Arial" letter-spacing="5" font-size="19">02 — DECISIÓN CLÍNICA</text>
+<text x="65" y="132" fill="#EEECE5" font-family="Georgia" font-size="44">No todos necesitan cirugía inmediata.</text>
+<g>
+<rect x="60" y="180" width="342" height="430" rx="26" fill="#27353C" stroke="#637177" stroke-opacity=".6"/>
+<rect x="429" y="180" width="342" height="430" rx="26" fill="#27353C" stroke="#637177" stroke-opacity=".6"/>
+<rect x="798" y="180" width="342" height="430" rx="26" fill="#27353C" stroke="#637177" stroke-opacity=".6"/>
+</g>
+<g font-family="Arial,sans-serif">
+<text x="90" y="232" font-size="16" letter-spacing="4" fill="#C8AD83">01 / SIN MOLESTIAS</text>
+<path d="M90 340 L371 340" stroke="#BE9482" stroke-width="8" stroke-linecap="round"/>
+<path d="M155 340 Q230 253 301 340" fill="#D0A38B" stroke="#BE9482" stroke-width="8"/>
+<ellipse cx="230" cy="333" rx="60" ry="31" fill="#EBD2B0" stroke="#C9AD87" stroke-width="4"/>
+<text x="90" y="425" font-size="28" fill="#F2EDE3">Observación</text>
+<text x="90" y="463" font-size="19" fill="#B9C4C3">Si no molesta, puede</text><text x="90" y="491" font-size="19" fill="#B9C4C3">vigilarse sin intervenir.</text>
+<text x="459" y="232" font-size="16" letter-spacing="4" fill="#C8AD83">02 / INFLAMADO</text>
+<ellipse cx="599" cy="338" rx="91" ry="60" fill="#88474C" opacity=".5"/>
+<path d="M459 340 L740 340" stroke="#C88988" stroke-width="8" stroke-linecap="round"/>
+<path d="M521 340 Q599 228 677 340" fill="#B96366" stroke="#DCA3A0" stroke-width="8"/>
+<ellipse cx="599" cy="322" rx="58" ry="27" fill="#E7B7A2" stroke="#A66F65" stroke-width="3"/>
+<text x="459" y="425" font-size="28" fill="#F2EDE3">Tratar el episodio</text>
+<text x="459" y="463" font-size="19" fill="#B9C4C3">Inflamación no equivale</text><text x="459" y="491" font-size="19" fill="#B9C4C3">siempre a infección.</text>
+<text x="828" y="232" font-size="16" letter-spacing="4" fill="#C8AD83">03 / EXTRACCIÓN</text>
+<path d="M828 340 L1109 340" stroke="#BE9482" stroke-width="8" stroke-linecap="round"/>
+<path d="M932 309 L1004 309 M968 275 L968 346" stroke="#E0C5A0" stroke-width="8" stroke-linecap="round"/>
+<path d="M945 362 Q969 386 993 362" fill="none" stroke="#C8AD83" stroke-width="5"/>
+<text x="828" y="425" font-size="28" fill="#F2EDE3">Retirar la cápsula</text>
+<text x="828" y="463" font-size="19" fill="#B9C4C3">Cuando está indicado,</text><text x="828" y="491" font-size="19" fill="#B9C4C3">disminuye la recurrencia.</text>
+</g>
+<text x="65" y="660" font-family="Arial" letter-spacing="6" font-size="18" fill="#C8AD83">HAUTLAB</text>
+<text x="1140" y="660" font-family="Arial" font-size="16" text-anchor="end" fill="#8C999C">NO SUSTITUYE VALORACIÓN MÉDICA</text>
+</svg>
