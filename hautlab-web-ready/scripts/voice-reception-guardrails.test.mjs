@@ -28,3 +28,31 @@ for (const [scenario, expected] of scenarios) {
     assert.match(prompt, expected);
   });
 }
+
+test("Voice price guard overrides general knowledge", () => {
+  const knowledge = prompt.indexOf("${buildAssistantInstructions()}");
+  const priceGuard = prompt.indexOf("PRECIOS Y AGENDA — RESTRICCIÓN PRIORITARIA");
+  assert.ok(knowledge >= 0 && priceGuard > knowledge, "Current-price guard must follow potentially historical knowledge");
+  assert.match(prompt.slice(priceGuard), /catálogo vigente verificado específicamente para esta sesión/);
+  assert.match(prompt.slice(priceGuard), /no presentes una cifra como aproximación/);
+});
+
+test("Voice Lab never assumes phone or human transfer", () => {
+  assert.match(prompt, /En Voice Lab no presupongas conexión telefónica ni transferencia humana/);
+  assert.match(prompt, /no prometas que alguien ya recibió el aviso/);
+});
+
+test("Voice requires real backend booking confirmation", () => {
+  assert.match(prompt, /Solo considera una cita confirmada cuando el backend lo confirme/);
+  assert.match(prompt, /No ofrezcas horarios ni afirmes que una cita está reservada sin disponibilidad y confirmación reales del backend/);
+});
+
+test("Voice handles wrong number, interruptions and silence without restarting", () => {
+  assert.match(prompt, /Si es un número equivocado, aclara brevemente que es HAUTLAB/);
+  assert.match(prompt, /Si te interrumpen, deja de hablar, escucha y responde a la nueva intención/);
+  assert.match(prompt, /No repitas el saludo ni reinicies la conversación/);
+});
+
+test("Voice template closes after the final guardrail", () => {
+  assert.match(prompt, /PRECIOS Y AGENDA — RESTRICCIÓN PRIORITARIA[\s\S]*\n\x60;\s*\n\}/);
+});
