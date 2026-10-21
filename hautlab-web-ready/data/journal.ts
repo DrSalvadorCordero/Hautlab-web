@@ -20,6 +20,7 @@ export const journalArticles: JournalArticle[] = [
     category: "Dermatología clínica",
     axis: "Piel",
     preparedAt: "2026-10-20",
+    publishedAt: "2026-10-20",
     readingTime: "8 min"
   },
   {
