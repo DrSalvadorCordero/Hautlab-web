@@ -13,6 +13,16 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "quiste-epidermico-que-es-y-cuando-extraer",
+    title: "Quiste epidérmico: qué es, cuándo extraerlo y por qué puede volver",
+    description:
+      "El llamado quiste sebáceo suele contener queratina, no sebo. Cómo reconocerlo, distinguir inflamación de infección y decidir entre observación y extracción.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-20",
+    readingTime: "8 min"
+  },
+  {
     slug: "dermatitis-seborreica-por-que-vuelve",
     title: "Dermatitis seborreica: por qué vuelve y qué significa controlarla",
     description:
