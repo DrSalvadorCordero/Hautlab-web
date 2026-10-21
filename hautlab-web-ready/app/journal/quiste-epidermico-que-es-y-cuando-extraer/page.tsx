@@ -85,6 +85,8 @@ export default function EpidermoidCystJournalPage() {
         inLanguage: "es-MX",
         dateCreated: article.preparedAt,
         dateModified: article.preparedAt,
+        datePublished: "2026-10-20",
+        reviewedBy: { "@id": siteConfig.url + "#doctor" },
         author: { "@id": siteConfig.url + "#clinic" },
         publisher: { "@id": siteConfig.url + "#clinic" },
         isPartOf: { "@id": siteConfig.url + "#website" },
@@ -130,7 +132,7 @@ export default function EpidermoidCystJournalPage() {
               Se conoce popularmente como «quiste sebáceo», pero su contenido no es sebo. Entender de qué está hecho cambia cómo se maneja y por qué puede regresar después de vaciarlo.
             </p>
             <p className="mt-8 text-xs leading-6 text-quiet">
-              Preparado: 20 de octubre de 2026 · Material educativo sujeto a revisión clínica antes de su publicación.
+              Publicado: 20 de octubre de 2026 · Revisión médica: Dr. Salvador Cordero.
             </p>
           </div>
         </section>
@@ -264,8 +266,8 @@ export default function EpidermoidCystJournalPage() {
             </Card>
             <Card className="p-7">
               <p className="text-xs uppercase tracking-[0.2em] text-champagne">Control editorial</p>
-              <p className="mt-5 text-lg font-medium text-bone">Borrador clínico para validación</p>
-              <p className="mt-3 text-sm leading-7 text-muted">Contenido preparado el 20 de octubre de 2026. La revisión clínica y autorización editorial deben confirmarse antes de publicar. Las ilustraciones son esquemáticas y no sustituyen una exploración.</p>
+              <p className="mt-5 text-lg font-medium text-bone">Revisión médica aprobada</p>
+              <p className="mt-3 text-sm leading-7 text-muted">Revisión clínica y editorial aprobada por el Dr. Salvador Cordero el 20 de octubre de 2026. Las ilustraciones son esquemáticas y no sustituyen una exploración.</p>
               <p className="mt-5 text-xs leading-6 text-quiet">Información educativa, no un diagnóstico ni una indicación de cirugía para un caso particular.</p>
             </Card>
           </div>
