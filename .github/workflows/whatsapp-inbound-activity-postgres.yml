@@ -40,9 +40,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          pids=()
           for i in $(seq 1 32); do
             psql -v ON_ERROR_STOP=1 -c "insert into public.wa_messages(conversation_id,meta_message_id,direction,body,created_at) values (1,'race-same-id','inbound','parallel','2026-10-21T10:04:00Z') on conflict (meta_message_id) do nothing" >/dev/null &
+            pids+=("$!")
           done
-          wait
-          psql -v ON_ERROR_STOP=1 -c "insert into public.wa_messages(conversation_id,meta_message_id,direction,body,created_at) values (1,'race-distinct-1','inbound','parallel','2026-10-21T10:05:00Z'),(1,'race-distinct-2','inbound','parallel','2026-10-21T10:06:00Z')"
+          for i in 1 2; do
+            psql -v ON_ERROR_STOP=1 -c "insert into public.wa_messages(conversation_id,meta_message_id,direction,body,created_at) values (1,'race-distinct-$i','inbound','parallel','2026-10-21T10:0$((4+i)):00Z') on conflict (meta_message_id) do nothing" >/dev/null &
+            pids+=("$!")
+          done
+          for pid in "${pids[@]}"; do wait "$pid"; done
           psql -v ON_ERROR_STOP=1 -Atc "select (select count(*) from public.wa_messages where meta_message_id='race-same-id') = 1 and (select count(*) from public.wa_messages where meta_message_id in ('race-distinct-1','race-distinct-2')) = 2 and (select last_patient_message_at = '2026-10-21T10:06:00Z'::timestamptz from public.wa_conversations where id=1)" | grep -qx t
