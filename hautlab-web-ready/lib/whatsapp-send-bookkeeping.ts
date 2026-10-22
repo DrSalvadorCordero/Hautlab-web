@@ -41,3 +41,32 @@ export async function withRequiredHandoff<T>(
   await handoff();
   return result;
 }
+
+
+// Attempt both Nimbo review persistence and escalation. Neither failure may hide
+// the other: operators need to distinguish failed state writes from failed alerts.
+export async function persistReviewAndEscalate(
+  persistReview: () => Promise<unknown>,
+  escalate: () => Promise<unknown>,
+): Promise<void> {
+  let reviewError: unknown;
+  let escalationError: unknown;
+  try {
+    await persistReview();
+  } catch (error) {
+    reviewError = error;
+  }
+  try {
+    await escalate();
+  } catch (error) {
+    escalationError = error;
+  }
+  if (reviewError !== undefined && escalationError !== undefined) {
+    throw new AggregateError(
+      [reviewError, escalationError],
+      "nimbo_review_and_escalation_failed",
+    );
+  }
+  if (reviewError !== undefined) throw reviewError;
+  if (escalationError !== undefined) throw escalationError;
+}
