@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { persistSentReply, withRequiredHandoff } from '../lib/whatsapp-send-bookkeeping.ts';
+import { persistReviewAndEscalate, persistSentReply, withRequiredHandoff } from '../lib/whatsapp-send-bookkeeping.ts';
 
 test('50 rejected/stale claims never create outbound bookkeeping', async () => {
   let saved = 0;
@@ -103,4 +103,46 @@ test('successful reply still reports a failed mandatory handoff', async () => {
     async () => { handoffs++; throw handoffError; },
   ), error => error === handoffError);
   assert.equal(handoffs, 1);
+});
+
+test('Nimbo persists both review and escalation errors without skipping either', async () => {
+  const review = new Error('review_database_unavailable');
+  const alert = new Error('operator_alert_unavailable');
+  const calls = [];
+  await assert.rejects(
+    () => persistReviewAndEscalate(
+      async () => { calls.push('review'); throw review; },
+      async () => { calls.push('escalation'); throw alert; },
+    ),
+    (error) => error instanceof AggregateError &&
+      error.message === 'nimbo_review_and_escalation_failed' &&
+      error.errors[0] === review && error.errors[1] === alert,
+  );
+  assert.deepEqual(calls, ['review', 'escalation']);
+});
+
+test('Nimbo escalation still executes if review fails, preserving the review error', async () => {
+  const review = new Error('review_failed');
+  let alerts = 0;
+  await assert.rejects(
+    () => persistReviewAndEscalate(
+      async () => { throw review; },
+      async () => { alerts += 1; },
+    ),
+    (error) => error === review,
+  );
+  assert.equal(alerts, 1);
+});
+
+test('Nimbo review succeeds but failed escalation is still raised', async () => {
+  const alert = new Error('alert_failed');
+  let reviews = 0;
+  await assert.rejects(
+    () => persistReviewAndEscalate(
+      async () => { reviews += 1; },
+      async () => { throw alert; },
+    ),
+    (error) => error === alert,
+  );
+  assert.equal(reviews, 1);
 });
