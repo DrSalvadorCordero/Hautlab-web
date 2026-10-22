@@ -1,5 +1,5 @@
 import { sendClaimedReply } from "@/lib/whatsapp-claimed-send";
-import { persistSentReply, withRequiredHandoff } from "@/lib/whatsapp-send-bookkeeping";
+import { persistReviewAndEscalate, persistSentReply, withRequiredHandoff } from "@/lib/whatsapp-send-bookkeeping";
 import { classifyNonBookingTurn } from "@/lib/whatsapp-turn-interruption";
 import { createHmac } from "node:crypto";
 import {
@@ -1686,23 +1686,22 @@ async function deliverNimboFlow(input: {
   };
 
   if (result.escalate) {
-    await withRequiredHandoff(deliverReply, async () => {
-      try {
-        await updateConversation(input.conversation.id, {
+    await withRequiredHandoff(deliverReply, () =>
+      persistReviewAndEscalate(
+        () => updateConversation(input.conversation.id, {
           stage: "human_review",
           priority: "high",
           human_review_reason:
             result.reasonCode ?? "nimbo_human_review_required",
           next_action: "human_review",
-        });
-      } finally {
-        await triggerEscalation({
+        }),
+        () => triggerEscalation({
           origin: input.origin,
           conversationId: input.conversation.id,
           operator: result.escalate!,
-        });
-      }
-    });
+        }),
+      ),
+    );
   } else {
     await deliverReply();
   }
