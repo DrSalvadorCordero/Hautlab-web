@@ -1696,9 +1696,11 @@ async function deliverNimboFlow(input: {
         metaMessageId,
         proposedBy: "nimbo-scheduler",
       });
-      await updateConversation(input.conversation.id, {
-        last_team_message_at: new Date().toISOString(),
-      });
+      if (metaMessageId) {
+        await updateConversation(input.conversation.id, {
+          last_team_message_at: new Date().toISOString(),
+        });
+      }
     }
   }
 
@@ -2079,9 +2081,11 @@ async function processTextMessage(input: {
         senderType: "system",
         proposedBy: "unsupported-message-recovery",
       });
-      await updateConversation(conversation.id, {
-        last_team_message_at: new Date().toISOString(),
-      });
+      if (metaMessageId) {
+        await updateConversation(conversation.id, {
+          last_team_message_at: new Date().toISOString(),
+        });
+      }
     }
     return;
   }
@@ -2157,9 +2161,11 @@ async function processTextMessage(input: {
         metaMessageId,
         proposedBy: "continuity-guard",
       });
-      await updateConversation(conversation.id, {
-        last_team_message_at: new Date().toISOString(),
-      });
+      if (metaMessageId) {
+        await updateConversation(conversation.id, {
+          last_team_message_at: new Date().toISOString(),
+        });
+      }
     }
     return;
   }
@@ -2234,9 +2240,11 @@ async function processTextMessage(input: {
       senderType: "system",
       proposedBy: "triage-fallback",
     });
-    await updateConversation(conversation.id, {
-      last_team_message_at: new Date().toISOString(),
-    });
+    if (metaMessageId) {
+      await updateConversation(conversation.id, {
+        last_team_message_at: new Date().toISOString(),
+      });
+    }
     return;
   }
 
@@ -2415,9 +2423,11 @@ async function processTextMessage(input: {
       metaMessageId,
       proposedBy: decision.model,
     });
-    await updateConversation(conversation.id, {
-      last_team_message_at: new Date().toISOString(),
-    });
+    if (metaMessageId) {
+      await updateConversation(conversation.id, {
+        last_team_message_at: new Date().toISOString(),
+      });
+    }
   }
 }
 
