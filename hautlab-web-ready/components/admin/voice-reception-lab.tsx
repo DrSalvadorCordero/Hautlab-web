@@ -2,6 +2,7 @@
 
 import { Mic, PhoneOff, Volume2 } from "lucide-react";
 import { useRef, useState } from "react";
+import { createVoiceGreetingGate } from "@/lib/voice/voice-greeting-gate";
 
 type SessionResponse = {
   session?: { id?: string };
@@ -17,12 +18,14 @@ export function VoiceReceptionLab() {
   const channelRef = useRef<RTCDataChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const greetingGateRef = useRef(createVoiceGreetingGate());
 
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function cleanup() {
+    greetingGateRef.current.reset();
     if (closeTimerRef.current) {
       clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -106,6 +109,7 @@ export function VoiceReceptionLab() {
         }
 
         if (event.type === "session.started") {
+          if (!greetingGateRef.current.claimGreeting()) return;
           setStatus("connected");
           setSessionId(event.session?.id ?? null);
 
@@ -127,6 +131,7 @@ export function VoiceReceptionLab() {
           typeof event.client_event_id === "string" &&
           event.client_event_id.startsWith("hautlab-greeting-")
         ) {
+          if (!greetingGateRef.current.claimStart()) return;
           events.send(
             JSON.stringify({
               type: "session.commentary.append",
