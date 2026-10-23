@@ -13,6 +13,17 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "molusco-contagioso-genital-cuidados-vigilancia",
+    title: "Molusco contagioso genital: tratar las lesiones es solo una parte del cuidado",
+    description:
+      "Qué ocurre después de retirar las lesiones, cómo cuidar la piel y por qué la vigilancia importa tanto como el procedimiento.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-22",
+    publishedAt: "2026-10-22",
+    readingTime: "6 min"
+  },
+  {
     slug: "quiste-epidermico-que-es-y-cuando-extraer",
     title: "Quiste epidérmico: qué es, cuándo extraerlo y por qué puede volver",
     description:
