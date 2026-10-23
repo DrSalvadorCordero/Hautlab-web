@@ -13,6 +13,15 @@ export type JournalArticle = {
 
 export const journalArticles: JournalArticle[] = [
   {
+    slug: "antibioticos-para-acne-cuando-usarlos-y-cuando-parar",
+    title: "Antibióticos para el acné: cuándo usarlos y cuándo parar",
+    description: "Clindamicina, doxiciclina y resistencia: cuándo se justifican los antibióticos para el acné, cuánto tiempo se revisan y qué sigue después.",
+    category: "Dermatología clínica",
+    axis: "Piel",
+    preparedAt: "2026-10-23",
+    readingTime: "10 min"
+  },
+  {
     slug: "molusco-contagioso-genital-cuidados-vigilancia",
     title: "Molusco contagioso genital: tratar las lesiones es solo una parte del cuidado",
     description:
