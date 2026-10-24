@@ -53,7 +53,14 @@ export async function careDb<T>(path: string, init: RequestInit = {}): Promise<T
     },
   });
   if (!response.ok) {
-    // Never leak database payloads containing patient data or internal SQL details.
+    // Log only allowlisted metadata: never log URL filters, identifiers, request/response bodies or SQL details.
+    const resource = path.split("?")[0];
+    const allowedResources = new Set(["private_care_patients", "private_care_plans", "private_care_followups", "private_care_access_requests", "private_care_invitations", "private_care_prepared_plans", "private_care_read_receipts", "rpc/claim_private_care_invitation"]);
+    console.error("private_care_storage_failure", {
+      status: response.status,
+      method: init.method ?? "GET",
+      resource: allowedResources.has(resource) ? resource : "other",
+    });
     throw new Error("private_care_storage_error_" + response.status);
   }
   const body = await response.text();
