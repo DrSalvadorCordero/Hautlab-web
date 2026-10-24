@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { BadgeDollarSign, HeartPulse, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
+import { BadgeDollarSign, HeartPulse, Bot, BriefcaseBusiness, Clock3, FileText, LayoutDashboard, CalendarDays, Settings, Sparkles, TrendingUp, Users } from "lucide-react";
 
 const baseNavigation = [
   { href: "/admin", label: "Resumen", icon: LayoutDashboard, managerOnly: false },
+  { href: "/admin/experiencia", label: "Agenda y reservas", icon: CalendarDays, managerOnly: true },
   { href: "/admin/asistencia", label: "Asistencia", icon: Clock3, managerOnly: false },
   { href: "/admin/personal", label: "Personal", icon: BriefcaseBusiness, managerOnly: true },
   { href: "/admin/facturacion", label: "Facturación", icon: FileText, managerOnly: true },

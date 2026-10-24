@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OperationsOverview } from "@/components/admin/operations-overview";
 import { redirect } from "next/navigation";
 import { CreateOrganization } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
@@ -10,6 +11,7 @@ const modules = [
   { title: "Check-in / Check-out", description: "Entradas, salidas, horas, retardos, correcciones y exportación.", href: "/admin/asistencia", icon: Clock3, status: "Disponible" },
   { title: "Usuarios internos", description: "Invita y administra al personal autorizado.", href: "/admin/usuarios", icon: Users, status: "Disponible" },
   { title: "Agenda y anticipos", description: "Preparación real de Nimbo, anticipos, reservas y Passport, con bloqueos visibles.", href: "/admin/experiencia", icon: CalendarDays, status: "Auditoría activa" },
+  { title: "Bandeja de WhatsApp", description: "Seguimientos, riesgos y conversaciones que requieren atención humana.", href: "/admin/whatsapp", icon: Bot, status: "Panel disponible" },
   { title: "Asistente HAUTLAB", description: "Base de conocimiento, uso y preguntas frecuentes.", href: "/admin/configuracion", icon: Bot, status: "En producción" },
   { title: "Growth OS", description: "Embudo, atribución y revenue desde marketing hasta cita confirmada.", href: "/admin/growth", icon: TrendingUp, status: "En producción" },
   { title: "Sales Brain", description: "Precio objetivo, última concesión, piso interno y estrategia de cierre por caso.", href: "/admin/ventas", icon: BadgeDollarSign, status: "En producción" },
@@ -28,6 +30,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <section className="rounded-[2rem] border border-line bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-7 shadow-calm sm:p-10"><p className="text-xs uppercase tracking-[0.24em] text-champagne">Panel operativo</p><h1 className="mt-4 font-serif text-3xl sm:text-4xl">Hola, {firstName}.</h1><p className="mt-4 max-w-2xl leading-7 text-muted">El acceso interno está separado del sitio público. El personal ve únicamente su asistencia; propietarios y administradores conservan el control operativo.</p></section>
+      <OperationsOverview />
       <section className="grid gap-4 md:grid-cols-2">{modules.map((module) => { const Icon = module.icon; return <Link key={module.title} href={module.href} prefetch={false} className="group rounded-[1.75rem] border border-line bg-white/[0.025] p-6 transition hover:-translate-y-0.5 hover:border-champagne/45 hover:bg-white/[0.045]"><div className="flex items-start justify-between gap-5"><div className="grid h-11 w-11 place-items-center rounded-2xl border border-line bg-black/20"><Icon className="h-5 w-5 text-champagne" /></div><span className="rounded-full border border-line px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-muted">{module.status}</span></div><h2 className="mt-6 text-lg font-medium text-bone">{module.title}</h2><p className="mt-3 text-sm leading-6 text-muted">{module.description}</p></Link>; })}</section>
     </div>
   );
