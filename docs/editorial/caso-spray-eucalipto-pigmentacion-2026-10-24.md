@@ -1,55 +1,69 @@
-# Parecía melasma: cuando un spray nocturno cambió las preguntas de la consulta
+# No todo lo que parece melasma lo es
 
-**HAUTLAB Journal · Borrador para revisión médica · 24 de octubre de 2026**
+**HAUTLAB Journal · Más allá de lo evidente · Caso clínico educativo**
 
-Las manchas del rostro no tienen una sola causa. En una valoración por pigmentación que inicialmente parecía compatible con melasma, revisar la rutina nocturna permitió identificar una exposición que merecía investigarse: un spray aromático con eucalipto utilizado para dormir y descongestionar.
+*Una mancha puede ser visible. Su origen, no siempre.*
 
-**Este relato es una reconstrucción educativa anonimizada.** No implica que se haya demostrado una alergia al eucalipto ni que el producto fuera la causa confirmada de la pigmentación.
+En dermatología, dos lesiones pueden parecerse y, sin embargo, contar historias completamente distintas. Por eso, en HAUTLAB la valoración no comienza eligiendo un procedimiento. Comienza entendiendo qué está ocurriendo en la piel.
 
-## La pista no estaba en el sol
+## Una historia que no terminaba de encajar
 
-Ante manchas faciales, es razonable considerar melasma, especialmente si existe una distribución característica. Pero la distribución, el inicio, los síntomas acompañantes y las exposiciones cotidianas pueden cambiar el diagnóstico diferencial.
+Una persona acudió por pigmentación facial que inicialmente hacía pensar en melasma. Era una posibilidad razonable, pero no una conclusión.
 
-La pregunta relevante fue qué productos entraban en contacto con el rostro o su entorno antes de dormir. Allí apareció el spray. Una exposición aromática no demuestra causalidad; sí justifica preguntar por contacto directo, pulverización sobre textiles, irritación, picor, ardor y relación temporal entre uso y aparición de lesiones.
+La evaluación de una mancha exige mirar más allá de su color: distribución, tiempo de evolución, síntomas, exposiciones, hábitos y productos utilizados. No todo está en la rutina cosmética. A veces, una exposición cotidiana pasa inadvertida porque nadie la considera un producto para la piel.
 
-## ¿Puede una fragancia producir manchas?
+Durante el interrogatorio apareció un detalle: el uso de un spray aromático con eucalipto para favorecer el descanso y aliviar la congestión nasal.
 
-Algunas sustancias de fragancias y aceites esenciales pueden desencadenar dermatitis de contacto alérgica o irritativa en personas susceptibles. La inflamación cutánea puede dejar hiperpigmentación postinflamatoria, incluso cuando el episodio inflamatorio previo fue discreto. También existe la dermatitis de contacto pigmentada, cuyo diagnóstico requiere correlación clínica y, en casos seleccionados, pruebas epicutáneas.
+**El hallazgo no probaba la causa. Cambiaba las preguntas.**
 
-No se debe equiparar automáticamente **eucalipto = alergia = manchas**. Importan la formulación completa, la concentración, los demás ingredientes, la vía de exposición y la evolución tras retirar el producto.
+¿El aerosol entraba en contacto con el rostro? ¿Se aplicaba sobre la almohada o las sábanas? ¿Había ardor, picor o irritación previa? ¿Qué otros ingredientes contenía? ¿La cronología era compatible?
 
-## Melasma frente a pigmentación relacionada con contacto
+Estas preguntas son parte del diagnóstico. No un detalle accesorio.
 
-- **Melasma:** suele producir máculas o parches hiperpigmentados, a menudo simétricos, con participación de radiación solar, predisposición y factores hormonales.
-- **Hiperpigmentación postinflamatoria:** sigue a inflamación o lesión cutánea; la historia de irritación, dermatitis o acné ayuda a orientarla.
-- **Dermatitis de contacto pigmentada:** puede asociarse a exposiciones repetidas, incluidas fragancias y cosméticos; su confirmación no se basa en una sola pregunta del interrogatorio.
+## Cuando la pigmentación tiene otra historia
 
-Estas entidades pueden coexistir. La fotografía aislada no basta para diferenciarlas.
+El melasma es una alteración pigmentaria multifactorial. La radiación, la predisposición individual y determinados factores hormonales pueden intervenir. Pero no es la única explicación para manchas faciales.
 
-## Qué cambia en la evaluación
+La **hiperpigmentación postinflamatoria** puede aparecer después de un proceso inflamatorio cutáneo, incluso cuando la irritación fue poco llamativa. La **dermatitis de contacto pigmentada** es otro diagnóstico diferencial en determinados patrones de pigmentación y exposiciones, entre ellas fragancias y productos cosméticos.
 
-Una historia clínica útil incluye inicio y distribución de manchas, exposición solar, cosméticos, perfumes, sprays ambientales, productos para cabello y ropa de cama, medicamentos, síntomas de dermatitis y antecedentes de pigmentación. La exploración puede orientar si se requieren dermatoscopia, pruebas epicutáneas o valoración adicional.
+Algunos ingredientes aromáticos, incluidos componentes de aceites esenciales, pueden sensibilizar o irritar a ciertas personas. Eso no significa que el eucalipto cause melasma ni que un spray concreto haya provocado estas manchas. La formulación completa, el contacto real, la exploración y, cuando procede, las pruebas epicutáneas son relevantes.
 
-Si se sospecha un producto, puede ser razonable evitar temporalmente la exposición mientras se evalúa; esto no sustituye el diagnóstico ni autoriza pruebas caseras de provocación. El tratamiento depende de la causa y del estado de la barrera cutánea.
+## La diferencia entre tratar una mancha y comprenderla
 
-## La enseñanza
+Un despigmentante puede ser apropiado para determinadas indicaciones. Un láser también puede tener un lugar en un plan individualizado. Pero elegir tecnología antes de precisar el diagnóstico puede exponer a tratamientos innecesarios, irritación o resultados decepcionantes.
 
-Antes de intensificar despigmentantes o indicar procedimientos, conviene comprobar que se está tratando la enfermedad correcta. A veces, la pregunta clínica más útil no es qué crema falta, sino qué exposición pasa inadvertida.
+En HAUTLAB, el orden importa: **escuchar, explorar, formular hipótesis, contrastarlas y solo después decidir si hay algo que tratar.**
 
-**Preguntas frecuentes**
+La mejor decisión clínica no siempre es añadir un producto. En ocasiones es reconocer una exposición, cuidar la barrera cutánea y observar la evolución de manera supervisada.
 
-**¿El eucalipto causa melasma?** No existe base para afirmar que un spray con eucalipto cause melasma como regla general. Algunas formulaciones aromáticas pueden provocar reacciones cutáneas en personas susceptibles.
+## Lo que este caso enseña
 
-**¿Una dermatitis puede dejar manchas?** Sí. La hiperpigmentación postinflamatoria puede persistir después de que disminuye la inflamación.
+No toda pigmentación es melasma. No todo producto que parece inocuo es irrelevante para una piel susceptible. Y encontrar una posible exposición no equivale a demostrar que sea la causa.
 
-**¿Dejar el spray confirma el diagnóstico?** No. Una mejoría tras evitarlo aporta información, pero por sí sola no demuestra el mecanismo ni identifica el ingrediente responsable.
+La medicina de precisión también consiste en saber cuándo todavía no tenemos la respuesta definitiva.
 
-**Nota editorial:** confirmar con el médico tratante la cronología real, el patrón de pigmentación, si existió dermatitis, si se suspendió el producto, la evolución y si se realizaron pruebas epicutáneas. No describir resolución, causalidad ni diagnóstico definitivo sin documentación clínica y consentimiento apropiado.
+**La piel muestra el hallazgo. La historia clínica ayuda a entenderlo.**
 
-## Lecturas de referencia
+---
 
-- DermNet, Pigmented contact dermatitis: https://dermnetnz.org/topics/pigmented-contact-dermatitis
-- DermNet, Fragrance allergy: https://dermnetnz.org/topics/fragrance-allergy
-- DermNet, Postinflammatory hyperpigmentation: https://dermnetnz.org/topics/postinflammatory-hyperpigmentation
+### Preguntas que vale la pena hacer
 
-**Enlaces internos propuestos:** /procedimientos/melasma y el artículo existente sobre recurrencia del melasma (verificar slug exacto antes de integrar).
+**¿Un spray con eucalipto puede producir manchas?** Algunos componentes de fragancias pueden ocasionar dermatitis de contacto en personas susceptibles, y la inflamación puede dejar pigmentación residual. No puede atribuirse una mancha al eucalipto sin evaluación clínica.
+
+**¿Cómo diferenciar melasma de pigmentación postinflamatoria?** Por el patrón de distribución, antecedentes, síntomas, exploración y exposiciones. En casos seleccionados pueden ser útiles pruebas complementarias.
+
+**¿Conviene suspender todos los productos aromáticos?** No de manera universal. Si se sospecha una exposición específica, el médico puede recomendar evitarla temporalmente y revisar los ingredientes, sin hacer pruebas de provocación caseras.
+
+**¿Qué debería hacer si tengo manchas persistentes?** Buscar una valoración clínica antes de combinar ácidos, despigmentantes o procedimientos. El tratamiento depende del diagnóstico.
+
+---
+
+*Nota de transparencia clínica:* Relato educativo anonimizado, reconstruido a partir de una situación clínica comunicada. La relación causal entre el spray y la pigmentación no está confirmada en la información disponible. No se documentan aquí pruebas epicutáneas, resolución tras suspensión ni diagnóstico definitivo. Su publicación requiere revisión médica y verificación de anonimización.
+
+**Referencias para revisión editorial**
+
+- DermNet — Pigmented contact dermatitis: https://dermnetnz.org/topics/pigmented-contact-dermatitis
+- DermNet — Fragrance allergy: https://dermnetnz.org/topics/fragrance-allergy
+- DermNet — Postinflammatory hyperpigmentation: https://dermnetnz.org/topics/postinflammatory-hyperpigmentation
+
+**SEO editorial propuesto:** título «No todo lo que parece melasma lo es: la importancia de investigar las manchas faciales». Intención informativa y de diagnóstico diferencial, sin competir directamente con la página de tratamiento del melasma. Enlaces internos sugeridos a la página de melasma y al contenido sobre su recurrencia, previa verificación de rutas.
