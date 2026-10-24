@@ -35,7 +35,9 @@ async function databaseRequest(path: string, method: "GET" | "HEAD" = "GET") {
 
 async function count(path: string) {
   const response = await databaseRequest(path, "HEAD");
-  const total = Number((response.headers.get("content-range") ?? "").split("/").at(-1));
+  const range = response.headers.get("content-range");
+  if (!range || !/\\/\\d+$/.test(range)) throw new Error("count_header_missing");
+  const total = Number(range.slice(range.lastIndexOf("/") + 1));
   if (!Number.isSafeInteger(total) || total < 0) throw new Error("invalid_count");
   return total;
 }
