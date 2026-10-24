@@ -250,7 +250,6 @@ async function upsertConversation(input: {
   phone: string;
   profileName?: string;
 }): Promise<ConversationRow> {
-  const now = new Date().toISOString();
   const rows = await supabaseRequest<ConversationRow[]>(
     "wa_conversations?on_conflict=phone&select=id,phone,profile_name,city,treatment,next_action,ai_mode,bot_paused,paused_reason,stage,clinical_risk,handoff_status,first_attribution,nimbo_person_id,nimbo_schedule_id,nimbo_last_offered_slots,nimbo_offer_expires_at,nimbo_pending_slot,nimbo_pending_cause,booking_full_name,booking_birth_date,booking_gender,booking_email,booking_whatsapp,booking_reason,booking_intake_completed_at",
     {
@@ -259,9 +258,8 @@ async function upsertConversation(input: {
       body: JSON.stringify({
         phone: input.phone,
         ...(input.profileName ? { profile_name: input.profileName } : {}),
-        last_message_at: now,
-        last_patient_message_at: now,
-        updated_at: now,
+        // Activity timestamps are set atomically by the wa_messages INSERT trigger.
+        // Upserting a conversation is not evidence of a *new* inbound event.
       }),
     },
   );
@@ -1952,6 +1950,16 @@ async function processTextMessage(input: {
   const planCode = extractHautlabPlanCode(rawText);
   const text = stripHautlabPlanReference(stripAttributionReference(rawText));
 
+
+  const isNew = await insertInboundMessage({
+    conversationId: conversation.id,
+    metaMessageId: input.message.id,
+    body: text,
+    messageType: input.message.type,
+  });
+  if (!isNew) return;
+
+  // Side effects run only after the unique inbound message was committed.
   if (planCode) {
     try {
       await attachHautlabPlanToConversation({
@@ -1970,13 +1978,6 @@ async function processTextMessage(input: {
     }
   }
 
-  const isNew = await insertInboundMessage({
-    conversationId: conversation.id,
-    metaMessageId: input.message.id,
-    body: text,
-    messageType: input.message.type,
-  });
-  if (!isNew) return;
 
   const referralSnapshot = getMetaReferralSnapshot(input.message);
   if (referralSnapshot) {

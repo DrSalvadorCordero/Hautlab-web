@@ -1,0 +1,53 @@
+name: WhatsApp Inbound Activity PostgreSQL
+on:
+  pull_request:
+    paths:
+      - "hautlab-web-ready/lib/whatsapp-orchestrator.ts"
+      - "hautlab-web-ready/supabase/migrations/20261021065000_fix_wa_inbound_timestamps.sql"
+      - "hautlab-web-ready/scripts/whatsapp-inbound-activity*"
+      - ".github/workflows/whatsapp-inbound-activity-postgres.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-postgresql-17:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: inbound_synthetic
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d inbound_synthetic"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: inbound_synthetic
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify migration against synthetic data
+        run: psql -v ON_ERROR_STOP=1 -f hautlab-web-ready/scripts/whatsapp-inbound-activity-postgres.sql
+      - name: Verify concurrent retries and distinct turns across 32 connections
+        shell: bash
+        run: |
+          set -euo pipefail
+          pids=()
+          for i in $(seq 1 32); do
+            psql -v ON_ERROR_STOP=1 -c "insert into public.wa_messages(conversation_id,meta_message_id,direction,body,created_at) values (1,'race-same-id','inbound','parallel','2026-10-21T10:04:00Z') on conflict (meta_message_id) do nothing" >/dev/null &
+            pids+=("$!")
+          done
+          for i in 1 2; do
+            psql -v ON_ERROR_STOP=1 -c "insert into public.wa_messages(conversation_id,meta_message_id,direction,body,created_at) values (1,'race-distinct-$i','inbound','parallel','2026-10-21T10:0$((4+i)):00Z') on conflict (meta_message_id) do nothing" >/dev/null &
+            pids+=("$!")
+          done
+          for pid in "${pids[@]}"; do wait "$pid"; done
+          psql -v ON_ERROR_STOP=1 -Atc "select (select count(*) from public.wa_messages where meta_message_id='race-same-id') = 1 and (select count(*) from public.wa_messages where meta_message_id in ('race-distinct-1','race-distinct-2')) = 2 and (select last_patient_message_at = '2026-10-21T10:06:00Z'::timestamptz from public.wa_conversations where id=1)" | grep -qx t
